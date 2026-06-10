@@ -1,0 +1,292 @@
+{
+  "package.json": {
+    "mtime": 1780557706.5648386,
+    "ast_hash": "8fc3323679283f19376f1dfcd1144a2b",
+    "semantic_hash": "8fc3323679283f19376f1dfcd1144a2b"
+  },
+  "vercel.json": {
+    "mtime": 1780557712.804057,
+    "ast_hash": "bd9f6e20e864adfdf235064d9a2e2031",
+    "semantic_hash": "bd9f6e20e864adfdf235064d9a2e2031"
+  },
+  "web/app/admin/page.tsx": {
+    "mtime": 1780387817.2781885,
+    "ast_hash": "531a73464b3d28e5688a93be3cddb762",
+    "semantic_hash": "531a73464b3d28e5688a93be3cddb762"
+  },
+  "web/app/favicon.ico/route.ts": {
+    "mtime": 1780556132.7371092,
+    "ast_hash": "7ae8e259f5d0cbc59b85f5ff8434c6de",
+    "semantic_hash": "7ae8e259f5d0cbc59b85f5ff8434c6de"
+  },
+  "web/app/layout.tsx": {
+    "mtime": 1780377999.4011562,
+    "ast_hash": "9290ecbe2df921d750fa20a9649d53c6",
+    "semantic_hash": "9290ecbe2df921d750fa20a9649d53c6"
+  },
+  "web/app/login/page.tsx": {
+    "mtime": 1780373261.9768975,
+    "ast_hash": "a5700ae632745b6f084468da8d9b7765",
+    "semantic_hash": "a5700ae632745b6f084468da8d9b7765"
+  },
+  "web/app/my-work/page.tsx": {
+    "mtime": 1780384490.601885,
+    "ast_hash": "b65b2585e40840c6edff54ca6f1c7c24",
+    "semantic_hash": "b65b2585e40840c6edff54ca6f1c7c24"
+  },
+  "web/app/page.tsx": {
+    "mtime": 1780384490.5408852,
+    "ast_hash": "e385905ec4c278d522e8620600036f1d",
+    "semantic_hash": "e385905ec4c278d522e8620600036f1d"
+  },
+  "web/app/smoke-test/page.tsx": {
+    "mtime": 1780384490.6688826,
+    "ast_hash": "8a8b04fa3af60e06dd05b645ab9de03b",
+    "semantic_hash": "8a8b04fa3af60e06dd05b645ab9de03b"
+  },
+  "web/components/AccessDeniedPanel.tsx": {
+    "mtime": 1780372497.4873307,
+    "ast_hash": "839ab516909c1bf0a8c3c19b46b6c092",
+    "semantic_hash": "839ab516909c1bf0a8c3c19b46b6c092"
+  },
+  "web/components/AccessRibbon.tsx": {
+    "mtime": 1780366965.8311422,
+    "ast_hash": "8482b7f7b1f7c3772a815452a47fb5b8",
+    "semantic_hash": "8482b7f7b1f7c3772a815452a47fb5b8"
+  },
+  "web/components/AccessSmokeTestPanel.tsx": {
+    "mtime": 1780370482.0679498,
+    "ast_hash": "e17c9a2741820a3fc8961b04c3c1d8fd",
+    "semantic_hash": "e17c9a2741820a3fc8961b04c3c1d8fd"
+  },
+  "web/components/AppNavigation.tsx": {
+    "mtime": 1780387835.1924617,
+    "ast_hash": "d6855851128f34664f99debc442534ef",
+    "semantic_hash": "d6855851128f34664f99debc442534ef"
+  },
+  "web/components/DashboardSection.tsx": {
+    "mtime": 1780550653.9436667,
+    "ast_hash": "c4f4848ece728a3313ca52be31e85513",
+    "semantic_hash": "c4f4848ece728a3313ca52be31e85513"
+  },
+  "web/components/HeroSection.tsx": {
+    "mtime": 1780374631.1661136,
+    "ast_hash": "77c92c7632fa82cf4725479bdd07d260",
+    "semantic_hash": "77c92c7632fa82cf4725479bdd07d260"
+  },
+  "web/components/IntakeFormSection.tsx": {
+    "mtime": 1780369124.4224615,
+    "ast_hash": "c55ee436ac714534a7789ef9ab3d6b75",
+    "semantic_hash": "c55ee436ac714534a7789ef9ab3d6b75"
+  },
+  "web/components/InteractiveHealthMap.tsx": {
+    "mtime": 1780382557.862009,
+    "ast_hash": "fbd805fabb8fcaa8edc331973d81bb67",
+    "semantic_hash": "fbd805fabb8fcaa8edc331973d81bb67"
+  },
+  "web/components/InteractiveHealthMapClient.tsx": {
+    "mtime": 1780392942.3502736,
+    "ast_hash": "85e7de5ec23fb2a11c2c283f740cd45f",
+    "semantic_hash": "85e7de5ec23fb2a11c2c283f740cd45f"
+  },
+  "web/components/KpiInputSection.tsx": {
+    "mtime": 1780367009.6508994,
+    "ast_hash": "f8aa771e83bc393d7296d38464567d11",
+    "semantic_hash": "f8aa771e83bc393d7296d38464567d11"
+  },
+  "web/components/MapSmokeTestPanel.tsx": {
+    "mtime": 1780382958.8570623,
+    "ast_hash": "b74b845bac964e8b89b6c5f5bc84a6a4",
+    "semantic_hash": "b74b845bac964e8b89b6c5f5bc84a6a4"
+  },
+  "web/components/SuperadminUsersPanel.tsx": {
+    "mtime": 1780369320.6994598,
+    "ast_hash": "6abef76dc623bd7e77a9abac0d28eac3",
+    "semantic_hash": "6abef76dc623bd7e77a9abac0d28eac3"
+  },
+  "web/components/ThailandHealthZoneMap.tsx": {
+    "mtime": 1780364482.867393,
+    "ast_hash": "2816144c716bc5256d45100659537ce8",
+    "semantic_hash": "2816144c716bc5256d45100659537ce8"
+  },
+  "web/components/WorkSummary.tsx": {
+    "mtime": 1780373266.9745388,
+    "ast_hash": "c42c15083c8665d72773d7f466199c3b",
+    "semantic_hash": "c42c15083c8665d72773d7f466199c3b"
+  },
+  "web/next-env.d.ts": {
+    "mtime": 1780035872.6316426,
+    "ast_hash": "ba64ff7d54714a8f64db89b1003207d8",
+    "semantic_hash": "ba64ff7d54714a8f64db89b1003207d8"
+  },
+  "web/next.config.js": {
+    "mtime": 1780035932.7070706,
+    "ast_hash": "83601b63ad838a016e32ff989ba4b985",
+    "semantic_hash": "83601b63ad838a016e32ff989ba4b985"
+  },
+  "web/package.json": {
+    "mtime": 1780386603.9356625,
+    "ast_hash": "d25009249808705609f4f97efcfbbf50",
+    "semantic_hash": "d25009249808705609f4f97efcfbbf50"
+  },
+  "web/services/access-control.ts": {
+    "mtime": 1780370462.3839078,
+    "ast_hash": "b68d29b1ca16c6d93b49062b21014699",
+    "semantic_hash": "b68d29b1ca16c6d93b49062b21014699"
+  },
+  "web/services/auth-session.ts": {
+    "mtime": 1780372469.1067822,
+    "ast_hash": "807d34bfe37e9eac5a6cd11b95550ad8",
+    "semantic_hash": "807d34bfe37e9eac5a6cd11b95550ad8"
+  },
+  "web/services/dashboard-analytics.ts": {
+    "mtime": 1780365827.765314,
+    "ast_hash": "2bae564cbe41ee03e8ac79db751cfbc6",
+    "semantic_hash": "2bae564cbe41ee03e8ac79db751cfbc6"
+  },
+  "web/services/health-issue-service.ts": {
+    "mtime": 1780382337.865393,
+    "ast_hash": "33a44e55150cc82c52796373804d2615",
+    "semantic_hash": "33a44e55150cc82c52796373804d2615"
+  },
+  "web/services/kpi-calculations.ts": {
+    "mtime": 1780365104.1492927,
+    "ast_hash": "70fb05c094c99c6f1052008503046abc",
+    "semantic_hash": "70fb05c094c99c6f1052008503046abc"
+  },
+  "web/services/map-boundary-service.ts": {
+    "mtime": 1780377497.4403598,
+    "ast_hash": "42b8d502e22ffe0530640bdc779b314f",
+    "semantic_hash": "42b8d502e22ffe0530640bdc779b314f"
+  },
+  "web/services/mvp-data.ts": {
+    "mtime": 1780036646.5085232,
+    "ast_hash": "704cc5bb68a561bfee8b23888e11acea",
+    "semantic_hash": "704cc5bb68a561bfee8b23888e11acea"
+  },
+  "web/services/qa-readiness.ts": {
+    "mtime": 1780366282.7231107,
+    "ast_hash": "b1399cf1835620998b22fd5f36cad39e",
+    "semantic_hash": "b1399cf1835620998b22fd5f36cad39e"
+  },
+  "web/services/supabase-client.ts": {
+    "mtime": 1780036492.6779125,
+    "ast_hash": "80da831b38f9349fa9e3e41f62f9549e",
+    "semantic_hash": "80da831b38f9349fa9e3e41f62f9549e"
+  },
+  "web/sql/001_mvp_schema.sql": {
+    "mtime": 1780036425.9589148,
+    "ast_hash": "5fe7dca1f0f3201e810344222e707a74",
+    "semantic_hash": "5fe7dca1f0f3201e810344222e707a74"
+  },
+  "web/sql/002_mvp_rls_policies.sql": {
+    "mtime": 1780037278.7740154,
+    "ast_hash": "f34dcb2a0b57c491e2f3aa9693c7ca5b",
+    "semantic_hash": "f34dcb2a0b57c491e2f3aa9693c7ca5b"
+  },
+  "web/sql/003_agency_province_mapping.sql": {
+    "mtime": 1780037716.4969125,
+    "ast_hash": "abb6384c98d227e995d80c8948e4cc05",
+    "semantic_hash": "abb6384c98d227e995d80c8948e4cc05"
+  },
+  "web/sql/004_seed_all_provinces_districts.sql": {
+    "mtime": 1780039643.3839116,
+    "ast_hash": "b5041a92b0cd19808aea95895c1d5613",
+    "semantic_hash": "b5041a92b0cd19808aea95895c1d5613"
+  },
+  "web/sql/005_full_agency_province_mapping.sql": {
+    "mtime": 1780374285.0978107,
+    "ast_hash": "3213e2c637a19183769dac7e6d412f70",
+    "semantic_hash": "3213e2c637a19183769dac7e6d412f70"
+  },
+  "web/sql/006_verify_agency_province_mapping.sql": {
+    "mtime": 1780040003.3922107,
+    "ast_hash": "f2e9f56a9a15322747ea0d943ceadc84",
+    "semantic_hash": "f2e9f56a9a15322747ea0d943ceadc84"
+  },
+  "web/sql/007_phase4_kpi_engine.sql": {
+    "mtime": 1780365087.9734983,
+    "ast_hash": "cbe1d09a05c818a993aff86d90878c88",
+    "semantic_hash": "cbe1d09a05c818a993aff86d90878c88"
+  },
+  "web/sql/008_seed_kpi_sample.sql": {
+    "mtime": 1780040677.6338463,
+    "ast_hash": "89f4edcb7737d34ecf4093169b85d503",
+    "semantic_hash": "89f4edcb7737d34ecf4093169b85d503"
+  },
+  "web/sql/009_reset_sample_data.sql": {
+    "mtime": 1780040975.8457952,
+    "ast_hash": "d31fef012239c341af6bce8a933d0821",
+    "semantic_hash": "d31fef012239c341af6bce8a933d0821"
+  },
+  "web/sql/010_kpi_input_validation_constraints.sql": {
+    "mtime": 1780041414.768072,
+    "ast_hash": "f04523d683586f1a8b98a614f1c642da",
+    "semantic_hash": "f04523d683586f1a8b98a614f1c642da"
+  },
+  "web/sql/011_phase8_auth_model.sql": {
+    "mtime": 1780366700.234858,
+    "ast_hash": "23940308a69b0681a8e9b4bf7c5cc1ef",
+    "semantic_hash": "23940308a69b0681a8e9b4bf7c5cc1ef"
+  },
+  "web/sql/012_phase7_qa_checks.sql": {
+    "mtime": 1780366295.5521774,
+    "ast_hash": "666c71ac771dded7b8fa02e1ba58759b",
+    "semantic_hash": "666c71ac771dded7b8fa02e1ba58759b"
+  },
+  "web/sql/013_phase8_rbac_policies.sql": {
+    "mtime": 1780366705.2561493,
+    "ast_hash": "05ecda25bbe9b84025665a9c573b5dee",
+    "semantic_hash": "05ecda25bbe9b84025665a9c573b5dee"
+  },
+  "web/sql/014_phase8_access_smoke_test.sql": {
+    "mtime": 1780370549.2286735,
+    "ast_hash": "c28aadfaba5c62d479017bc88e53bcd1",
+    "semantic_hash": "c28aadfaba5c62d479017bc88e53bcd1"
+  },
+  "web/sql/015_phase8_bootstrap_superadmin.sql": {
+    "mtime": 1780371051.1893327,
+    "ast_hash": "c61db3fba1fa7c5291877835b3ee42b5",
+    "semantic_hash": "c61db3fba1fa7c5291877835b3ee42b5"
+  },
+  "web/sql/016_fix_udon_thani_agency_mapping.sql": {
+    "mtime": 1780374285.1462572,
+    "ast_hash": "fc55498399d288cae5c88b1c6b5ba841",
+    "semantic_hash": "fc55498399d288cae5c88b1c6b5ba841"
+  },
+  "web/sql/017_phase_map_readiness_checks.sql": {
+    "mtime": 1780377497.4913597,
+    "ast_hash": "927414fb08add83897d14f8ca6a5585e",
+    "semantic_hash": "927414fb08add83897d14f8ca6a5585e"
+  },
+  "web/sql/018_phase_map_smoke_test.sql": {
+    "mtime": 1780382977.2086215,
+    "ast_hash": "39fb3cd44c152b36fcf46d849858582d",
+    "semantic_hash": "39fb3cd44c152b36fcf46d849858582d"
+  },
+  "web/sql/019_public_dashboard_read_policies.sql": {
+    "mtime": 1780555252.4798265,
+    "ast_hash": "d038b61ce01bb7f7bb0ad4104274d0c0",
+    "semantic_hash": "d038b61ce01bb7f7bb0ad4104274d0c0"
+  },
+  "web/tsconfig.json": {
+    "mtime": 1780035612.2832706,
+    "ast_hash": "a7f91c20e4ccc6ce66f02f140b0e5cfb",
+    "semantic_hash": "a7f91c20e4ccc6ce66f02f140b0e5cfb"
+  },
+  "web/types/map.ts": {
+    "mtime": 1780377497.392912,
+    "ast_hash": "a0f665f4bd61b53da3241697c3efe0b4",
+    "semantic_hash": "a0f665f4bd61b53da3241697c3efe0b4"
+  },
+  "web/types/mvp.ts": {
+    "mtime": 1780550642.6381533,
+    "ast_hash": "f4378820a30b2092fd32d6beae8be5e3",
+    "semantic_hash": "f4378820a30b2092fd32d6beae8be5e3"
+  },
+  "web/vercel.json": {
+    "mtime": 1780557117.600011,
+    "ast_hash": "09028e6f8c60caa7586f5a7c040a297b",
+    "semantic_hash": "09028e6f8c60caa7586f5a7c040a297b"
+  }
+}

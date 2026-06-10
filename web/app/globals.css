@@ -127,6 +127,33 @@ main {
   align-items: center;
 }
 
+.pagination-row {
+  margin-top: 14px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.record-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.table-input,
+.table-textarea {
+  width: 100%;
+  min-width: 140px;
+}
+
+.table-textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
 .hero__actions {
   margin-top: 18px;
   display: flex;

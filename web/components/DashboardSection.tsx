@@ -25,6 +25,7 @@ import type {
   AgencyCoverageRow,
   AgencyProvinceMapRow,
   AgencyOption,
+  District,
   IntakeFormData,
   IntakeRecordRow,
   KpiSummaryRow,
@@ -40,7 +41,15 @@ type DashboardSectionProps = {
   onSelectDistrictForIntake?: (selection: { agencyCode: string; provinceCode: string; districtCode: string }) => void;
 };
 
+type SavedRecordDraft = {
+  agencyCode: string;
+  provinceCode: string;
+  districtCode: string;
+  healthIssue: string;
+};
+
 const fiscalYears = [2566, 2567, 2568, 2569, 2570];
+const latestRecordsPageSize = 10;
 
 const getRelatedLabel = <T,>(value: T | T[] | null | undefined, picker: (item: T) => string | null | undefined) => {
   const item = Array.isArray(value) ? value[0] : value;
@@ -57,6 +66,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
   const [topProvince, setTopProvince] = useState("-");
   const [agencies, setAgencies] = useState<AgencyOption[]>([]);
   const [provinces, setProvinces] = useState<Province[]>([]);
+  const [districts, setDistricts] = useState<District[]>([]);
   const [agencyProvinceMap, setAgencyProvinceMap] = useState<AgencyProvinceMapRow[]>([]);
   const [agencyCoverage, setAgencyCoverage] = useState<AgencyCoverageRow[]>([]);
   const [provinceCoverage, setProvinceCoverage] = useState<ProvinceCoverageRow[]>([]);
@@ -65,8 +75,16 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
   const [selectedFiscalYear, setSelectedFiscalYear] = useState<number>(2569);
   const [filterAgency, setFilterAgency] = useState("");
   const [filterProvince, setFilterProvince] = useState("");
+  const [latestRecordsPage, setLatestRecordsPage] = useState(1);
+  const [recordsRefreshKey, setRecordsRefreshKey] = useState(0);
+  const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<SavedRecordDraft | null>(null);
+  const [recordActionMessage, setRecordActionMessage] = useState("");
+  const [savingRecordId, setSavingRecordId] = useState<string | null>(null);
+  const [deletingRecordId, setDeletingRecordId] = useState<string | null>(null);
   const activeAgencyFilter = accessScope?.agencyCode ?? filterAgency;
   const activeProvinceFilter = accessScope?.provinceCode ?? filterProvince;
+  const canViewSavedRecords = accessScope?.role === "superadmin" || accessScope?.role === "admin";
 
   const visibleAgencyCodes = useMemo(
     () => resolveVisibleAgencyCodes(accessScope ?? { role: "superadmin" }, agencyProvinceMap, agencies.map((item) => item.code)),
@@ -85,6 +103,24 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
 
   const visibleAgencies = useMemo(() => agencies.filter((agency) => visibleAgencyCodes.includes(agency.code)), [agencies, visibleAgencyCodes]);
   const visibleProvinces = useMemo(() => provinces.filter((province) => visibleProvinceCodes.includes(province.code)), [provinces, visibleProvinceCodes]);
+  const editProvinceOptions = useMemo(() => {
+    if (!editDraft?.agencyCode) {
+      return [] as Province[];
+    }
+
+    const allowedProvinceCodes = new Set(
+      agencyProvinceMap.filter((item) => item.agency_code === editDraft.agencyCode).map((item) => item.province_code)
+    );
+
+    return visibleProvinces.filter((province) => allowedProvinceCodes.has(province.code));
+  }, [agencyProvinceMap, editDraft?.agencyCode, visibleProvinces]);
+  const editDistrictOptions = useMemo(() => {
+    if (!editDraft?.provinceCode) {
+      return [] as District[];
+    }
+
+    return districts.filter((district) => district.province_code === editDraft.provinceCode);
+  }, [districts, editDraft?.provinceCode]);
   const visibleAgencyCoverage = useMemo(
     () => agencyCoverage.filter((item) => visibleAgencyCodes.includes(item.agency_code)),
     [agencyCoverage, visibleAgencyCodes]
@@ -94,17 +130,22 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
     [provinceCoverage, visibleProvinceCodes]
   );
   const showAdvancedPanels = viewMode === "backoffice";
+  const latestRecordsPageCount = Math.max(1, Math.ceil(totalCount / latestRecordsPageSize));
+  const latestRecordsStart = totalCount === 0 ? 0 : (latestRecordsPage - 1) * latestRecordsPageSize + 1;
+  const latestRecordsEnd = Math.min(totalCount, latestRecordsPage * latestRecordsPageSize);
 
   useEffect(() => {
     const loadFilterOptions = async () => {
-      const [agencyRes, provinceRes, mappingRes] = await Promise.all([
+      const [agencyRes, provinceRes, districtRes, mappingRes] = await Promise.all([
         supabase.from("master_agencies").select("code,label_th").order("code", { ascending: true }),
         supabase.from("master_provinces").select("code,name_th").order("name_th", { ascending: true }),
+        supabase.from("master_districts").select("code,name_th,province_code").order("name_th", { ascending: true }),
         supabase.from("agency_provinces").select("agency_code,province_code"),
       ]);
 
       setAgencies(agencyRes.data ?? []);
       setProvinces(provinceRes.data ?? []);
+      setDistricts(districtRes.data ?? []);
       setAgencyProvinceMap((mappingRes.data as AgencyProvinceMapRow[]) ?? []);
     };
 
@@ -112,9 +153,21 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
   }, []);
 
   useEffect(() => {
+    setLatestRecordsPage(1);
+  }, [refreshKey, activeAgencyFilter, activeProvinceFilter]);
+
+  useEffect(() => {
+    if (latestRecordsPage > latestRecordsPageCount) {
+      setLatestRecordsPage(latestRecordsPageCount);
+    }
+  }, [latestRecordsPage, latestRecordsPageCount]);
+
+  useEffect(() => {
     const loadRows = async () => {
       setLoading(true);
       const previousFiscalYear = selectedFiscalYear > fiscalYears[0] ? selectedFiscalYear - 1 : null;
+      const latestRecordsFrom = (latestRecordsPage - 1) * latestRecordsPageSize;
+      const latestRecordsTo = latestRecordsFrom + latestRecordsPageSize - 1;
 
       let query = supabase
         .from("intake_records")
@@ -122,7 +175,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
           "id,created_at,health_issue_text,agency_code,province_code,district_code,master_agencies(label_th),master_provinces(name_th),master_districts(name_th)"
         )
         .order("created_at", { ascending: false })
-        .limit(10);
+        .range(latestRecordsFrom, latestRecordsTo);
 
       let countQuery = supabase.from("intake_records").select("*", { count: "exact", head: true });
 
@@ -132,7 +185,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
       if (activeProvinceFilter) countQuery = countQuery.eq("province_code", activeProvinceFilter);
 
       const [{ data }, { count }, intakeSummaryRes, kpiSummaryRes, previousKpiSummaryRes] = await Promise.all([
-        query,
+        canViewSavedRecords ? query : Promise.resolve({ data: [] as IntakeRecordRow[] }),
         countQuery,
         (() => {
           let summaryQuery = supabase
@@ -217,7 +270,18 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
     };
 
     void loadRows();
-  }, [refreshKey, activeAgencyFilter, activeProvinceFilter, agencies, provinces, agencyProvinceMap, selectedFiscalYear]);
+  }, [
+    refreshKey,
+    recordsRefreshKey,
+    activeAgencyFilter,
+    activeProvinceFilter,
+    agencies,
+    provinces,
+    agencyProvinceMap,
+    selectedFiscalYear,
+    latestRecordsPage,
+    canViewSavedRecords,
+  ]);
 
   const selectedAgencyLabel = useMemo(() => {
     return agencies.find((item) => item.code === formData.agencyCode)?.label_th ?? formData.agencyCode ?? "-";
@@ -244,6 +308,81 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
       setFilterAgency("");
     }
     setFilterProvince("");
+  };
+
+  const beginEditRecord = (row: IntakeRecordRow) => {
+    setRecordActionMessage("");
+    setEditingRecordId(row.id);
+    setEditDraft({
+      agencyCode: row.agency_code,
+      provinceCode: row.province_code,
+      districtCode: row.district_code,
+      healthIssue: row.health_issue_text ?? "",
+    });
+  };
+
+  const cancelEditRecord = () => {
+    setEditingRecordId(null);
+    setEditDraft(null);
+  };
+
+  const updateEditDraft = (next: Partial<SavedRecordDraft>) => {
+    setEditDraft((current) => (current ? { ...current, ...next } : current));
+  };
+
+  const saveEditedRecord = async () => {
+    if (!editingRecordId || !editDraft) return;
+    if (!editDraft.agencyCode || !editDraft.provinceCode || !editDraft.districtCode || editDraft.healthIssue.trim().length < 3) {
+      setRecordActionMessage("กรอกข้อมูลให้ครบก่อนบันทึกการแก้ไข");
+      return;
+    }
+
+    setSavingRecordId(editingRecordId);
+    setRecordActionMessage("");
+
+    const { error } = await supabase
+      .from("intake_records")
+      .update({
+        agency_code: editDraft.agencyCode,
+        province_code: editDraft.provinceCode,
+        district_code: editDraft.districtCode,
+        health_issue_text: editDraft.healthIssue.trim(),
+      })
+      .eq("id", editingRecordId);
+
+    setSavingRecordId(null);
+
+    if (error) {
+      setRecordActionMessage(`แก้ไขไม่สำเร็จ: ${error.message}`);
+      return;
+    }
+
+    setRecordActionMessage("แก้ไขรายการสำเร็จแล้ว");
+    cancelEditRecord();
+    setRecordsRefreshKey((current) => current + 1);
+  };
+
+  const deleteRecord = async (row: IntakeRecordRow) => {
+    const confirmed = window.confirm("ยืนยันลบรายการนี้ออกจาก Supabase?");
+    if (!confirmed) return;
+
+    setDeletingRecordId(row.id);
+    setRecordActionMessage("");
+
+    const { error } = await supabase.from("intake_records").delete().eq("id", row.id);
+
+    setDeletingRecordId(null);
+
+    if (error) {
+      setRecordActionMessage(`ลบไม่สำเร็จ: ${error.message}`);
+      return;
+    }
+
+    setRecordActionMessage("ลบรายการสำเร็จแล้ว");
+    if (editingRecordId === row.id) {
+      cancelEditRecord();
+    }
+    setRecordsRefreshKey((current) => current + 1);
   };
 
   const exportLatestRowsCsv = () => {
@@ -395,12 +534,204 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
     return checks;
   }, [agencies.length, kpiAlerts.length, kpiSummaryRows.length, provinceCoverage]);
 
+  const savedRecordsPanel = canViewSavedRecords ? (
+    <article className="panel table-panel">
+      <div className="section-row">
+        <div>
+          <h3>รายการที่บันทึกสำเร็จ</h3>
+          <p className="section-row__subtitle">
+            แสดง {latestRecordsStart.toLocaleString("th-TH")}-{latestRecordsEnd.toLocaleString("th-TH")} จาก {totalCount.toLocaleString("th-TH")} รายการ
+          </p>
+        </div>
+        <div className="section-row__actions">
+          <span className="filter-chip">หน้า {latestRecordsPage.toLocaleString("th-TH")} / {latestRecordsPageCount.toLocaleString("th-TH")}</span>
+        </div>
+      </div>
+      <div className="actions-row">
+        <button type="button" className="cta cta--solid" onClick={exportLatestRowsCsv} disabled={rows.length === 0}>
+          Export CSV
+        </button>
+      </div>
+      <div className="filter-row">
+        <label>
+          กรองหน่วยงาน
+          {accessScope?.agencyCode ? (
+            <input value={agencies.find((agency) => agency.code === accessScope.agencyCode)?.label_th ?? accessScope.agencyCode} disabled />
+          ) : (
+            <select value={filterAgency} onChange={(event) => setFilterAgency(event.target.value)}>
+              <option value="">ทั้งหมด</option>
+              {visibleAgencies.map((agency) => (<option key={agency.code} value={agency.code}>{agency.label_th}</option>))}
+            </select>
+          )}
+        </label>
+
+        <label>
+          กรองจังหวัด
+          <select value={activeProvinceFilter} onChange={(event) => setFilterProvince(event.target.value)} disabled={Boolean(accessScope?.provinceCode)}>
+            <option value="">ทั้งหมด</option>
+            {visibleProvinces.map((province) => (<option key={province.code} value={province.code}>{province.name_th}</option>))}
+          </select>
+        </label>
+      </div>
+
+      {activeFilterChips.length ? (
+        <div className="filter-chips" aria-label="ตัวกรองที่ใช้งานอยู่">
+          {activeFilterChips.map((chip) => (
+            <span key={chip} className="filter-chip">
+              {chip}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
+      {recordActionMessage ? <p className="inline-message">{recordActionMessage}</p> : null}
+      {loading ? <p>กำลังโหลดข้อมูล...</p> : null}
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr><th>เวลา</th><th>หน่วยงาน</th><th>จังหวัด</th><th>อำเภอ</th><th>ประเด็นโรค/ภัยสุขภาพ</th><th>จัดการ</th></tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr><td colSpan={6}>ยังไม่มีข้อมูล</td></tr>
+            ) : (
+              rows.map((row) => {
+                const isEditing = editingRecordId === row.id && editDraft;
+                return (
+                  <tr key={row.id}>
+                    <td>{new Date(row.created_at).toLocaleString("th-TH")}</td>
+                    {isEditing ? (
+                      <>
+                        <td>
+                          {accessScope?.agencyCode ? (
+                            <input className="table-input" value={agencies.find((agency) => agency.code === accessScope.agencyCode)?.label_th ?? accessScope.agencyCode} disabled />
+                          ) : (
+                            <select
+                              className="table-input"
+                              value={editDraft.agencyCode}
+                              onChange={(event) =>
+                                setEditDraft({
+                                  ...editDraft,
+                                  agencyCode: event.target.value,
+                                  provinceCode: "",
+                                  districtCode: "",
+                                })
+                              }
+                            >
+                              <option value="">เลือกหน่วยงาน</option>
+                              {visibleAgencies.map((agency) => (
+                                <option key={agency.code} value={agency.code}>{agency.label_th}</option>
+                              ))}
+                            </select>
+                          )}
+                        </td>
+                        <td>
+                          <select
+                            className="table-input"
+                            value={editDraft.provinceCode}
+                            onChange={(event) =>
+                              setEditDraft({
+                                ...editDraft,
+                                provinceCode: event.target.value,
+                                districtCode: "",
+                              })
+                            }
+                            disabled={Boolean(accessScope?.provinceCode)}
+                          >
+                            <option value="">เลือกจังหวัด</option>
+                            {editProvinceOptions.map((province) => (
+                              <option key={province.code} value={province.code}>{province.name_th}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td>
+                          <select
+                            className="table-input"
+                            value={editDraft.districtCode}
+                            onChange={(event) => updateEditDraft({ districtCode: event.target.value })}
+                          >
+                            <option value="">เลือกอำเภอ</option>
+                            {editDistrictOptions.map((district) => (
+                              <option key={district.code} value={district.code}>{district.name_th}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td>
+                          <textarea
+                            className="table-textarea"
+                            value={editDraft.healthIssue}
+                            onChange={(event) => updateEditDraft({ healthIssue: event.target.value })}
+                            rows={3}
+                          />
+                        </td>
+                        <td>
+                          <div className="record-actions">
+                            <button type="button" className="cta cta--solid" onClick={saveEditedRecord} disabled={savingRecordId === row.id}>
+                              {savingRecordId === row.id ? "กำลังบันทึก..." : "บันทึก"}
+                            </button>
+                            <button type="button" className="cta cta--ghost" onClick={cancelEditRecord} disabled={savingRecordId === row.id}>
+                              ยกเลิก
+                            </button>
+                          </div>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td>{getRelatedLabel(row.master_agencies, (agency) => agency.label_th) ?? row.agency_code ?? "-"}</td>
+                        <td>{getRelatedLabel(row.master_provinces, (province) => province.name_th) ?? row.province_code ?? "-"}</td>
+                        <td>{getRelatedLabel(row.master_districts, (district) => district.name_th) ?? row.district_code ?? "-"}</td>
+                        <td>{row.health_issue_text}</td>
+                        <td>
+                          <div className="record-actions">
+                            <button type="button" className="cta cta--ghost" onClick={() => beginEditRecord(row)} disabled={Boolean(savingRecordId || deletingRecordId)}>
+                              แก้ไข
+                            </button>
+                            <button type="button" className="cta cta--ghost" onClick={() => deleteRecord(row)} disabled={deletingRecordId === row.id || Boolean(savingRecordId)}>
+                              {deletingRecordId === row.id ? "กำลังลบ..." : "ลบ"}
+                            </button>
+                          </div>
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+      <div className="pagination-row" aria-label="เปลี่ยนหน้ารายการที่บันทึกสำเร็จ">
+        <button
+          type="button"
+          className="cta cta--ghost"
+          onClick={() => setLatestRecordsPage((page) => Math.max(1, page - 1))}
+          disabled={loading || latestRecordsPage <= 1}
+        >
+          หน้าก่อนหน้า
+        </button>
+        <span className="inline-message">
+          หน้า {latestRecordsPage.toLocaleString("th-TH")} จาก {latestRecordsPageCount.toLocaleString("th-TH")}
+        </span>
+        <button
+          type="button"
+          className="cta cta--ghost"
+          onClick={() => setLatestRecordsPage((page) => Math.min(latestRecordsPageCount, page + 1))}
+          disabled={loading || latestRecordsPage >= latestRecordsPageCount}
+        >
+          หน้าถัดไป
+        </button>
+      </div>
+    </article>
+  ) : null;
+
   return (
     <section className="section" id="dashboard-section">
       <div className="section__header">
         <h2>Dashboard Preview</h2>
         <p>โครงแสดงผลแผนที่ สคร. 13 เขต และรายการข้อมูลล่าสุดจากฐานข้อมูล</p>
       </div>
+
+      {savedRecordsPanel}
 
       <div className="dashboard-grid">
         <article className="panel panel--map">
@@ -692,69 +1023,6 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
         </div>
       </article>
 
-      <article className="panel table-panel">
-        <h3>รายการบันทึกล่าสุด (10 รายการ)</h3>
-        <div className="actions-row">
-          <button type="button" className="cta cta--solid" onClick={exportLatestRowsCsv} disabled={rows.length === 0}>
-            Export CSV
-          </button>
-        </div>
-        <div className="filter-row">
-          <label>
-            กรองหน่วยงาน
-            {accessScope?.agencyCode ? (
-              <input value={agencies.find((agency) => agency.code === accessScope.agencyCode)?.label_th ?? accessScope.agencyCode} disabled />
-            ) : (
-              <select value={filterAgency} onChange={(event) => setFilterAgency(event.target.value)}>
-                <option value="">ทั้งหมด</option>
-                {visibleAgencies.map((agency) => (<option key={agency.code} value={agency.code}>{agency.label_th}</option>))}
-              </select>
-            )}
-          </label>
-
-          <label>
-            กรองจังหวัด
-            <select value={activeProvinceFilter} onChange={(event) => setFilterProvince(event.target.value)} disabled={Boolean(accessScope?.provinceCode)}>
-              <option value="">ทั้งหมด</option>
-              {visibleProvinces.map((province) => (<option key={province.code} value={province.code}>{province.name_th}</option>))}
-            </select>
-          </label>
-        </div>
-
-        {activeFilterChips.length ? (
-          <div className="filter-chips" aria-label="ตัวกรองที่ใช้งานอยู่">
-            {activeFilterChips.map((chip) => (
-              <span key={chip} className="filter-chip">
-                {chip}
-              </span>
-            ))}
-          </div>
-        ) : null}
-
-        {loading ? <p>กำลังโหลดข้อมูล...</p> : null}
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr><th>เวลา</th><th>หน่วยงาน</th><th>จังหวัด</th><th>อำเภอ</th><th>ประเด็นโรค/ภัยสุขภาพ</th></tr>
-            </thead>
-            <tbody>
-              {rows.length === 0 ? (
-                <tr><td colSpan={5}>ยังไม่มีข้อมูล</td></tr>
-              ) : (
-                rows.map((row) => (
-                  <tr key={row.id}>
-                    <td>{new Date(row.created_at).toLocaleString("th-TH")}</td>
-                    <td>{getRelatedLabel(row.master_agencies, (agency) => agency.label_th) ?? row.agency_code ?? "-"}</td>
-                    <td>{getRelatedLabel(row.master_provinces, (province) => province.name_th) ?? row.province_code ?? "-"}</td>
-                    <td>{getRelatedLabel(row.master_districts, (district) => district.name_th) ?? row.district_code ?? "-"}</td>
-                    <td>{row.health_issue_text}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </article>
     </section>
   );
 }
