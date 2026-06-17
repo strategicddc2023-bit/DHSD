@@ -19,10 +19,14 @@ export default function LoginPage() {
       const user = await loadCurrentAppUser();
       setCurrentUser(user);
       if (user?.role === "superadmin") {
-        router.replace("/");
+        router.replace("/superadmin");
         return;
       }
-      if (user?.role === "admin" || user?.role === "user") {
+      if (user?.role === "admin") {
+        router.replace("/admin");
+        return;
+      }
+      if (user?.role === "user") {
         router.replace("/my-work");
       }
     };
@@ -51,10 +55,14 @@ export default function LoginPage() {
     setSaving(false);
 
     if (user?.role === "superadmin") {
-      router.replace("/");
+      router.replace("/superadmin");
       return;
     }
-    if (user?.role === "admin" || user?.role === "user") {
+    if (user?.role === "admin") {
+      router.replace("/admin");
+      return;
+    }
+    if (user?.role === "user") {
       router.replace("/my-work");
       return;
     }

@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import RolePageLayout, { type RoleMenuItem } from "@/components/RolePageLayout";
-import DashboardSection from "@/components/DashboardSection";
+import SuperadminUsersPanel from "@/components/SuperadminUsersPanel";
+
 import IntakeFormSection from "@/components/IntakeFormSection";
 import KpiInputSection from "@/components/KpiInputSection";
-import WorkSummary from "@/components/WorkSummary";
+import SavedRecordsPanel from "@/components/SavedRecordsPanel";
 import { buildAccessScope, loadCurrentAppUser } from "@/services/auth-session";
 import { supabase } from "@/services/supabase-client";
 import type { AgencyOption, AppUserRow, IntakeFormData } from "@/types/mvp";
@@ -18,26 +19,21 @@ const initialFormData: IntakeFormData = {
   healthIssue: "",
 };
 
-type AdminTab = "overview" | "intake" | "dashboard" | "kpi";
+type SuperadminTab = "users" | "intake" | "kpi";
 
 const MENU_ITEMS: RoleMenuItem[] = [
   {
-    key: "overview",
-    label: "ภาพรวมงานของฉัน",
-    icon: "🏥",
-    description: "สรุปสถานะงานของหน่วยงาน",
+    key: "users",
+    label: "จัดการผู้ใช้งาน",
+    icon: "👥",
+    description: "เพิ่ม แก้ไข และจัดการ allowlist",
   },
+
   {
     key: "intake",
     label: "กรอกข้อมูลอำเภอ",
     icon: "📝",
     description: "บันทึกข้อมูล พชอ. รายอำเภอ",
-  },
-  {
-    key: "dashboard",
-    label: "ดู Dashboard",
-    icon: "📊",
-    description: "ดูข้อมูลภาพรวมของ สคร. ตนเอง",
   },
   {
     key: "kpi",
@@ -47,13 +43,13 @@ const MENU_ITEMS: RoleMenuItem[] = [
   },
 ];
 
-export default function AdminPage() {
+export default function SuperadminPage() {
   const [formData, setFormData] = useState<IntakeFormData>(initialFormData);
   const [refreshKey, setRefreshKey] = useState(0);
   const [agencies, setAgencies] = useState<AgencyOption[]>([]);
   const [currentUser, setCurrentUser] = useState<AppUserRow | null>(null);
   const [userLoaded, setUserLoaded] = useState(false);
-  const [activeTab, setActiveTab] = useState<AdminTab>("overview");
+  const [activeTab, setActiveTab] = useState<SuperadminTab>("users");
   const router = useRouter();
   const accessScope = buildAccessScope(currentUser);
 
@@ -73,15 +69,6 @@ export default function AdminPage() {
       const user = await loadCurrentAppUser();
       setCurrentUser(user);
       setUserLoaded(true);
-      // Pre-fill agency from user profile
-      const agencyCode = user?.agency_code;
-      if (agencyCode) {
-        setFormData((prev) =>
-          prev.agencyCode === agencyCode
-            ? prev
-            : { ...prev, agencyCode, provinceCode: "", districtCode: "" }
-        );
-      }
     };
     void loadUser();
   }, []);
@@ -92,12 +79,9 @@ export default function AdminPage() {
       router.replace("/login");
       return;
     }
-    if (currentUser.role === "superadmin") {
-      router.replace("/superadmin");
-      return;
-    }
-    if (currentUser.role === "user") {
-      router.replace("/my-work");
+    if (currentUser.role !== "superadmin") {
+      if (currentUser.role === "admin") router.replace("/admin");
+      else router.replace("/my-work");
     }
   }, [currentUser, router, userLoaded]);
 
@@ -111,50 +95,39 @@ export default function AdminPage() {
     );
   }
 
-  if (!currentUser || currentUser.role !== "admin") {
+  if (!currentUser || currentUser.role !== "superadmin") {
     return null;
   }
 
   return (
     <RolePageLayout
       user={currentUser}
-      title="หน้างาน Admin"
-      subtitle="จัดการข้อมูลและติดตามความคืบหน้าของหน่วยงาน"
-      badgeLabel="Admin"
-      badgeIcon="🏥"
+      title="ระบบจัดการ DHSD"
+      subtitle="ศูนย์กลางจัดการระบบ ผู้ใช้งาน และข้อมูล"
+      badgeLabel="Superadmin"
+      badgeIcon="⚙️"
       menuItems={MENU_ITEMS}
       activeKey={activeTab}
-      onMenuChange={(key) => setActiveTab(key as AdminTab)}
+      onMenuChange={(key) => setActiveTab(key as SuperadminTab)}
     >
-      {/* ภาพรวม */}
-      {activeTab === "overview" && (
+      {/* จัดการผู้ใช้งาน */}
+      {activeTab === "users" && (
         <section className="role-section">
-          <WorkSummary user={currentUser} scope={accessScope} />
-          <div className="role-section__actions">
-            <button
-              type="button"
-              className="cta cta--solid"
-              onClick={() => setActiveTab("intake")}
-            >
-              📝 เริ่มกรอกข้อมูล
-            </button>
-            <button
-              type="button"
-              className="cta cta--ghost"
-              onClick={() => setActiveTab("dashboard")}
-            >
-              📊 ดู Dashboard
-            </button>
+          <div className="role-section__header">
+            <h1>👥 จัดการผู้ใช้งาน &amp; สิทธิ์การเข้าถึง</h1>
+            <p>เพิ่ม แก้ไข และจัดการ allowlist ผู้ใช้งานในระบบ DHSD</p>
           </div>
+          <SuperadminUsersPanel accessScope={accessScope ?? undefined} />
         </section>
       )}
+
 
       {/* กรอกข้อมูล */}
       {activeTab === "intake" && (
         <section className="role-section">
           <div className="role-section__header">
             <h1>📝 กรอกข้อมูลอำเภอ</h1>
-            <p>บันทึกข้อมูลการดำเนินงาน พชอ. รายอำเภอของหน่วยงานตนเอง</p>
+            <p>บันทึกข้อมูลการดำเนินงาน พชอ. รายอำเภอ (สามารถกรอกแทนทุกหน่วยงาน)</p>
           </div>
           <IntakeFormSection
             formData={formData}
@@ -162,31 +135,12 @@ export default function AdminPage() {
             onSaved={() => setRefreshKey((prev) => prev + 1)}
             accessScope={accessScope ?? undefined}
           />
-        </section>
-      )}
-
-      {/* Dashboard */}
-      {activeTab === "dashboard" && (
-        <section className="role-section">
-          <div className="role-section__header">
-            <h1>📊 Dashboard ของ สคร.</h1>
-            <p>ดูข้อมูลและสถิติของหน่วยงานตนเอง</p>
+          <div style={{ marginTop: "2rem" }}>
+            <SavedRecordsPanel
+              refreshKey={refreshKey}
+              accessScope={accessScope ?? undefined}
+            />
           </div>
-          <DashboardSection
-            formData={formData}
-            refreshKey={refreshKey}
-            accessScope={accessScope ?? undefined}
-            viewMode="backoffice"
-            onSelectDistrictForIntake={(selection) => {
-              setFormData((prev) => ({
-                ...prev,
-                agencyCode: selection.agencyCode,
-                provinceCode: selection.provinceCode,
-                districtCode: selection.districtCode,
-              }));
-              setActiveTab("intake");
-            }}
-          />
         </section>
       )}
 
@@ -195,7 +149,7 @@ export default function AdminPage() {
         <section className="role-section">
           <div className="role-section__header">
             <h1>🎯 กรอก KPI รายปีงบประมาณ</h1>
-            <p>บันทึกค่า KPI และเป้าหมายรายปีงบประมาณของหน่วยงาน</p>
+            <p>บันทึกค่า KPI และเป้าหมายรายปีงบประมาณ</p>
           </div>
           <KpiInputSection
             agencies={agencies}

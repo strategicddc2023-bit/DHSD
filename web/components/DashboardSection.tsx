@@ -40,6 +40,7 @@ type DashboardSectionProps = {
   refreshKey: number;
   accessScope?: AccessScope;
   viewMode?: "public" | "backoffice";
+  hideSavedRecords?: boolean;
   onSelectDistrictForIntake?: (selection: { agencyCode: string; provinceCode: string; districtCode: string }) => void;
 };
 
@@ -92,7 +93,7 @@ const getRelatedLabel = <T,>(value: T | T[] | null | undefined, picker: (item: T
   return item ? picker(item) : undefined;
 };
 
-export default function DashboardSection({ formData, refreshKey, accessScope, viewMode = "backoffice", onSelectDistrictForIntake }: DashboardSectionProps) {
+export default function DashboardSection({ formData, refreshKey, accessScope, viewMode = "backoffice", hideSavedRecords = false, onSelectDistrictForIntake }: DashboardSectionProps) {
   const mapRef = useRef<any>(null);
   const [rows, setRows] = useState<IntakeRecordRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -1065,7 +1066,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
         </article>
       </div>
 
-      {savedRecordsPanel}
+      {!hideSavedRecords && savedRecordsPanel}
 
       <div className="dashboard-grid">
         <article className="panel panel--map">

@@ -9,6 +9,7 @@ import type { AppUserRow } from "@/types/mvp";
 type NavItem = {
   href: string;
   label: string;
+  icon: string;
   allowed: boolean;
 };
 
@@ -20,15 +21,31 @@ export default function AppNavigation({ user }: AppNavigationProps) {
   const router = useRouter();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  
+
   const isSuperadmin = user?.role === "superadmin";
-  const isStaff = user?.role === "admin" || user?.role === "user";
-  const hasAgencyScope = Boolean(user?.agency_code);
+  const isAdmin = user?.role === "admin";
+  const isUser = user?.role === "user";
 
   const items: NavItem[] = [
-    { href: "/", label: "หน้าหลัก", allowed: true },
-    { href: "#dashboard-section", label: "Dashboard", allowed: !isSuperadmin },
-    { href: "/admin", label: "จัดการระบบ", allowed: isSuperadmin },
+    { href: "/", label: "หน้าหลัก", icon: "🏠", allowed: true },
+    {
+      href: "/superadmin",
+      label: "⚙️ จัดการระบบ",
+      icon: "⚙️",
+      allowed: isSuperadmin,
+    },
+    {
+      href: "/admin",
+      label: "🏥 หน้างาน Admin",
+      icon: "🏥",
+      allowed: isAdmin,
+    },
+    {
+      href: "/my-work",
+      label: "📋 งานของฉัน",
+      icon: "📋",
+      allowed: isUser,
+    },
   ];
 
   const visibleItems = items.filter((item) => item.allowed);
@@ -46,6 +63,11 @@ export default function AppNavigation({ user }: AppNavigationProps) {
       <nav className="app-nav" aria-label="เมนูหลัก">
         <div className="app-nav__brand">
           <span>DHSD</span>
+          {user && (
+            <span className={`app-nav__role-badge app-nav__role-badge--${user.role}`}>
+              {isSuperadmin ? "⚙️ Superadmin" : isAdmin ? "🏥 Admin" : "👤 User"}
+            </span>
+          )}
         </div>
         <button
           type="button"
@@ -76,12 +98,16 @@ export default function AppNavigation({ user }: AppNavigationProps) {
           </div>
           <div className="app-nav__auth" onClick={closeMenu}>
             {user ? (
-              <button type="button" className="cta cta--ghost app-nav__auth-btn" onClick={() => setShowLogoutModal(true)}>
+              <button
+                type="button"
+                className="cta cta--ghost app-nav__auth-btn"
+                onClick={() => setShowLogoutModal(true)}
+              >
                 ออกจากระบบ
               </button>
             ) : (
               <Link className="cta cta--solid app-nav__auth-btn" href="/login" prefetch={false}>
-                เข้าสู่ระบบ Admin
+                เข้าสู่ระบบ
               </Link>
             )}
           </div>
