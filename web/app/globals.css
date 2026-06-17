@@ -494,6 +494,45 @@ main {
   border-color: #c7e9e5;
 }
 
+/* Hamburger menu button — hidden on desktop */
+.app-nav__hamburger {
+  display: none;
+  position: relative;
+  width: 36px;
+  height: 36px;
+  padding: 6px;
+  border: 1px solid #d6e7f0;
+  border-radius: 10px;
+  background: #f8fcff;
+  cursor: pointer;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  z-index: 55;
+}
+
+.app-nav__hamburger-bar {
+  display: block;
+  width: 20px;
+  height: 2.5px;
+  border-radius: 2px;
+  background: #1d425a;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.app-nav__hamburger--open .app-nav__hamburger-bar:nth-child(1) {
+  transform: translateY(7.5px) rotate(45deg);
+}
+
+.app-nav__hamburger--open .app-nav__hamburger-bar:nth-child(2) {
+  opacity: 0;
+}
+
+.app-nav__hamburger--open .app-nav__hamburger-bar:nth-child(3) {
+  transform: translateY(-7.5px) rotate(-45deg);
+}
+
 .access-ribbon {
   max-width: 1440px;
   margin: -32px auto 18px;
@@ -902,6 +941,20 @@ input {
   grid-template-columns: minmax(160px, 0.8fr) minmax(220px, 1.6fr);
   gap: 12px;
   align-items: center;
+}
+
+.province-progress-row--clickable {
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease-in-out;
+}
+
+.province-progress-row--clickable:hover {
+  background-color: #f0f7fc;
+  border-color: #cbdbe8;
+  transform: translateY(-1px);
 }
 
 .province-progress-row__meta {
@@ -1667,39 +1720,55 @@ ul {
 
   .app-nav {
     align-items: center;
-    flex-direction: column;
+    flex-direction: row;
     padding: 12px;
-    gap: 12px;
+    gap: 10px;
+  }
+
+  .app-nav__hamburger {
+    display: flex;
   }
 
   .app-nav__shell {
-    width: 100%;
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 280px;
+    height: 100vh;
+    height: 100dvh;
     flex-direction: column;
     align-items: stretch;
-    gap: 12px;
+    gap: 8px;
+    padding: 80px 18px 24px;
+    background: #ffffff;
+    border-left: 1px solid #d6e7f0;
+    box-shadow: -8px 0 40px rgba(0, 0, 0, 0.1);
+    transform: translateX(100%);
+    transition: transform 0.28s ease;
+    z-index: 54;
+    overflow-y: auto;
+  }
+
+  .app-nav__shell--open {
+    transform: translateX(0);
   }
 
   .app-nav__links {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding-bottom: 4px;
-    justify-content: flex-start;
-    -webkit-overflow-scrolling: touch;
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  .app-nav__links::-webkit-scrollbar {
-    display: none;
+    flex-direction: column;
+    gap: 6px;
   }
 
   .app-nav__link {
-    flex-shrink: 0;
+    display: block;
+    text-align: center;
   }
 
   .app-nav__auth {
     display: flex;
     justify-content: center;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #d6e7f0;
   }
 
   .intake-grid,

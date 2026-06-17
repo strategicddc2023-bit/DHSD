@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import type { AccessScope } from "@/services/access-control";
 import { resolveVisibleAgencyCodes, resolveVisibleProvinceCodes } from "@/services/access-control";
 import { supabase } from "@/services/supabase-client";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import InteractiveHealthMap from "@/components/InteractiveHealthMap";
+import { loadDistrictHealthIssueSummary } from "@/services/health-issue-service";
+import type { DistrictHealthIssueSummary } from "@/services/health-issue-service";
 import SuperadminUsersPanel from "@/components/SuperadminUsersPanel";
 import {
   forecastLabel,
@@ -77,6 +79,8 @@ type ProvinceHealthIssueRecord = {
   provinceCode: string;
   districtCode: string;
   districtName: string;
+  subdistrictCode?: string;
+  subdistrictName?: string;
   healthIssue: string;
 };
 
@@ -89,6 +93,7 @@ const getRelatedLabel = <T,>(value: T | T[] | null | undefined, picker: (item: T
 };
 
 export default function DashboardSection({ formData, refreshKey, accessScope, viewMode = "backoffice", onSelectDistrictForIntake }: DashboardSectionProps) {
+  const mapRef = useRef<any>(null);
   const [rows, setRows] = useState<IntakeRecordRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
@@ -103,12 +108,24 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
   const [agencyCoverage, setAgencyCoverage] = useState<AgencyCoverageRow[]>([]);
   const [provinceCoverage, setProvinceCoverage] = useState<ProvinceCoverageRow[]>([]);
   const [submittedDistrictCodesByProvince, setSubmittedDistrictCodesByProvince] = useState<Record<string, string[]>>({});
+  const [districtRecordCount, setDistrictRecordCount] = useState<Record<string, number>>({});
+  // Removed: subdistrictRecordCount - master_subdistricts table doesn't exist
   const [kpiSummaryRows, setKpiSummaryRows] = useState<KpiSummaryRow[]>([]);
   const [previousKpiSummaryRows, setPreviousKpiSummaryRows] = useState<KpiSummaryRow[]>([]);
   const [selectedFiscalYear, setSelectedFiscalYear] = useState<number>(2569);
   const [filterAgency, setFilterAgency] = useState("");
   const [filterProvince, setFilterProvince] = useState("");
-  const [selectedChartProvinceCode, setSelectedChartProvinceCode] = useState("");
+  const [selectedDistrictCode, setSelectedDistrictCode] = useState("");
+  const [selectedSubdistrictCode, setSelectedSubdistrictCode] = useState("");
+
+  const selectedDistrictName = useMemo(() => {
+    if (!selectedDistrictCode) return "";
+    return districts.find((d) => d.code === selectedDistrictCode)?.name_th ?? selectedDistrictCode;
+  }, [selectedDistrictCode, districts]);
+
+  const [districtHealthIssueData, setDistrictHealthIssueData] = useState<{ issue: string; count: number }[]>([]);
+  const [districtHealthIssueTotal, setDistrictHealthIssueTotal] = useState(0);
+  const [districtHealthIssueLoading, setDistrictHealthIssueLoading] = useState(false);
   const [provinceHealthIssueRecords, setProvinceHealthIssueRecords] = useState<ProvinceHealthIssueRecord[]>([]);
   const [latestRecordsPage, setLatestRecordsPage] = useState(1);
   const [recordsRefreshKey, setRecordsRefreshKey] = useState(0);
@@ -149,6 +166,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
 
     return visibleProvinces.filter((province) => allowedProvinceCodes.has(province.code));
   }, [agencyProvinceMap, editDraft?.agencyCode, visibleProvinces]);
+  
   const editDistrictOptions = useMemo(() => {
     if (!editDraft?.provinceCode) {
       return [] as District[];
@@ -156,6 +174,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
 
     return districts.filter((district) => district.province_code === editDraft.provinceCode);
   }, [districts, editDraft?.provinceCode]);
+
   const visibleAgencyCoverage = useMemo(
     () => agencyCoverage.filter((item) => visibleAgencyCodes.includes(item.agency_code)),
     [agencyCoverage, visibleAgencyCodes]
@@ -216,8 +235,11 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
 
       if (activeAgencyFilter) query = query.eq("agency_code", activeAgencyFilter);
       if (activeProvinceFilter) query = query.eq("province_code", activeProvinceFilter);
+      if (selectedDistrictCode) query = query.eq("district_code", selectedDistrictCode);
+
       if (activeAgencyFilter) countQuery = countQuery.eq("agency_code", activeAgencyFilter);
       if (activeProvinceFilter) countQuery = countQuery.eq("province_code", activeProvinceFilter);
+      if (selectedDistrictCode) countQuery = countQuery.eq("district_code", selectedDistrictCode);
 
       const [{ data }, { count }, intakeSummaryRes, kpiSummaryRes, previousKpiSummaryRes] = await Promise.all([
         canViewSavedRecords ? query : Promise.resolve({ data: [] as IntakeRecordRow[] }),
@@ -270,8 +292,10 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
 
       const agencyMap = new Map<string, number>();
       const provinceMap = new Map<string, number>();
+      const districtMap = new Map<string, number>();
       const submittedDistrictMap = new Map<string, Set<string>>();
       const healthIssueMap = new Map<string, ProvinceHealthIssueRecord>();
+      
       summaryRows.forEach((item) => {
         if (item.agency_code) {
           agencyMap.set(item.agency_code, (agencyMap.get(item.agency_code) ?? 0) + 1);
@@ -284,6 +308,8 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
             submittedDistrictMap.set(item.province_code, new Set<string>());
           }
           submittedDistrictMap.get(item.province_code)?.add(item.district_code);
+          const districtKey = `${item.province_code}::${item.district_code}`;
+          districtMap.set(districtKey, (districtMap.get(districtKey) ?? 0) + 1);
         }
         const healthIssue = item.health_issue_text?.trim();
         if (item.province_code && item.district_code && healthIssue) {
@@ -301,6 +327,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
       setSubmittedDistrictCodesByProvince(
         Object.fromEntries([...submittedDistrictMap.entries()].map(([provinceCode, districtCodes]) => [provinceCode, [...districtCodes]]))
       );
+      setDistrictRecordCount(Object.fromEntries(districtMap));
       setProvinceHealthIssueRecords([...healthIssueMap.values()]);
 
       const topA = [...agencyMap.entries()].sort((x, y) => y[1] - x[1])[0];
@@ -337,6 +364,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
     recordsRefreshKey,
     activeAgencyFilter,
     activeProvinceFilter,
+    selectedDistrictCode,
     agencies,
     provinces,
     agencyProvinceMap,
@@ -362,8 +390,9 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
     const chips: string[] = [];
     if (activeAgencyFilter) chips.push(`หน่วยงาน: ${agencies.find((item) => item.code === activeAgencyFilter)?.label_th ?? activeAgencyFilter}`);
     if (activeProvinceFilter) chips.push(`จังหวัด: ${provinces.find((item) => item.code === activeProvinceFilter)?.name_th ?? activeProvinceFilter}`);
+    if (selectedDistrictCode) chips.push(`อำเภอ: ${districts.find((d) => d.code === selectedDistrictCode)?.name_th ?? selectedDistrictCode}`);
     return chips;
-  }, [agencies, activeAgencyFilter, activeProvinceFilter, provinces]);
+  }, [agencies, activeAgencyFilter, activeProvinceFilter, provinces, selectedDistrictCode, districts]);
 
   const districtCountByProvince = useMemo(() => {
     return districts.reduce((acc, district) => {
@@ -372,24 +401,37 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
     }, new Map<string, number>());
   }, [districts]);
 
+  // Sync active filters to clear invalid child selections
   useEffect(() => {
     if (!activeAgencyFilter) {
-      setSelectedChartProvinceCode("");
+      setFilterProvince("");
+      setSelectedDistrictCode("");
       return;
     }
 
     if (activeProvinceFilter) {
-      setSelectedChartProvinceCode(activeProvinceFilter);
-      return;
+      // Validate that the active province belongs to the active agency
+      const isProvinceValid = agencyProvinceMap.some(
+        (item) => item.agency_code === activeAgencyFilter && item.province_code === activeProvinceFilter
+      );
+      if (!isProvinceValid) {
+        setFilterProvince("");
+        setSelectedDistrictCode("");
+      }
+    } else {
+      setSelectedDistrictCode("");
     }
+  }, [activeAgencyFilter, activeProvinceFilter, agencyProvinceMap]);
 
-    const provinceStillVisible = visibleProvinceCoverage.some(
-      (province) => province.agency_code === activeAgencyFilter && province.province_code === selectedChartProvinceCode
-    );
-    if (!provinceStillVisible) {
-      setSelectedChartProvinceCode("");
+  // Sync district when province changes
+  useEffect(() => {
+    if (selectedDistrictCode) {
+      const belongsToProvince = districts.find((d) => d.code === selectedDistrictCode)?.province_code === activeProvinceFilter;
+      if (!belongsToProvince) {
+        setSelectedDistrictCode("");
+      }
     }
-  }, [activeAgencyFilter, activeProvinceFilter, selectedChartProvinceCode, visibleProvinceCoverage]);
+  }, [activeProvinceFilter, selectedDistrictCode, districts]);
 
   const provinceSubmissionGroups = useMemo<AgencySubmissionProgressGroup[]>(() => {
     const scopedProvinces = visibleProvinceCoverage
@@ -443,9 +485,53 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
     visibleProvinceCoverage,
   ]);
 
-  const selectedIssueProvinceCode = activeProvinceFilter || selectedChartProvinceCode;
+  const selectedIssueProvinceCode = activeProvinceFilter;
+
+  // Load district health issues
+  useEffect(() => {
+    if (!selectedDistrictCode) {
+      setDistrictHealthIssueData([]);
+      setDistrictHealthIssueTotal(0);
+      setDistrictHealthIssueLoading(false);
+      return;
+    }
+
+    let mounted = true;
+    setDistrictHealthIssueLoading(true);
+
+    const load = async () => {
+      try {
+        const summary = await loadDistrictHealthIssueSummary(selectedDistrictCode);
+        if (!mounted) return;
+        setDistrictHealthIssueData(summary.issues);
+        setDistrictHealthIssueTotal(summary.totalCount);
+      } catch {
+        if (!mounted) return;
+        setDistrictHealthIssueData([]);
+        setDistrictHealthIssueTotal(0);
+      } finally {
+        if (mounted) setDistrictHealthIssueLoading(false);
+      }
+    };
+
+    void load();
+    return () => { mounted = false; };
+  }, [selectedDistrictCode]);
 
   const coverageChartRows = useMemo<CoverageChartRow[]>(() => {
+    // Drill-down to districts: when agency AND province are selected
+    if (activeAgencyFilter && selectedIssueProvinceCode) {
+      return districts
+        .filter((district) => district.province_code === selectedIssueProvinceCode)
+        .sort((a, b) => a.name_th.localeCompare(b.name_th, "th"))
+        .map((district) => ({
+          code: district.code,
+          name: district.name_th,
+          record_count: districtRecordCount[`${selectedIssueProvinceCode}::${district.code}`] ?? 0,
+          selected: selectedDistrictCode === district.code,
+        }));
+    }
+
     if (activeAgencyFilter) {
       return visibleProvinceCoverage
         .filter((province) => province.agency_code === activeAgencyFilter)
@@ -465,15 +551,19 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
       record_count: agency.record_count,
       selected: agency.agency_code === formData.agencyCode,
     }));
-  }, [activeAgencyFilter, activeProvinceFilter, formData.agencyCode, selectedIssueProvinceCode, visibleAgencyCoverage, visibleProvinceCoverage]);
-
-  const coverageChartTitle = activeAgencyFilter
-    ? `ความครอบคลุมข้อมูลรายจังหวัดใน ${agencies.find((item) => item.code === activeAgencyFilter)?.label_th ?? activeAgencyFilter}`
-    : "ความครอบคลุมข้อมูลตาม สคร.";
+  }, [activeAgencyFilter, activeProvinceFilter, formData.agencyCode, selectedIssueProvinceCode, visibleAgencyCoverage, visibleProvinceCoverage, districts, districtRecordCount, selectedDistrictCode]);
 
   const selectedIssueProvinceName = selectedIssueProvinceCode
     ? provinces.find((province) => province.code === selectedIssueProvinceCode)?.name_th ?? selectedIssueProvinceCode
     : "";
+
+  const isDistrictMode = Boolean(activeAgencyFilter && selectedIssueProvinceCode);
+
+  const coverageChartTitle = isDistrictMode
+    ? `จำนวนรายการตามอำเภอในจังหวัด${selectedIssueProvinceName}`
+    : activeAgencyFilter
+      ? `ความครอบคลุมข้อมูลรายจังหวัดใน ${agencies.find((item) => item.code === activeAgencyFilter)?.label_th ?? activeAgencyFilter}`
+      : "ความครอบคลุมข้อมูลตาม สคร.";
 
   const selectedProvinceIssueRecords = useMemo(() => {
     if (!selectedIssueProvinceCode) {
@@ -490,25 +580,27 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
   }, [provinceHealthIssueRecords, selectedIssueProvinceCode]);
 
   const handleCoverageChartBarClick = (entry: { payload?: CoverageChartRow }) => {
-    if (activeProvinceFilter) {
-      return;
-    }
-
     const code = entry.payload?.code;
     if (!code) {
       return;
     }
 
-    // If no agency filter is active, clicking a bar sets the agency filter (drill-down from สคร. to provinces)
+    // 1. Level 1: No agency selected (showing agencies) -> select agency
     if (!activeAgencyFilter) {
       if (!accessScope?.agencyCode) {
-        setFilterAgency((current) => (current === code ? "" : code));
+        setFilterAgency(code);
       }
       return;
     }
 
-    // If agency filter is active, clicking a bar toggles province selection
-    setSelectedChartProvinceCode((current) => (current === code ? "" : code));
+    // 2. Level 2: Agency selected (showing provinces) -> select province
+    if (!activeProvinceFilter) {
+      setFilterProvince(code);
+      return;
+    }
+
+    // 3. Level 3: Province selected (showing districts) -> select district
+    setSelectedDistrictCode((current) => (current === code ? "" : code));
   };
 
   const clearTableFilters = () => {
@@ -516,6 +608,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
       setFilterAgency("");
     }
     setFilterProvince("");
+    setSelectedDistrictCode("");
   };
 
   const beginEditRecord = (row: IntakeRecordRow) => {
@@ -766,7 +859,12 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
           {accessScope?.agencyCode ? (
             <input value={agencies.find((agency) => agency.code === accessScope.agencyCode)?.label_th ?? accessScope.agencyCode} disabled />
           ) : (
-            <select value={filterAgency} onChange={(event) => setFilterAgency(event.target.value)}>
+            <select value={filterAgency} onChange={(event) => {
+              setFilterAgency(event.target.value);
+              setFilterProvince("");
+              setSelectedDistrictCode("");
+              setSelectedSubdistrictCode("");
+            }}>
               <option value="">ทั้งหมด</option>
               {visibleAgencies.map((agency) => (<option key={agency.code} value={agency.code}>{agency.label_th}</option>))}
             </select>
@@ -775,7 +873,11 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
 
         <label>
           กรองจังหวัด
-          <select value={activeProvinceFilter} onChange={(event) => setFilterProvince(event.target.value)} disabled={Boolean(accessScope?.provinceCode)}>
+          <select value={activeProvinceFilter} onChange={(event) => {
+            setFilterProvince(event.target.value);
+            setSelectedDistrictCode("");
+            setSelectedSubdistrictCode("");
+          }} disabled={Boolean(accessScope?.provinceCode)}>
             <option value="">ทั้งหมด</option>
             {visibleProvinces.map((province) => (<option key={province.code} value={province.code}>{province.name_th}</option>))}
           </select>
@@ -856,7 +958,12 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
                           <select
                             className="table-input"
                             value={editDraft.districtCode}
-                            onChange={(event) => updateEditDraft({ districtCode: event.target.value })}
+                            onChange={(event) =>
+                              setEditDraft({
+                                ...editDraft,
+                                districtCode: event.target.value,
+                              })
+                            }
                           >
                             <option value="">เลือกอำเภอ</option>
                             {editDistrictOptions.map((district) => (
@@ -870,6 +977,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
                             value={editDraft.healthIssue}
                             onChange={(event) => updateEditDraft({ healthIssue: event.target.value })}
                             rows={3}
+                            placeholder="ระบุประเด็นโรค/ภัยสุขภาพ"
                           />
                         </td>
                         <td>
@@ -963,6 +1071,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
         <article className="panel panel--map">
           <h3>แผนที่เขตสุขภาพ (สคร.1-สคร.13)</h3>
           <InteractiveHealthMap
+            ref={mapRef}
             coverage={visibleAgencies.map((agency) => ({
               agency_code: agency.code,
               agency_name: agency.label_th,
@@ -980,13 +1089,29 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
             })}
             agencyProvinceMap={agencyProvinceMap}
             selectedAgencyCode={activeAgencyFilter || formData.agencyCode}
+            selectedProvinceFromChart={activeProvinceFilter}
+            selectedDistrictFromMap={selectedDistrictCode}
             accessScope={accessScope}
             onSelectDistrictForIntake={onSelectDistrictForIntake}
-            onSelectAgency={(agencyCode) =>
-              accessScope?.agencyCode
-                ? undefined
-                : setFilterAgency((current) => (current === agencyCode ? "" : agencyCode))
-            }
+            onSelectAgency={(agencyCode) => {
+              if (accessScope?.agencyCode) return;
+              setFilterAgency((current) => {
+                const next = current === agencyCode ? "" : agencyCode;
+                if (!next) {
+                  setFilterProvince("");
+                  setSelectedDistrictCode("");
+                }
+                return next;
+              });
+            }}
+            onSelectProvince={(provinceCode) => {
+              if (accessScope?.provinceCode) return;
+              setFilterProvince((current) => (current === provinceCode ? "" : provinceCode));
+              setSelectedDistrictCode("");
+            }}
+            onSelectDistrict={(districtCode) => {
+              setSelectedDistrictCode((current) => (current === districtCode ? "" : districtCode));
+            }}
           />
           <div className="map-actions">
             <p className="inline-message">
@@ -994,120 +1119,261 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
                 ? "คลิกเขตเดิมซ้ำเพื่อยกเลิกการกรองหน่วยงาน"
                 : "คลิกเขตบนแผนที่เพื่อกรองข้อมูล"}
             </p>
-            <button type="button" className="cta cta--ghost" onClick={() => setFilterAgency("")} disabled={!filterAgency || Boolean(accessScope?.agencyCode)}>
+            <button type="button" className="cta cta--ghost" onClick={() => {
+              setFilterAgency("");
+              setFilterProvince("");
+              setSelectedDistrictCode("");
+              setSelectedSubdistrictCode("");
+              if (mapRef.current) {
+                mapRef.current.resetView();
+              }
+            }} disabled={!filterAgency || Boolean(accessScope?.agencyCode)}>
               ล้างตัวกรองแผนที่
             </button>
           </div>
         </article>
 
         <article className="panel">
-          <h3>{coverageChartTitle}</h3>
-          <div style={{ width: "100%", height: 350, marginTop: 16 }}>
-            <ResponsiveContainer>
-              <BarChart data={coverageChartRows} margin={{ top: 20, right: 20, bottom: 40, left: -20 }}>
-                <XAxis
-                  dataKey="name"
-                  tick={{ fontSize: 12, fill: "#4b647d" }}
-                  interval={0}
-                  angle={-45}
-                  textAnchor="end"
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#4b647d" }} />
-                <Tooltip cursor={{ fill: "rgba(16, 36, 62, 0.04)" }} contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 10px 30px rgba(16,36,62,0.1)" }} />
-                <Bar dataKey="record_count" radius={[6, 6, 0, 0]} onClick={handleCoverageChartBarClick}>
-                  {coverageChartRows.map((entry, index) => (
-                    <Cell
-                      key={`cell-${entry.code}-${index}`}
-                      fill={entry.selected ? "#f9007a" : "#00c4b4"}
-                      style={{ cursor: !activeProvinceFilter && !accessScope?.agencyCode ? "pointer" : "default" }}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="province-progress-panel" aria-label="ความคืบหน้าการส่งงานรายจังหวัดตาม สคร.">
-            <div className="province-progress-panel__header">
-              <div>
-                <h4>ความคืบหน้าการส่งงานรายจังหวัด</h4>
-                <p>นับอำเภอที่มีรายการส่งงานแล้ว เทียบกับอำเภอทั้งหมดในจังหวัด</p>
+          {selectedDistrictCode ? (
+            // District mode: show ONLY district health issues
+            <div className="province-issue-panel" aria-label="ประเด็นโรคภัยสุขภาพของอำเภอที่เลือก">
+              <div className="province-issue-panel__header">
+                <div>
+                  <h4>ประเด็นโรค/ภัยสุขภาพ</h4>
+                  <p>
+                    {districtHealthIssueLoading
+                      ? "กำลังโหลดข้อมูล..."
+                      : districtHealthIssueTotal > 0
+                        ? `อำเภอ${selectedDistrictName} — ${districtHealthIssueTotal.toLocaleString("th-TH")} รายการ`
+                        : `อำเภอ${selectedDistrictName} — ยังไม่มีข้อมูล`}
+                  </p>
+                </div>
+                <button type="button" className="cta cta--ghost" onClick={() => setSelectedDistrictCode("")}>
+                  กลับไปดูจังหวัด
+                </button>
               </div>
-              <span>{provinceSubmissionGroups.reduce((total, group) => total + group.provinces.length, 0).toLocaleString("th-TH")} จังหวัด</span>
-            </div>
 
-            <div className="province-progress-list">
-              {provinceSubmissionGroups.length === 0 ? (
-                <p className="province-progress-empty">ยังไม่มีจังหวัดในขอบเขตที่เลือก</p>
+              {districtHealthIssueLoading ? (
+                <p className="province-issue-empty">กำลังโหลดประเด็นโรค/ภัยสุขภาพ...</p>
+              ) : districtHealthIssueData.length === 0 ? (
+                <p className="province-issue-empty">ยังไม่มีประเด็นโรค/ภัยสุขภาพของอำเภอที่เลือก</p>
               ) : (
-                provinceSubmissionGroups.map((group) => (
-                  <section key={group.agencyCode} className="province-progress-group" aria-label={group.agencyName}>
-                    <div className="province-progress-group__title">
-                      <strong>{group.agencyName}</strong>
-                      <span>{group.provinces.length.toLocaleString("th-TH")} จังหวัด</span>
+                <div className="province-issue-list">
+                  {districtHealthIssueData.map((item) => (
+                    <div key={item.issue} className="province-issue-item">
+                      <strong>{item.issue}</strong>
+                      <span>{item.count.toLocaleString("th-TH")} รายการ</span>
                     </div>
-                    <div className="province-progress-group__rows">
-                      {group.provinces.map((province) => (
-                        <div key={province.provinceCode} className="province-progress-row">
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : isDistrictMode ? (
+            // Province mode (no district selected): show province issues + district progress
+            <>
+              <div className="province-issue-panel" style={{ border: "none", padding: 0, marginTop: 0 }} aria-label="ประเด็นโรคภัยสุขภาพของจังหวัดที่เลือก">
+                <div className="province-progress-panel__header">
+                  <div>
+                    <h4>ประเด็นโรค/ภัยสุขภาพ</h4>
+                    <p>จังหวัด{selectedIssueProvinceName}{selectedProvinceIssueRecords.length > 0 ? ` — ${selectedProvinceIssueRecords.length.toLocaleString("th-TH")} รายการ` : ""}</p>
+                  </div>
+                </div>
+
+                {selectedProvinceIssueRecords.length === 0 ? (
+                  <p className="province-issue-empty">ยังไม่มีประเด็นโรค/ภัยสุขภาพของจังหวัด{selectedIssueProvinceName}</p>
+                ) : (
+                  <div className="province-issue-list">
+                    {selectedProvinceIssueRecords.map((record) => (
+                      <div key={`${record.districtCode}-${record.healthIssue}`} className="province-issue-item">
+                        <strong>{record.districtName}</strong>
+                        <span>{record.healthIssue}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="province-progress-panel" aria-label="ความคืบหน้าการส่งงานรายอำเภอ">
+                <div className="province-progress-panel__header">
+                  <div>
+                    <h4>ความคืบหน้าการส่งงานรายอำเภอ</h4>
+                    <p>สถานะการส่งงานของแต่ละอำเภอในจังหวัด{selectedIssueProvinceName}</p>
+                  </div>
+                  <button type="button" className="cta cta--ghost" onClick={() => {
+                    setFilterProvince("");
+                    setSelectedDistrictCode("");
+                  }}>
+                    กลับไปดูจังหวัด
+                  </button>
+                </div>
+                <div className="province-progress-list">
+                  {coverageChartRows.length === 0 ? (
+                    <p className="province-progress-empty">ยังไม่มีอำเภอในจังหวัดนี้</p>
+                  ) : (
+                    coverageChartRows.map((district) => {
+                      const submitted = district.record_count > 0;
+                      const percent = submitted ? 100 : 0;
+                      return (
+                        <div 
+                          key={district.code} 
+                          className="province-progress-row province-progress-row--clickable"
+                        onClick={() => {
+                          setSelectedDistrictCode(district.code);
+                        }}
+                        >
                           <div className="province-progress-row__meta">
-                            <strong>{province.provinceName}</strong>
+                            <strong>{district.name}</strong>
                             <span>
-                              {province.agencyName} · ส่งแล้ว {province.submittedDistricts.toLocaleString("th-TH")} / {province.totalDistricts.toLocaleString("th-TH")} อำเภอ
+                              {submitted ? `ส่งแล้ว ${district.record_count} รายการ` : "ยังไม่มีข้อมูล"}
                             </span>
                           </div>
                           <div
                             className="province-progress-bar"
                             role="img"
-                            aria-label={`จังหวัด${province.provinceName} ส่งแล้ว ${province.submittedPercent.toLocaleString("th-TH")} เปอร์เซ็นต์ ค้างส่ง ${province.pendingPercent.toLocaleString("th-TH")} เปอร์เซ็นต์`}
+                            aria-label={`อำเภอ${district.name} ${submitted ? `ส่งแล้ว 100%` : "ยังไม่ส่ง"}`}
                           >
-                            <div className="province-progress-bar__sent" style={{ width: `${province.submittedPercent}%` }}>
-                              {province.submittedPercent > 10 ? `${province.submittedPercent.toLocaleString("th-TH")}%` : ""}
+                            <div className="province-progress-bar__sent" style={{ width: `${percent}%` }}>
+                              {submitted ? "มีข้อมูล" : ""}
                             </div>
-                            <div className="province-progress-bar__pending" style={{ width: `${province.pendingPercent}%` }}>
-                              {province.pendingPercent > 10 ? `${province.pendingPercent.toLocaleString("th-TH")}%` : ""}
+                            <div className="province-progress-bar__pending" style={{ width: `${100 - percent}%` }}>
+                              {submitted ? "" : "ไม่มีข้อมูล"}
                             </div>
                           </div>
                         </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            // Agency/SCR mode: show bar chart + province progress + province issues
+            <>
+              <h3>{coverageChartTitle}</h3>
+              <div style={{ width: "100%", height: 350, marginTop: 16 }}>
+                <ResponsiveContainer>
+                  <BarChart data={coverageChartRows} margin={{ top: 20, right: 20, bottom: 40, left: -20 }}>
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 12, fill: "#4b647d" }}
+                      interval={0}
+                      angle={-45}
+                      textAnchor="end"
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#4b647d" }} />
+                    <Tooltip cursor={{ fill: "rgba(16, 36, 62, 0.04)" }} contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 10px 30px rgba(16,36,62,0.1)" }} />
+                    <Bar dataKey="record_count" radius={[6, 6, 0, 0]} onClick={handleCoverageChartBarClick}>
+                      {coverageChartRows.map((entry, index) => (
+                        <Cell
+                          key={`cell-${entry.code}-${index}`}
+                          fill={entry.selected ? "#f9007a" : "#00c4b4"}
+                          style={{ cursor: !activeProvinceFilter && !accessScope?.agencyCode ? "pointer" : "default" }}
+                        />
                       ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </>
+          )}
+          {!selectedDistrictCode && !isDistrictMode ? (
+            <div className="province-progress-panel" aria-label="ความคืบหน้าการส่งงานรายจังหวัดตาม สคร.">
+              <div className="province-progress-panel__header">
+                <div>
+                  <h4>ความคืบหน้าการส่งงานรายจังหวัด</h4>
+                  <p>นับอำเภอที่มีรายการส่งงานแล้ว เทียบกับอำเภอทั้งหมดในจังหวัด</p>
+                </div>
+                <span>{provinceSubmissionGroups.reduce((total, group) => total + group.provinces.length, 0).toLocaleString("th-TH")} จังหวัด</span>
+              </div>
+
+              <div className="province-progress-list">
+                {provinceSubmissionGroups.length === 0 ? (
+                  <p className="province-progress-empty">ยังไม่มีจังหวัดในขอบเขตที่เลือก</p>
+                ) : (
+                  provinceSubmissionGroups.map((group) => (
+                    <section key={group.agencyCode} className="province-progress-group" aria-label={group.agencyName}>
+                      <div className="province-progress-group__title">
+                        <strong>{group.agencyName}</strong>
+                        <span>{group.provinces.length.toLocaleString("th-TH")} จังหวัด</span>
+                      </div>
+                      <div className="province-progress-group__rows">
+                        {group.provinces.map((province) => (
+                          <div 
+                            key={province.provinceCode} 
+                            className="province-progress-row province-progress-row--clickable"
+                            onClick={() => {
+                              if (!accessScope?.agencyCode) {
+                                setFilterAgency(province.agencyCode);
+                              }
+                              if (!accessScope?.provinceCode) {
+                                setFilterProvince(province.provinceCode);
+                              }
+                              setSelectedDistrictCode("");
+                            }}
+                          >
+                            <div className="province-progress-row__meta">
+                              <strong>{province.provinceName}</strong>
+                              <span>
+                                {province.agencyName} · ส่งแล้ว {province.submittedDistricts.toLocaleString("th-TH")} / {province.totalDistricts.toLocaleString("th-TH")} อำเภอ
+                              </span>
+                            </div>
+                            <div
+                              className="province-progress-bar"
+                              role="img"
+                              aria-label={`จังหวัด${province.provinceName} ส่งแล้ว ${province.submittedPercent.toLocaleString("th-TH")} เปอร์เซ็นต์ ค้างส่ง ${province.pendingPercent.toLocaleString("th-TH")} เปอร์เซ็นต์`}
+                            >
+                              <div className="province-progress-bar__sent" style={{ width: `${province.submittedPercent}%` }}>
+                                {province.submittedPercent > 10 ? `${province.submittedPercent.toLocaleString("th-TH")}%` : ""}
+                              </div>
+                              <div className="province-progress-bar__pending" style={{ width: `${province.pendingPercent}%` }}>
+                                {province.pendingPercent > 10 ? `${province.pendingPercent.toLocaleString("th-TH")}%` : ""}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  ))
+                )}
+              </div>
+            </div>
+          ) : null}
+          {!selectedDistrictCode && !isDistrictMode ? (
+            <div className="province-issue-panel" aria-label="ประเด็นโรคภัยสุขภาพของจังหวัดที่เลือก">
+              <div className="province-issue-panel__header">
+                <div>
+                  <h4>ประเด็นโรค/ภัยสุขภาพ</h4>
+                  <p>
+                    {selectedIssueProvinceName
+                      ? `จังหวัด${selectedIssueProvinceName}`
+                      : activeAgencyFilter
+                        ? "เลือกแท่งจังหวัดจากกราฟเพื่อดูรายการ"
+                        : "เลือก สคร. จากแผนที่ก่อน แล้วคลิกแท่งจังหวัด"}
+                  </p>
+                </div>
+                {selectedIssueProvinceName ? <span>{selectedProvinceIssueRecords.length.toLocaleString("th-TH")} รายการ</span> : null}
+              </div>
+
+              {!activeAgencyFilter ? (
+                <p className="province-issue-empty">เลือก สคร. จากแผนที่ เพื่อเปลี่ยนกราฟเป็นรายจังหวัด</p>
+              ) : !selectedIssueProvinceCode ? (
+                <p className="province-issue-empty">คลิกแท่งจังหวัดในกราฟด้านบนเพื่อดูชื่อประเด็นโรค/ภัยสุขภาพ</p>
+              ) : selectedProvinceIssueRecords.length === 0 ? (
+                <p className="province-issue-empty">ยังไม่มีประเด็นโรค/ภัยสุขภาพของจังหวัด{selectedIssueProvinceName}</p>
+              ) : (
+                <div className="province-issue-list">
+                  {selectedProvinceIssueRecords.map((record) => (
+                    <div key={`${record.districtCode}-${record.healthIssue}`} className="province-issue-item">
+                      <strong>{record.districtName}</strong>
+                      <span>{record.healthIssue}</span>
                     </div>
-                  </section>
-                ))
+                  ))}
+                </div>
               )}
             </div>
-          </div>
-          <div className="province-issue-panel" aria-label="ประเด็นโรคภัยสุขภาพของจังหวัดที่เลือก">
-            <div className="province-issue-panel__header">
-              <div>
-                <h4>ประเด็นโรค/ภัยสุขภาพ</h4>
-                <p>
-                  {selectedIssueProvinceName
-                    ? `จังหวัด${selectedIssueProvinceName}`
-                    : activeAgencyFilter
-                      ? "เลือกแท่งจังหวัดจากกราฟเพื่อดูรายการ"
-                      : "เลือก สคร. จากแผนที่ก่อน แล้วคลิกแท่งจังหวัด"}
-                </p>
-              </div>
-              {selectedIssueProvinceName ? <span>{selectedProvinceIssueRecords.length.toLocaleString("th-TH")} รายการ</span> : null}
-            </div>
-
-            {!activeAgencyFilter ? (
-              <p className="province-issue-empty">เลือก สคร. จากแผนที่ เพื่อเปลี่ยนกราฟเป็นรายจังหวัด</p>
-            ) : !selectedIssueProvinceCode ? (
-              <p className="province-issue-empty">คลิกแท่งจังหวัดในกราฟด้านบนเพื่อดูชื่อประเด็นโรค/ภัยสุขภาพ</p>
-            ) : selectedProvinceIssueRecords.length === 0 ? (
-              <p className="province-issue-empty">ยังไม่มีประเด็นโรค/ภัยสุขภาพของจังหวัด{selectedIssueProvinceName}</p>
-            ) : (
-              <div className="province-issue-list">
-                {selectedProvinceIssueRecords.map((record) => (
-                  <div key={`${record.districtCode}-${record.healthIssue}`} className="province-issue-item">
-                    <strong>{record.districtName}</strong>
-                    <span>{record.healthIssue}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          ) : null}
         </article>
       </div>
 
@@ -1189,8 +1455,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
 
       {showAdvancedPanels ? <SuperadminUsersPanel accessScope={accessScope} /> : null}
 
-
-
+      {/*
       <article className="panel table-panel">
         <div className="section-row">
           <h3>Forecast เบื้องต้น</h3>
@@ -1219,6 +1484,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
           </table>
         </div>
       </article>
+      */}
 
       <div className="metrics-grid">
         <article className="metric-card"><p>จำนวนรายการตามตัวกรอง</p><h3>{totalCount.toLocaleString("th-TH")}</h3></article>
@@ -1228,6 +1494,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
         <article className="metric-card"><p>จังหวัดข้อมูลสูงสุด</p><h3>{topProvince}</h3></article>
       </div>
 
+      {/*
       <article className="panel table-panel">
         <div className="section-row">
           <h3>KPI Summary (Phase 4)</h3>
@@ -1314,6 +1581,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
           </table>
         </div>
       </article>
+      */}
 
     </section>
   );

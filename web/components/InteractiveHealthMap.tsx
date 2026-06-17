@@ -1,5 +1,4 @@
-"use client";
-
+import { forwardRef } from "react";
 import dynamic from "next/dynamic";
 import type { AccessScope } from "@/services/access-control";
 import type { AgencyCoverageRow, AgencyProvinceMapRow, ProvinceCoverageRow } from "@/types/mvp";
@@ -9,9 +8,16 @@ export type InteractiveHealthMapProps = {
   provinceCoverage: ProvinceCoverageRow[];
   agencyProvinceMap: AgencyProvinceMapRow[];
   selectedAgencyCode?: string;
+  selectedProvinceFromChart?: string;
+  selectedDistrictFromMap?: string;
+  selectedSubdistrictFromMap?: string;
   onSelectAgency?: (agencyCode: string) => void;
+  onSelectProvince?: (provinceCode: string) => void;
+  onSelectDistrict?: (districtCode: string) => void;
+  onSelectSubdistrict?: (subdistrictCode: string) => void;
   accessScope?: AccessScope;
   onSelectDistrictForIntake?: (selection: { agencyCode: string; provinceCode: string; districtCode: string }) => void;
+  forwardedRef?: any;
 };
 
 const InteractiveHealthMapClient = dynamic(() => import("@/components/InteractiveHealthMapClient"), {
@@ -23,6 +29,10 @@ const InteractiveHealthMapClient = dynamic(() => import("@/components/Interactiv
   ),
 });
 
-export default function InteractiveHealthMap(props: InteractiveHealthMapProps) {
-  return <InteractiveHealthMapClient {...props} />;
-}
+const InteractiveHealthMap = forwardRef<any, InteractiveHealthMapProps>((props, ref) => {
+  return <InteractiveHealthMapClient {...props} forwardedRef={ref} />;
+});
+
+InteractiveHealthMap.displayName = "InteractiveHealthMap";
+
+export default InteractiveHealthMap;

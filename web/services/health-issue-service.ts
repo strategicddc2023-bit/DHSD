@@ -45,3 +45,32 @@ export async function loadDistrictHealthIssueSummary(districtCode: string): Prom
   };
 }
 
+export async function loadSubdistrictHealthIssueSummary(subdistrictCode: string): Promise<DistrictHealthIssueSummary> {
+  const [{ count }, { data }] = await Promise.all([
+    supabase.from("intake_records").select("*", { count: "exact", head: true }).eq("subdistrict_code", subdistrictCode),
+    supabase
+      .from("intake_records")
+      .select("id,created_at,health_issue_text,agency_code,province_code,district_code,master_agencies(label_th)")
+      .eq("subdistrict_code", subdistrictCode)
+      .order("created_at", { ascending: false })
+      .limit(20),
+  ]);
+
+  const latestRecords = (data as DistrictHealthIssueRecord[] | null) ?? [];
+  const issueCounts = latestRecords.reduce((acc, record) => {
+    const issue = record.health_issue_text?.trim() || "ไม่ระบุ";
+    acc.set(issue, (acc.get(issue) ?? 0) + 1);
+    return acc;
+  }, new Map<string, number>());
+
+  return {
+    districtCode: subdistrictCode,
+    totalCount: count ?? 0,
+    issues: [...issueCounts.entries()]
+      .map(([issue, issueCount]) => ({ issue, count: issueCount }))
+      .sort((a, b) => b.count - a.count || a.issue.localeCompare(b.issue, "th")),
+    latestRecords,
+  };
+}
+
+

@@ -19,6 +19,7 @@ type AppNavigationProps = {
 export default function AppNavigation({ user }: AppNavigationProps) {
   const router = useRouter();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   
   const isSuperadmin = user?.role === "superadmin";
   const isStaff = user?.role === "admin" || user?.role === "user";
@@ -32,6 +33,8 @@ export default function AppNavigation({ user }: AppNavigationProps) {
 
   const visibleItems = items.filter((item) => item.allowed);
 
+  const closeMenu = () => setMenuOpen(false);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setShowLogoutModal(false);
@@ -44,21 +47,34 @@ export default function AppNavigation({ user }: AppNavigationProps) {
         <div className="app-nav__brand">
           <span>DHSD</span>
         </div>
-        <div className="app-nav__shell">
+        <button
+          type="button"
+          className={`app-nav__hamburger ${menuOpen ? "app-nav__hamburger--open" : ""}`}
+          onClick={() => setMenuOpen((prev) => !prev)}
+          aria-label={menuOpen ? "ปิดเมนู" : "เปิดเมนู"}
+          aria-expanded={menuOpen}
+        >
+          <span className="app-nav__hamburger-bar" />
+          <span className="app-nav__hamburger-bar" />
+          <span className="app-nav__hamburger-bar" />
+        </button>
+        <div className={`app-nav__shell ${menuOpen ? "app-nav__shell--open" : ""}`}>
           <div className="app-nav__links">
-            {visibleItems.map((item) =>
-              item.href.startsWith("#") ? (
-                <a key={item.href} className="app-nav__link" href={item.href}>
-                  {item.label}
-                </a>
-              ) : (
-                <Link key={item.href} className="app-nav__link" href={item.href} prefetch={false}>
-                  {item.label}
-                </Link>
-              )
-            )}
+            {visibleItems.map((item) => (
+              <span key={item.href} onClick={closeMenu}>
+                {item.href.startsWith("#") ? (
+                  <a className="app-nav__link" href={item.href}>
+                    {item.label}
+                  </a>
+                ) : (
+                  <Link className="app-nav__link" href={item.href} prefetch={false}>
+                    {item.label}
+                  </Link>
+                )}
+              </span>
+            ))}
           </div>
-          <div className="app-nav__auth">
+          <div className="app-nav__auth" onClick={closeMenu}>
             {user ? (
               <button type="button" className="cta cta--ghost app-nav__auth-btn" onClick={() => setShowLogoutModal(true)}>
                 ออกจากระบบ

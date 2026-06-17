@@ -1,4 +1,4 @@
-﻿export type AgencyOption = {
+export type AgencyOption = {
   code: string;
   label_th: string;
 };
@@ -11,6 +11,13 @@ export type Province = {
 export type District = {
   code: string;
   name_th: string;
+  province_code: string;
+};
+
+export type Subdistrict = {
+  code: string;
+  name_th: string;
+  district_code: string;
   province_code: string;
 };
 
@@ -28,9 +35,11 @@ export type IntakeRecordRow = {
   agency_code: string;
   province_code: string;
   district_code: string;
+  subdistrict_code?: string | null;
   master_agencies: { label_th: string } | { label_th: string }[] | null;
   master_provinces: { name_th: string } | { name_th: string }[] | null;
   master_districts: { name_th: string } | { name_th: string }[] | null;
+  master_subdistricts?: { name_th: string } | { name_th: string }[] | null;
 };
 
 export type AgencyCoverageRow = {
