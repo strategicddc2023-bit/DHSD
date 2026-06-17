@@ -490,16 +490,25 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
   }, [provinceHealthIssueRecords, selectedIssueProvinceCode]);
 
   const handleCoverageChartBarClick = (entry: { payload?: CoverageChartRow }) => {
-    if (!activeAgencyFilter || activeProvinceFilter) {
+    if (activeProvinceFilter) {
       return;
     }
 
-    const provinceCode = entry.payload?.code;
-    if (!provinceCode) {
+    const code = entry.payload?.code;
+    if (!code) {
       return;
     }
 
-    setSelectedChartProvinceCode((current) => (current === provinceCode ? "" : provinceCode));
+    // If no agency filter is active, clicking a bar sets the agency filter (drill-down from สคร. to provinces)
+    if (!activeAgencyFilter) {
+      if (!accessScope?.agencyCode) {
+        setFilterAgency((current) => (current === code ? "" : code));
+      }
+      return;
+    }
+
+    // If agency filter is active, clicking a bar toggles province selection
+    setSelectedChartProvinceCode((current) => (current === code ? "" : code));
   };
 
   const clearTableFilters = () => {
@@ -930,6 +939,24 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
         <p>โครงแสดงผลแผนที่ สคร. 13 เขต และรายการข้อมูลล่าสุดจากฐานข้อมูล</p>
       </div>
 
+      <div className="dashboard-summary">
+        <article className="summary-card">
+          <p>ปีงบประมาณ KPI</p>
+          <h3>{selectedFiscalYear}</h3>
+          <span>ใช้สรุปผล KPI Summary</span>
+        </article>
+        <article className="summary-card">
+          <p>ตัวกรองข้อมูล</p>
+          <h3>{activeFilterChips.length}</h3>
+          <span>{activeFilterChips.length ? activeFilterChips.join(" · ") : "ยังไม่ได้กรองข้อมูล"}</span>
+        </article>
+        <article className="summary-card">
+          <p>หน่วยงานบนแผนที่</p>
+          <h3>{selectedMapAgencyLabel}</h3>
+          <span>คลิกที่แผนที่เพื่อเปลี่ยนบริบท</span>
+        </article>
+      </div>
+
       {savedRecordsPanel}
 
       <div className="dashboard-grid">
@@ -994,7 +1021,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
                     <Cell
                       key={`cell-${entry.code}-${index}`}
                       fill={entry.selected ? "#f9007a" : "#00c4b4"}
-                      style={{ cursor: activeAgencyFilter && !activeProvinceFilter ? "pointer" : "default" }}
+                      style={{ cursor: !activeProvinceFilter && !accessScope?.agencyCode ? "pointer" : "default" }}
                     />
                   ))}
                 </Bar>
@@ -1081,24 +1108,6 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
               </div>
             )}
           </div>
-        </article>
-      </div>
-
-      <div className="dashboard-summary">
-        <article className="summary-card">
-          <p>ปีงบประมาณ KPI</p>
-          <h3>{selectedFiscalYear}</h3>
-          <span>ใช้สรุปผล KPI Summary</span>
-        </article>
-        <article className="summary-card">
-          <p>ตัวกรองข้อมูล</p>
-          <h3>{activeFilterChips.length}</h3>
-          <span>{activeFilterChips.length ? activeFilterChips.join(" · ") : "ยังไม่ได้กรองข้อมูล"}</span>
-        </article>
-        <article className="summary-card">
-          <p>หน่วยงานบนแผนที่</p>
-          <h3>{selectedMapAgencyLabel}</h3>
-          <span>คลิกที่แผนที่เพื่อเปลี่ยนบริบท</span>
         </article>
       </div>
 
