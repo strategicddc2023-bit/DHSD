@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppNavigation from "@/components/AppNavigation";
 import DashboardSection from "@/components/DashboardSection";
 import HeroSection from "@/components/HeroSection";
-import IntakeFormSection from "@/components/IntakeFormSection";
-import KpiInputSection from "@/components/KpiInputSection";
 import { buildAccessScope, loadCurrentAppUser } from "@/services/auth-session";
 import { supabase } from "@/services/supabase-client";
 import type { AgencyOption, AppUserRow, IntakeFormData } from "@/types/mvp";
@@ -24,7 +22,6 @@ export default function HomePage() {
   const [agencies, setAgencies] = useState<AgencyOption[]>([]);
   const [currentUser, setCurrentUser] = useState<AppUserRow | null>(null);
   const [userLoaded, setUserLoaded] = useState(false);
-  const inputRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const accessScope = buildAccessScope(currentUser);
 
@@ -58,46 +55,17 @@ export default function HomePage() {
     void loadUser();
   }, []);
 
-  useEffect(() => {
-    if (!userLoaded) return;
-    if (currentUser?.role === "admin" || currentUser?.role === "user") {
-      router.replace("/my-work");
-    }
-  }, [currentUser?.role, router, userLoaded]);
-
-  const scrollToInput = () => {
-    inputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
   return (
     <main>
       <AppNavigation user={currentUser} />
-      <HeroSection onScrollToForm={scrollToInput} />
+      <HeroSection />
       <div className="content-wrap">
-        {currentUser?.role === "superadmin" ? (
-          <>
-            <div ref={inputRef}>
-              <IntakeFormSection
-                formData={formData}
-                onChange={setFormData}
-                onSaved={() => setRefreshKey((prev) => prev + 1)}
-                accessScope={accessScope ?? undefined}
-              />
-            </div>
-
-            <KpiInputSection
-              agencies={agencies}
-              onSaved={() => setRefreshKey((prev) => prev + 1)}
-              accessScope={accessScope ?? undefined}
-            />
-          </>
-        ) : null}
-
         <DashboardSection
           formData={formData}
           refreshKey={refreshKey}
           accessScope={accessScope ?? undefined}
-          viewMode={currentUser?.role === "superadmin" ? "backoffice" : "public"}
+          viewMode="public"
+          hideSavedRecords={true}
           onSelectDistrictForIntake={(selection) =>
             setFormData((prev) => ({
               ...prev,

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "@/services/supabase-client";
 import type { AppUserRow } from "@/types/mvp";
 
@@ -19,9 +19,11 @@ type AppNavigationProps = {
 
 export default function AppNavigation({ user }: AppNavigationProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const isHomepage = pathname === "/";
   const isSuperadmin = user?.role === "superadmin";
   const isAdmin = user?.role === "admin";
   const isUser = user?.role === "user";
@@ -60,7 +62,7 @@ export default function AppNavigation({ user }: AppNavigationProps) {
 
   return (
     <>
-      <nav className="app-nav" aria-label="เมนูหลัก">
+      <nav className={`app-nav ${isHomepage ? "app-nav--homepage" : ""}`} aria-label="เมนูหลัก">
         <div className="app-nav__brand">
           <span>DHSD</span>
           {user && (
