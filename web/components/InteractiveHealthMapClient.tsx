@@ -263,13 +263,6 @@ export default function InteractiveHealthMapClient({
         {isMapBusy ? <div className="interactive-map__overlay" role="status"><span></span><p>{districtStatus === "loading" ? `กำลังโหลดอำเภอของจังหวัด${selectedProvinceName}` : "กำลังโหลดแผนที่"}</p></div> : null}
       </div>
 
-      <div className="interactive-map__status">
-        {districtStatus === "loading" ? <p>กำลังโหลดขอบเขตอำเภอของจังหวัด{selectedProvinceName}...</p>
-        : districtStatus === "error" ? <p>โหลดขอบเขตอำเภอของจังหวัด{selectedProvinceName}ไม่สำเร็จ</p>
-        : districtBoundaries ? <p>กำลังแสดง {districtBoundaries.features.length.toLocaleString("th-TH")} อำเภอในจังหวัด{selectedProvinceName}{selectedDistrictCode ? " • คลิกเลือกอำเภอแล้ว" : " • คลิกอำเภอเพื่อดูข้อมูลพื้นที่"}</p>
-        : selectedAgencyCode ? <p>กำลังแสดง {visibleBoundaries?.features.length.toLocaleString("th-TH") ?? 0} จังหวัดใน {selectedAgencyName}{selectedProvinceName ? ` • เลือกจังหวัด${selectedProvinceName}แล้ว` : " • คลิกจังหวัดเพื่อดูระดับอำเภอ"}</p>
-        : <p>คลิกพื้นที่บนแผนที่เพื่อเลือกเขตสุขภาพ และซูมเข้าไปดูจังหวัดในเขตนั้น</p>}
-      </div>
 
       <div className="interactive-map__legend">
         <span><i className="interactive-map__swatch interactive-map__swatch--zone" />เขตสุขภาพ</span>

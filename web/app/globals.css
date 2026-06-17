@@ -1789,6 +1789,18 @@ thead th {
   overflow: hidden;
 }
 
+.map-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.map-panel-header h3 {
+  margin: 0;
+}
+
 .map-actions {
   margin-top: 10px;
   display: flex;
@@ -1796,6 +1808,148 @@ thead th {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.health-issue-donut-panel {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #d6e7f0;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+}
+
+.health-issue-donut-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.health-issue-donut-panel__header h4 {
+  margin: 0;
+  color: #0f3349;
+  font-size: 0.98rem;
+}
+
+.health-issue-donut-panel__header p {
+  margin: 3px 0 0;
+  color: #5d7590;
+  font-size: 0.86rem;
+}
+
+.health-issue-donut-panel__header > span {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: #e8f5f3;
+  color: #11615d;
+  border: 1px solid #c7e9e5;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.health-issue-donut {
+  position: relative;
+  min-height: 190px;
+}
+
+.health-issue-donut__center {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.health-issue-donut__center strong {
+  color: #0f3349;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.health-issue-donut__center span {
+  color: #5d7590;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.health-issue-donut-legend {
+  display: grid;
+  gap: 7px;
+}
+
+.health-issue-donut-legend__item {
+  width: 100%;
+  min-height: 34px;
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #dce8f1;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1d425a;
+  padding: 7px 9px;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.health-issue-donut-legend__item.is-active {
+  border-color: #00a99d;
+  background: #ecfffc;
+}
+
+.health-issue-donut-legend__item span:nth-child(2) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.health-issue-donut-legend__item strong {
+  color: #0f3349;
+  font-size: 0.9rem;
+}
+
+.health-issue-donut-legend__swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.health-issue-donut-detail {
+  margin-top: 10px;
+  display: grid;
+  gap: 4px;
+  border: 1px dashed #c7dbe8;
+  border-radius: 10px;
+  background: #f7fbff;
+  padding: 10px;
+}
+
+.health-issue-donut-detail strong {
+  color: #0f3349;
+  line-height: 1.35;
+}
+
+.health-issue-donut-detail span,
+.health-issue-donut-detail p {
+  margin: 0;
+  color: #5d7590;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.health-issue-donut-detail__list {
+  display: grid;
+  gap: 3px;
+  margin-top: 4px;
 }
 
 .filter-chips {

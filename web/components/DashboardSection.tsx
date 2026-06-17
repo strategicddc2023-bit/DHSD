@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import type { AccessScope } from "@/services/access-control";
 import { resolveVisibleAgencyCodes, resolveVisibleProvinceCodes } from "@/services/access-control";
 import { supabase } from "@/services/supabase-client";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
 import InteractiveHealthMap from "@/components/InteractiveHealthMap";
 import { loadDistrictHealthIssueSummary } from "@/services/health-issue-service";
 import type { DistrictHealthIssueSummary } from "@/services/health-issue-service";
@@ -77,6 +77,7 @@ type CoverageChartRow = {
 };
 
 type ProvinceHealthIssueRecord = {
+  agencyCode: string;
   provinceCode: string;
   districtCode: string;
   districtName: string;
@@ -85,8 +86,15 @@ type ProvinceHealthIssueRecord = {
   healthIssue: string;
 };
 
+type HealthIssueDonutRow = {
+  issue: string;
+  count: number;
+  color: string;
+};
+
 const fiscalYears = [2566, 2567, 2568, 2569, 2570];
 const latestRecordsPageSize = 10;
+const healthIssueDonutColors = ["#00c4b4", "#f43f5e", "#f59e0b", "#3b82f6", "#8b5cf6", "#14b8a6", "#64748b"];
 
 const getRelatedLabel = <T,>(value: T | T[] | null | undefined, picker: (item: T) => string | null | undefined) => {
   const item = Array.isArray(value) ? value[0] : value;
@@ -128,6 +136,8 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
   const [districtHealthIssueTotal, setDistrictHealthIssueTotal] = useState(0);
   const [districtHealthIssueLoading, setDistrictHealthIssueLoading] = useState(false);
   const [provinceHealthIssueRecords, setProvinceHealthIssueRecords] = useState<ProvinceHealthIssueRecord[]>([]);
+  const [healthIssueScopeRecords, setHealthIssueScopeRecords] = useState<ProvinceHealthIssueRecord[]>([]);
+  const [selectedHealthIssue, setSelectedHealthIssue] = useState("");
   const [latestRecordsPage, setLatestRecordsPage] = useState(1);
   const [recordsRefreshKey, setRecordsRefreshKey] = useState(0);
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
@@ -296,6 +306,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
       const districtMap = new Map<string, number>();
       const submittedDistrictMap = new Map<string, Set<string>>();
       const healthIssueMap = new Map<string, ProvinceHealthIssueRecord>();
+      const healthIssueRows: ProvinceHealthIssueRecord[] = [];
       
       summaryRows.forEach((item) => {
         if (item.agency_code) {
@@ -315,11 +326,20 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
         const healthIssue = item.health_issue_text?.trim();
         if (item.province_code && item.district_code && healthIssue) {
           const key = `${item.district_code}::${healthIssue.toLocaleLowerCase("th-TH")}`;
+          const districtName = getRelatedLabel(item.master_districts, (district) => district.name_th) ?? item.district_code;
+          healthIssueRows.push({
+            agencyCode: item.agency_code,
+            provinceCode: item.province_code,
+            districtCode: item.district_code,
+            districtName,
+            healthIssue,
+          });
           if (!healthIssueMap.has(key)) {
             healthIssueMap.set(key, {
+              agencyCode: item.agency_code,
               provinceCode: item.province_code,
               districtCode: item.district_code,
-              districtName: getRelatedLabel(item.master_districts, (district) => district.name_th) ?? item.district_code,
+              districtName,
               healthIssue,
             });
           }
@@ -330,6 +350,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
       );
       setDistrictRecordCount(Object.fromEntries(districtMap));
       setProvinceHealthIssueRecords([...healthIssueMap.values()]);
+      setHealthIssueScopeRecords(healthIssueRows);
 
       const topA = [...agencyMap.entries()].sort((x, y) => y[1] - x[1])[0];
       const topP = [...provinceMap.entries()].sort((x, y) => y[1] - x[1])[0];
@@ -560,6 +581,60 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
 
   const isDistrictMode = Boolean(activeAgencyFilter && selectedIssueProvinceCode);
 
+  const healthIssueDonutScopeLabel = selectedDistrictCode
+    ? `อำเภอ${selectedDistrictName}`
+    : activeProvinceFilter
+      ? `จังหวัด${selectedIssueProvinceName}`
+      : activeAgencyFilter
+        ? agencies.find((item) => item.code === activeAgencyFilter)?.label_th ?? activeAgencyFilter
+        : "ภาพรวมทั้งประเทศ";
+
+  const healthIssueDonutData = useMemo<HealthIssueDonutRow[]>(() => {
+    const issueMap = new Map<string, number>();
+
+    if (selectedDistrictCode) {
+      districtHealthIssueData.forEach((item) => {
+        issueMap.set(item.issue, (issueMap.get(item.issue) ?? 0) + item.count);
+      });
+    } else {
+      healthIssueScopeRecords.forEach((record) => {
+        issueMap.set(record.healthIssue, (issueMap.get(record.healthIssue) ?? 0) + 1);
+      });
+    }
+
+    return [...issueMap.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "th"))
+      .slice(0, 7)
+      .map(([issue, count], index) => ({
+        issue,
+        count,
+        color: healthIssueDonutColors[index % healthIssueDonutColors.length],
+      }));
+  }, [districtHealthIssueData, healthIssueScopeRecords, selectedDistrictCode]);
+
+  const healthIssueDonutTotal = healthIssueDonutData.reduce((total, item) => total + item.count, 0);
+  const selectedHealthIssueCount = healthIssueDonutData.find((item) => item.issue === selectedHealthIssue)?.count ?? 0;
+  const selectedHealthIssueRecords = useMemo(() => {
+    if (!selectedHealthIssue || selectedDistrictCode) {
+      return [] as ProvinceHealthIssueRecord[];
+    }
+
+    return healthIssueScopeRecords
+      .filter((record) => record.healthIssue === selectedHealthIssue)
+      .sort((a, b) => {
+        const provinceCompare = a.provinceCode.localeCompare(b.provinceCode, "th");
+        if (provinceCompare !== 0) return provinceCompare;
+        return a.districtName.localeCompare(b.districtName, "th");
+      })
+      .slice(0, 6);
+  }, [healthIssueScopeRecords, selectedDistrictCode, selectedHealthIssue]);
+
+  useEffect(() => {
+    if (selectedHealthIssue && !healthIssueDonutData.some((item) => item.issue === selectedHealthIssue)) {
+      setSelectedHealthIssue("");
+    }
+  }, [healthIssueDonutData, selectedHealthIssue]);
+
   const coverageChartTitle = isDistrictMode
     ? `จำนวนรายการตามอำเภอในจังหวัด${selectedIssueProvinceName}`
     : activeAgencyFilter
@@ -602,6 +677,21 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
 
     // 3. Level 3: Province selected (showing districts) -> select district
     setSelectedDistrictCode((current) => (current === code ? "" : code));
+  };
+
+  const clearMapFilters = () => {
+    if (!accessScope?.agencyCode) {
+      setFilterAgency("");
+    }
+    if (!accessScope?.provinceCode) {
+      setFilterProvince("");
+    }
+    setSelectedDistrictCode("");
+    setSelectedSubdistrictCode("");
+    setSelectedHealthIssue("");
+    if (mapRef.current) {
+      mapRef.current.resetView();
+    }
   };
 
   const clearTableFilters = () => {
@@ -1070,7 +1160,17 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
 
       <div className="dashboard-grid">
         <article className="panel panel--map">
-          <h3>แผนที่เขตสุขภาพ (สคร.1-สคร.13)</h3>
+          <div className="map-panel-header">
+            <h3>แผนที่เขตสุขภาพ</h3>
+            <button
+              type="button"
+              className="cta cta--ghost"
+              onClick={clearMapFilters}
+              disabled={!filterAgency && !filterProvince && !selectedDistrictCode && !selectedSubdistrictCode}
+            >
+              ล้างตัวกรองแผนที่
+            </button>
+          </div>
           <InteractiveHealthMap
             ref={mapRef}
             coverage={visibleAgencies.map((agency) => ({
@@ -1114,23 +1214,91 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
               setSelectedDistrictCode((current) => (current === districtCode ? "" : districtCode));
             }}
           />
-          <div className="map-actions">
-            <p className="inline-message">
-              {activeAgencyFilter
-                ? "คลิกเขตเดิมซ้ำเพื่อยกเลิกการกรองหน่วยงาน"
-                : "คลิกเขตบนแผนที่เพื่อกรองข้อมูล"}
-            </p>
-            <button type="button" className="cta cta--ghost" onClick={() => {
-              setFilterAgency("");
-              setFilterProvince("");
-              setSelectedDistrictCode("");
-              setSelectedSubdistrictCode("");
-              if (mapRef.current) {
-                mapRef.current.resetView();
-              }
-            }} disabled={!filterAgency || Boolean(accessScope?.agencyCode)}>
-              ล้างตัวกรองแผนที่
-            </button>
+          <div className="health-issue-donut-panel" aria-label="สัดส่วนประเด็นโรคภัยสุขภาพ">
+            <div className="health-issue-donut-panel__header">
+              <div>
+                <h4>ประเด็นโรค/ภัยสุขภาพ</h4>
+                <p>{healthIssueDonutScopeLabel}</p>
+              </div>
+              <span>{healthIssueDonutTotal.toLocaleString("th-TH")} รายการ</span>
+            </div>
+
+            {healthIssueDonutData.length === 0 ? (
+              <p className="province-issue-empty">ยังไม่มีข้อมูลประเด็นโรค/ภัยสุขภาพในขอบเขตนี้</p>
+            ) : (
+              <>
+                <div className="health-issue-donut">
+                  <ResponsiveContainer width="100%" height={190}>
+                    <PieChart>
+                      <Pie
+                        data={healthIssueDonutData}
+                        dataKey="count"
+                        nameKey="issue"
+                        innerRadius={48}
+                        outerRadius={78}
+                        paddingAngle={2}
+                        stroke="#ffffff"
+                        strokeWidth={3}
+                        onClick={(entry: unknown) => {
+                          const issue = (entry as { issue?: string }).issue;
+                          if (issue) {
+                            setSelectedHealthIssue((current) => (current === issue ? "" : issue));
+                          }
+                        }}
+                      >
+                        {healthIssueDonutData.map((entry) => (
+                          <Cell
+                            key={entry.issue}
+                            fill={entry.color}
+                            opacity={!selectedHealthIssue || selectedHealthIssue === entry.issue ? 1 : 0.38}
+                            style={{ cursor: "pointer" }}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value, name) => [`${Number(value ?? 0).toLocaleString("th-TH")} รายการ`, name]}
+                        contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 10px 30px rgba(16,36,62,0.1)" }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="health-issue-donut__center" aria-hidden="true">
+                    <strong>{healthIssueDonutTotal.toLocaleString("th-TH")}</strong>
+                    <span>รายการ</span>
+                  </div>
+                </div>
+
+                <div className="health-issue-donut-legend">
+                  {healthIssueDonutData.map((item) => (
+                    <button
+                      key={item.issue}
+                      type="button"
+                      className={`health-issue-donut-legend__item${selectedHealthIssue === item.issue ? " is-active" : ""}`}
+                      onClick={() => setSelectedHealthIssue((current) => (current === item.issue ? "" : item.issue))}
+                    >
+                      <span className="health-issue-donut-legend__swatch" style={{ background: item.color }} />
+                      <span>{item.issue}</span>
+                      <strong>{item.count.toLocaleString("th-TH")}</strong>
+                    </button>
+                  ))}
+                </div>
+
+                {selectedHealthIssue ? (
+                  <div className="health-issue-donut-detail">
+                    <strong>{selectedHealthIssue}</strong>
+                    <span>{selectedHealthIssueCount.toLocaleString("th-TH")} รายการ</span>
+                    {selectedHealthIssueRecords.length > 0 ? (
+                      <div className="health-issue-donut-detail__list">
+                        {selectedHealthIssueRecords.map((record, index) => (
+                          <p key={`${record.provinceCode}-${record.districtCode}-${index}`}>
+                            {provinces.find((province) => province.code === record.provinceCode)?.name_th ?? record.provinceCode} / {record.districtName}
+                          </p>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </>
+            )}
           </div>
         </article>
 
@@ -1587,4 +1755,3 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
     </section>
   );
 }
-
