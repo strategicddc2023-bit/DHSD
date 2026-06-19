@@ -1,0 +1,3261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>web — Complete Call Flow &amp; Architecture Documentation</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+:root {
+  --bg: #0f172a; --surface: #1e293b; --border: #334155;
+  --text: #e2e8f0; --muted: #94a3b8; --accent: #38bdf8;
+  --warn: #fbbf24; --err: #f87171; --ok: #34d399;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+.container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+h1 { font-size: 2.4rem; margin-bottom: 8px; background: linear-gradient(135deg, var(--accent), #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+h2 { font-size: 1.7rem; margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); }
+h3 { font-size: 1.25rem; margin: 32px 0 12px; color: var(--accent); }
+h4 { font-size: 1.05rem; margin: 20px 0 8px; color: var(--warn); }
+p { margin: 8px 0; color: var(--muted); }
+.subtitle { color: var(--muted); font-size: 1.1rem; margin-bottom: 32px; }
+.mermaid { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 20px 0; overflow-x: auto; position: relative; }
+.mermaid.is-enhanced { padding: 0; overflow: hidden; min-height: 260px; }
+.mermaid-viewport { padding: 54px 24px 24px; overflow: hidden; cursor: grab; touch-action: none; min-height: 260px; }
+.mermaid-viewport.is-dragging { cursor: grabbing; }
+.mermaid-viewport svg { max-width: none !important; height: auto; transform-origin: 0 0; transition: transform 120ms ease; }
+.mermaid-toolbar { position: absolute; top: 10px; right: 10px; z-index: 3; display: flex; align-items: center; gap: 6px; padding: 6px; background: rgba(15,23,42,0.92); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.28); }
+.mermaid-toolbar button, .mermaid-toolbar .zoom-level { height: 28px; min-width: 32px; border: 1px solid var(--border); border-radius: 6px; background: #1e293b; color: var(--text); font: 600 0.78rem system-ui, sans-serif; display: inline-flex; align-items: center; justify-content: center; }
+.mermaid-toolbar button { cursor: pointer; }
+.mermaid-toolbar button:hover { border-color: var(--accent); color: var(--accent); }
+.mermaid-toolbar .zoom-level { min-width: 52px; color: var(--muted); background: transparent; }
+.call-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.92rem; }
+.call-table th { background: #1a2744; color: var(--accent); text-align: left; padding: 10px 14px; border: 1px solid var(--border); }
+.call-table td { padding: 8px 14px; border: 1px solid var(--border); vertical-align: top; }
+.call-table tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
+.tag-async { background: #7c3aed33; color: #a78bfa; }
+.tag-class { background: #05966933; color: var(--ok); }
+.tag-func { background: #2563eb33; color: var(--accent); }
+.tag-cmd { background: #d9770633; color: var(--warn); }
+.tag-endpoint { background: #dc262633; color: var(--err); }
+.tag-hook { background: #db277733; color: #f472b6; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin: 16px 0; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin: 16px 0; }
+.arrow-chain { font-family: 'Fira Code', monospace; font-size: 0.85rem; color: var(--accent); padding: 10px; background: rgba(56,189,248,0.06); border-radius: 6px; }
+code { font-family: 'Fira Code', 'Cascadia Code', monospace; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 3px; font-size: 0.88em; }
+ul, ol { margin: 8px 0 8px 24px; color: var(--muted); }
+li { margin: 4px 0; }
+a { color: var(--accent); }
+hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+.nav { position: sticky; top: 0; background: var(--bg); z-index: 10; padding: 12px 0; border-bottom: 1px solid var(--border); display: flex; gap: 20px; flex-wrap: wrap; font-size: 0.9rem; }
+.nav a { text-decoration: none; }
+.nav a:hover { text-decoration: underline; }
+@media (max-width: 768px) { .container { padding: 16px; } h1 { font-size: 1.8rem; } }
+
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>web — Complete Call Flow &amp; Architecture Documentation</h1>
+<p class="subtitle">Generated from graphify knowledge graph: 251 nodes, 404 edges, 26 communities. Commit: unknown</p>
+
+<div class="nav">
+    <a href="#overview">Architecture Overview</a>
+    <a href="#build-graph">Graph Build</a>
+    <a href="#outputs-docs">Outputs &amp; Docs</a>
+    <a href="#security-global">Security &amp; Global Graph</a>
+    <a href="#user-access-management">User Access Management</a>
+    <a href="#health-map-visualization">Health Map Visualization</a>
+    <a href="#access-permissions">Access Permissions</a>
+    <a href="#dashboard-analytics">Dashboard Analytics</a>
+    <a href="#kpi-calculations">KPI Calculations</a>
+    <a href="#thailand-health-zone-map">Thailand Health Zone Map</a>
+    <a href="#testing-and-qa">Testing and QA</a>
+    <a href="#qa-processes">QA Processes</a>
+    <a href="#project-overview">Project Overview</a>
+    <a href="#development-requirements">Development Requirements</a>
+    <a href="#layout-and-metadata">Layout and Metadata</a>
+    <a href="#other">Other</a>
+</div>
+
+<!-- ====== Architecture Overview ====== -->
+<h2 id="overview">1. Architecture Overview</h2>
+
+<div class="mermaid">
+
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    BUILD_GRAPH_321CBB04("Graph Build<br/><small>56 nodes</small>")
+    class BUILD_GRAPH_321CBB04 module;
+    OUTPUTS_DOCS_ED82387C("Outputs &amp; Docs<br/><small>2 nodes</small>")
+    class OUTPUTS_DOCS_ED82387C module;
+    SECURITY_GLOBAL_5B9C6A04("Security &amp; Global Graph<br/><small>1 nodes</small>")
+    class SECURITY_GLOBAL_5B9C6A04 module;
+    USER_ACCESS_MANAGEMENT_0EB48135("User Access Management<br/><small>39 nodes</small>")
+    class USER_ACCESS_MANAGEMENT_0EB48135 module;
+    HEALTH_MAP_VISUALIZATION_866071A7("Health Map Visualization<br/><small>32 nodes</small>")
+    class HEALTH_MAP_VISUALIZATION_866071A7 module;
+    ACCESS_PERMISSIONS_D7BE3568("Access Permissions<br/><small>31 nodes</small>")
+    class ACCESS_PERMISSIONS_D7BE3568 module;
+    DASHBOARD_ANALYTICS_9BDB178D("Dashboard Analytics<br/><small>30 nodes</small>")
+    class DASHBOARD_ANALYTICS_9BDB178D module;
+    KPI_CALCULATIONS_EE834384("KPI Calculations<br/><small>14 nodes</small>")
+    class KPI_CALCULATIONS_EE834384 module;
+    THAILAND_HEALTH_ZONE_MAP_9AF78A3C("Thailand Health Zone Map<br/><small>13 nodes</small>")
+    class THAILAND_HEALTH_ZONE_MAP_9AF78A3C module;
+    TESTING_AND_QA_CDA18CF5("Testing and QA<br/><small>9 nodes</small>")
+    class TESTING_AND_QA_CDA18CF5 module;
+    QA_PROCESSES_42F48057("QA Processes<br/><small>3 nodes</small>")
+    class QA_PROCESSES_42F48057 module;
+    PROJECT_OVERVIEW_82CC82B9("Project Overview<br/><small>3 nodes</small>")
+    class PROJECT_OVERVIEW_82CC82B9 module;
+    DEVELOPMENT_REQUIREMENTS_507C01B2("Development Requirements<br/><small>3 nodes</small>")
+    class DEVELOPMENT_REQUIREMENTS_507C01B2 module;
+    LAYOUT_AND_METADATA_86D470B6("Layout and Metadata<br/><small>3 nodes</small>")
+    class LAYOUT_AND_METADATA_86D470B6 module;
+    OTHER_D0941E68("Other<br/><small>12 nodes</small>")
+    class OTHER_D0941E68 module;
+    USER_ACCESS_MANAGEMENT_0EB48135 -->|imports x22| ACCESS_PERMISSIONS_D7BE3568
+    DASHBOARD_ANALYTICS_9BDB178D -->|imports x11| ACCESS_PERMISSIONS_D7BE3568
+    ACCESS_PERMISSIONS_D7BE3568 -->|imports x10| USER_ACCESS_MANAGEMENT_0EB48135
+    USER_ACCESS_MANAGEMENT_0EB48135 -->|contains x4| KPI_CALCULATIONS_EE834384
+    DASHBOARD_ANALYTICS_9BDB178D -->|imports x4| HEALTH_MAP_VISUALIZATION_866071A7
+    HEALTH_MAP_VISUALIZATION_866071A7 -->|imports x4| ACCESS_PERMISSIONS_D7BE3568
+    KPI_CALCULATIONS_EE834384 -->|imports x4| ACCESS_PERMISSIONS_D7BE3568
+    DASHBOARD_ANALYTICS_9BDB178D -->|imports x3| USER_ACCESS_MANAGEMENT_0EB48135
+    DASHBOARD_ANALYTICS_9BDB178D -->|imports x3| THAILAND_HEALTH_ZONE_MAP_9AF78A3C
+    HEALTH_MAP_VISUALIZATION_866071A7 -->|imports x3| THAILAND_HEALTH_ZONE_MAP_9AF78A3C
+    ACCESS_PERMISSIONS_D7BE3568 -->|contains x3| THAILAND_HEALTH_ZONE_MAP_9AF78A3C
+    USER_ACCESS_MANAGEMENT_0EB48135 -->|imports x2| DASHBOARD_ANALYTICS_9BDB178D
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h4>Architecture Layers</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>Layer</th><th>Nodes</th><th>Communities</th></tr>
+      <tr><td>Graph Build</td><td>56</td><td><code>4, 5, 9, 10</code></td></tr><tr><td>Outputs &amp; Docs</td><td>2</td><td><code>17</code></td></tr><tr><td>Security &amp; Global Graph</td><td>1</td><td><code>22</code></td></tr><tr><td>User Access Management</td><td>39</td><td><code>0</code></td></tr><tr><td>Health Map Visualization</td><td>32</td><td><code>1</code></td></tr><tr><td>Access Permissions</td><td>31</td><td><code>2</code></td></tr><tr><td>Dashboard Analytics</td><td>30</td><td><code>3</code></td></tr><tr><td>KPI Calculations</td><td>14</td><td><code>6</code></td></tr><tr><td>Thailand Health Zone Map</td><td>13</td><td><code>7</code></td></tr><tr><td>Testing and QA</td><td>9</td><td><code>8</code></td></tr><tr><td>QA Processes</td><td>3</td><td><code>11</code></td></tr><tr><td>Project Overview</td><td>3</td><td><code>12</code></td></tr><tr><td>Development Requirements</td><td>3</td><td><code>13</code></td></tr><tr><td>Layout and Metadata</td><td>3</td><td><code>14</code></td></tr><tr><td>Other</td><td>12</td><td><code>15, 16, 18, 19, 20, 21, 23, 24, 25</code></td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Core Flow</h4>
+    <div class="arrow-chain">Graph Build -&gt; Outputs &amp; Docs -&gt; Security &amp; Global Graph -&gt; User Access Management -&gt; Access Permissions -&gt; Thailand Health Zone Map -&gt; Health Map Visualization</div>
+  </div>
+</div>
+<div class="grid">
+  <div class="card">
+    <h4>Graph Report Highlights</h4>
+    <ul>
+      <li>251 nodes · 404 edges · 26 communities (17 shown, 9 thin omitted)</li>
+      <li>Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 1 edges (avg confidence: 1.0)</li>
+      <li>Token cost: 0 input · 0 output</li>
+      <li>1. `compilerOptions` - 16 edges</li>
+      <li>2. `supabase` - 13 edges</li>
+      <li>3. `AppUserRow` - 12 edges</li>
+    </ul>
+  </div>
+</div>
+<hr>
+<!-- ====== 2. Graph Build ====== -->
+<h2 id="build-graph">2. Graph Build</h2>
+<p>Graph Build groups implementation around packagejson, tsconfigjson, verceljson, react, mostly in package.json, tsconfig.json, vercel.json. This section covers 56 nodes and 52 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Graph Build (56 nodes, 52 edges)
+    subgraph build_graph_package_json_4e40bfbd["package.json"]
+        package_dependencies_c512ca5e("dependencies<br/><small>package.json</small>")
+        package_582681c2("package.json")
+        package_devdependencies_ff8711cc("devDependencies<br/><small>package.json</small>")
+        package_scripts_25cfc1ca("scripts<br/><small>package.json</small>")
+        package_name_b23e1232("name<br/><small>package.json</small>")
+        package_private_9955bf19("private<br/><small>package.json</small>")
+        package_version_a7f3cb7e("version<br/><small>package.json</small>")
+        package_scripts_build_b63da213("build<br/><small>package.json</small>")
+        package_scripts_dev_8c0c97d3("dev<br/><small>package.json</small>")
+        package_scripts_lint_619c0521("lint<br/><small>package.json</small>")
+        package_scripts_start_e2cf302c("start<br/><small>package.json</small>")
+        package_dependencies_leaflet_e1b9b00b("leaflet<br/><small>package.json</small>")
+        package_dependencies_next_e23f1ebc("next<br/><small>package.json</small>")
+        package_dependencies_react_a04d7d7e("react<br/><small>package.json</small>")
+        package_dependencies_react_dom_87814871("react-dom<br/><small>package.json</small>")
+        package_dependencies_react_leaflet_5ad5eb67("react-leaflet<br/><small>package.json</small>")
+    end
+    tsconfig_compileroptions_73010530("compilerOptions<br/><small>tsconfig.json</small>")
+    vercel_587f4e29("vercel.json")
+    package_582681c2 -->|contains| package_dependencies_c512ca5e
+    package_582681c2 -->|contains| package_devdependencies_ff8711cc
+    package_582681c2 -->|contains| package_name_b23e1232
+    package_582681c2 -->|contains| package_private_9955bf19
+    package_582681c2 -->|contains| package_scripts_25cfc1ca
+    package_582681c2 -->|contains| package_version_a7f3cb7e
+    package_scripts_25cfc1ca -->|contains| package_scripts_build_b63da213
+    package_scripts_25cfc1ca -->|contains| package_scripts_dev_8c0c97d3
+    package_scripts_25cfc1ca -->|contains| package_scripts_lint_619c0521
+    package_scripts_25cfc1ca -->|contains| package_scripts_start_e2cf302c
+    package_dependencies_c512ca5e -->|contains| package_dependencies_leaflet_e1b9b00b
+    package_dependencies_c512ca5e -->|contains| package_dependencies_next_e23f1ebc
+    package_dependencies_c512ca5e -->|contains| package_dependencies_react_a04d7d7e
+    package_dependencies_c512ca5e -->|contains| package_dependencies_react_dom_87814871
+    package_dependencies_c512ca5e -->|contains| package_dependencies_react_leaflet_5ad5eb67
+    %% Omitted for readability: 38 nodes, 0 edges
+    class package_dependencies_c512ca5e function;
+    class package_582681c2 function;
+    class package_devdependencies_ff8711cc function;
+    class package_scripts_25cfc1ca function;
+    class package_name_b23e1232 function;
+    class package_private_9955bf19 function;
+    class package_version_a7f3cb7e function;
+    class package_scripts_build_b63da213 function;
+    class package_scripts_dev_8c0c97d3 function;
+    class package_scripts_lint_619c0521 function;
+    class package_scripts_start_e2cf302c function;
+    class package_dependencies_leaflet_e1b9b00b function;
+    class package_dependencies_next_e23f1ebc function;
+    class package_dependencies_react_a04d7d7e function;
+    class package_dependencies_react_dom_87814871 function;
+    class package_dependencies_react_leaflet_5ad5eb67 function;
+    class tsconfig_compileroptions_73010530 function;
+    class vercel_587f4e29 function;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>package.json</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>package.json node in package.json.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>name</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>name node in package.json.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>version</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>version node in package.json.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>private</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>private node in package.json.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>scripts</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>scripts node in package.json.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>dev</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>dev node in package.json.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>build</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>build node in package.json.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>start</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>start node in package.json.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>lint</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>lint node in package.json.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>dependencies</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>dependencies node in package.json.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>@supabase/supabase-js</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>@supabase/supabase-js node in package.json.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>leaflet</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>leaflet node in package.json.</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>next</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>next node in package.json.</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><code>react</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>react node in package.json.</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td><code>react-dom</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>react-dom node in package.json.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>react-leaflet</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>react-leaflet node in package.json.</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td><code>recharts</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>recharts node in package.json.</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td><code>devDependencies</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>devDependencies node in package.json.</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td><code>@types/leaflet</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>@types/leaflet node in package.json.</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td><code>@types/node</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>@types/node node in package.json.</td>
+</tr>
+<tr>
+  <td>21</td>
+  <td><code>@types/react</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>@types/react node in package.json.</td>
+</tr>
+<tr>
+  <td>22</td>
+  <td><code>eslint</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>eslint node in package.json.</td>
+</tr>
+<tr>
+  <td>23</td>
+  <td><code>eslint-config-next</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Reads, resolves, or persists project configuration.</td>
+</tr>
+<tr>
+  <td>24</td>
+  <td><code>typescript</code><br><small style="color:var(--muted)">package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>typescript node in package.json.</td>
+</tr>
+<tr>
+  <td>25</td>
+  <td><code>tsconfig.json</code><br><small style="color:var(--muted)">tsconfig.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Reads, resolves, or persists project configuration.</td>
+</tr>
+<tr>
+  <td>26</td>
+  <td><code>compilerOptions</code><br><small style="color:var(--muted)">tsconfig.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>compilerOptions node in tsconfig.json.</td>
+</tr>
+<tr>
+  <td>27</td>
+  <td><code>target</code><br><small style="color:var(--muted)">tsconfig.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>target node in tsconfig.json.</td>
+</tr>
+<tr>
+  <td>28</td>
+  <td><code>lib</code><br><small style="color:var(--muted)">tsconfig.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>lib node in tsconfig.json.</td>
+</tr>
+<tr>
+  <td>29</td>
+  <td><code>allowJs</code><br><small style="color:var(--muted)">tsconfig.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>allowJs node in tsconfig.json.</td>
+</tr>
+<tr>
+  <td>30</td>
+  <td><code>skipLibCheck</code><br><small style="color:var(--muted)">tsconfig.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>skipLibCheck node in tsconfig.json.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>package.json</code></td><td>24 nodes</td></tr>
+<tr><td><code>tsconfig.json</code></td><td>23 nodes</td></tr>
+<tr><td><code>vercel.json</code></td><td>5 nodes</td></tr>
+<tr><td><code>Specification.md</code></td><td>4 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x49, references x3. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 3. Outputs & Docs ====== -->
+<h2 id="outputs-docs">3. Outputs &amp; Docs</h2>
+<p>Outputs &amp; Docs groups implementation around public, map, boundaries, favicon, mostly in public/favicon.svg, public/map-boundaries/README.md. This section covers 2 nodes and 1 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Outputs &amp; Docs (2 nodes, 1 edges)
+    public_favicon_svg_aae8c522("Favicon SVG<br/><small>public/favicon.svg</small>")
+    public_map_boundaries_readme_md_8ad01e39("Map Boundaries README<br/><small>public/map-boundaries/README.md</small>")
+    public_favicon_svg_aae8c522 -->|shares data with| public_map_boundaries_readme_md_8ad01e39
+    class public_favicon_svg_aae8c522 klass;
+    class public_map_boundaries_readme_md_8ad01e39 concept;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>Favicon SVG</code><br><small style="color:var(--muted)">public/favicon.svg</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Favicon SVG node in public/favicon.svg.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>Map Boundaries README</code><br><small style="color:var(--muted)">public/map-boundaries/README.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Documentation node describing Map Boundaries README.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>public/favicon.svg</code></td><td>1 nodes</td></tr>
+<tr><td><code>public/map-boundaries/README.md</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: shares data with x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 4. Security & Global Graph ====== -->
+<h2 id="security-global">4. Security &amp; Global Graph</h2>
+<p>Security &amp; Global Graph groups implementation around security, risks, mostly in unmapped files. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Security &amp; Global Graph (1 nodes, 0 edges)
+    node_13_bd307a3e("Security Risks")
+    class node_13_bd307a3e klass;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>Security Risks</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Security Risks node in project.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td colspan="2">No source file mapping</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: No high-confidence call edges detected. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 5. User Access Management ====== -->
+<h2 id="user-access-management">5. User Access Management</h2>
+<p>User Access Management groups implementation around pagetsx, app, components, services, mostly in app/superadmin/page.tsx, app/admin/page.tsx, app/my-work/page.tsx. This section covers 39 nodes and 86 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: User Access Management (39 nodes, 86 edges)
+    subgraph user_access_management_services_auth_session_ts_e519fb54["services/auth-session.ts"]
+        services_auth_session_buildaccessscope_a8a24ea1("buildAccessScope()<br/><small>services/auth-session.ts</small>")
+        services_auth_session_6a737736("auth-session.ts")
+        services_auth_session_loadcurrentappuser_9fe1716d("loadCurrentAppUser()<br/><small>services/auth-session.ts</small>")
+    end
+    subgraph user_access_management_app_admin_page_tsx_236c2650["app/admin/page.tsx"]
+        admin_page_c5b18fca("page.tsx")
+        admin_page_adminpage_d04df2b1("AdminPage()<br/><small>app/admin/page.tsx</small>")
+    end
+    subgraph user_access_management_app_my_work_page_tsx_b7e1fabc["app/my-work/page.tsx"]
+        my_work_page_a99bf4bf("page.tsx")
+        my_work_page_myworkpage_2218ee5a("MyWorkPage()<br/><small>app/my-work/page.tsx</small>")
+    end
+    subgraph user_access_management_app_page_tsx_cf5dbb5d["app/page.tsx"]
+        app_page_c77e992c("page.tsx")
+        app_page_homepage_3744d325("HomePage()<br/><small>app/page.tsx</small>")
+    end
+    subgraph user_access_management_app_superadmin_page_tsx_b4043068["app/superadmin/page.tsx"]
+        superadmin_page_1ff7f6ff("page.tsx")
+        superadmin_page_superadminpage_542621d7("SuperadminPage()<br/><small>app/superadmin/page.tsx</small>")
+    end
+    subgraph user_access_management_components_RolePageLayout_8a736a86["components/RolePageLayout.tsx"]
+        components_rolepagelayout_71dec9fa("RolePageLayout.tsx")
+        components_rolepagelayout_rolemenuitem_8f5907b6("RoleMenuItem<br/><small>components/RolePageLayout.tsx</small>")
+    end
+    subgraph user_access_management_services_supabase_client_2bd07801["services/supabase-client.ts"]
+        services_supabase_client_37108241("supabase-client.ts")
+        services_supabase_client_supabase_0acc5cff("supabase<br/><small>services/supabase-client.ts</small>")
+    end
+    login_page_6485224e("page.tsx")
+    components_accessribbon_9cdf6212("AccessRibbon.tsx")
+    components_intakeformsection_af22b9b0("IntakeFormSection.tsx")
+    admin_page_adminpage_d04df2b1 -->|calls| services_auth_session_buildaccessscope_a8a24ea1
+    my_work_page_myworkpage_2218ee5a -->|calls| services_auth_session_buildaccessscope_a8a24ea1
+    app_page_homepage_3744d325 -->|calls| services_auth_session_buildaccessscope_a8a24ea1
+    superadmin_page_superadminpage_542621d7 -->|calls| services_auth_session_buildaccessscope_a8a24ea1
+    admin_page_c5b18fca -->|imports| components_intakeformsection_af22b9b0
+    admin_page_c5b18fca -->|imports| components_rolepagelayout_71dec9fa
+    admin_page_c5b18fca -->|imports| components_rolepagelayout_rolemenuitem_8f5907b6
+    admin_page_c5b18fca -->|imports| services_auth_session_6a737736
+    admin_page_c5b18fca -->|imports| services_auth_session_buildaccessscope_a8a24ea1
+    admin_page_c5b18fca -->|imports| services_auth_session_loadcurrentappuser_9fe1716d
+    admin_page_c5b18fca -->|imports| services_supabase_client_37108241
+    admin_page_c5b18fca -->|imports| services_supabase_client_supabase_0acc5cff
+    login_page_6485224e -->|imports| services_auth_session_6a737736
+    login_page_6485224e -->|imports| services_auth_session_loadcurrentappuser_9fe1716d
+    login_page_6485224e -->|imports| services_supabase_client_37108241
+    login_page_6485224e -->|imports| services_supabase_client_supabase_0acc5cff
+    my_work_page_a99bf4bf -->|imports| components_accessribbon_9cdf6212
+    my_work_page_a99bf4bf -->|imports| components_intakeformsection_af22b9b0
+    my_work_page_a99bf4bf -->|imports| services_auth_session_6a737736
+    my_work_page_a99bf4bf -->|imports| services_auth_session_buildaccessscope_a8a24ea1
+    my_work_page_a99bf4bf -->|imports| services_auth_session_loadcurrentappuser_9fe1716d
+    app_page_c77e992c -->|imports| services_auth_session_6a737736
+    app_page_c77e992c -->|imports| services_auth_session_buildaccessscope_a8a24ea1
+    app_page_c77e992c -->|imports| services_auth_session_loadcurrentappuser_9fe1716d
+    %% Omitted for readability: 21 nodes, 16 edges
+    class services_auth_session_buildaccessscope_a8a24ea1 function;
+    class services_auth_session_6a737736 module;
+    class services_auth_session_loadcurrentappuser_9fe1716d function;
+    class admin_page_c5b18fca ui;
+    class admin_page_adminpage_d04df2b1 ui;
+    class my_work_page_a99bf4bf ui;
+    class my_work_page_myworkpage_2218ee5a ui;
+    class app_page_c77e992c ui;
+    class app_page_homepage_3744d325 ui;
+    class superadmin_page_1ff7f6ff ui;
+    class superadmin_page_superadminpage_542621d7 ui;
+    class components_rolepagelayout_71dec9fa ui;
+    class components_rolepagelayout_rolemenuitem_8f5907b6 ui;
+    class services_supabase_client_37108241 entry;
+    class services_supabase_client_supabase_0acc5cff function;
+    class login_page_6485224e ui;
+    class components_accessribbon_9cdf6212 ui;
+    class components_intakeformsection_af22b9b0 ui;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>page.tsx</code><br><small style="color:var(--muted)">app/admin/page.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>AppUserRow</code><br><small style="color:var(--muted)">types/mvp.ts</small><br><code>auth-session.ts</code><br><small style="color:var(--muted)">services/auth-session.ts</small><br><code>buildAccessScope()</code><br><small style="color:var(--muted)">services/auth-session.ts</small><br>+7 more</td>
+  <td>Module file in app/admin/page.tsx.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>AdminTab</code><br><small style="color:var(--muted)">app/admin/page.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>AdminTab node in app/admin/page.tsx.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>MENU_ITEMS</code><br><small style="color:var(--muted)">app/admin/page.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>MENU_ITEMS node in app/admin/page.tsx.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>AdminPage()</code><br><small style="color:var(--muted)">app/admin/page.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>buildAccessScope()</code><br><small style="color:var(--muted)">services/auth-session.ts</small></td>
+  <td>Organizes documentation pages, navigation, or content lookup.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>page.tsx</code><br><small style="color:var(--muted)">app/login/page.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>AppUserRow</code><br><small style="color:var(--muted)">types/mvp.ts</small><br><code>auth-session.ts</code><br><small style="color:var(--muted)">services/auth-session.ts</small><br><code>loadCurrentAppUser()</code><br><small style="color:var(--muted)">services/auth-session.ts</small><br>+2 more</td>
+  <td>Module file in app/login/page.tsx.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>LoginPage()</code><br><small style="color:var(--muted)">app/login/page.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Organizes documentation pages, navigation, or content lookup.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>page.tsx</code><br><small style="color:var(--muted)">app/my-work/page.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>AccessRibbon.tsx</code><br><small style="color:var(--muted)">components/AccessRibbon.tsx</small><br><code>AppNavigation.tsx</code><br><small style="color:var(--muted)">components/AppNavigation.tsx</small><br><code>AppUserRow</code><br><small style="color:var(--muted)">types/mvp.ts</small><br>+5 more</td>
+  <td>Module file in app/my-work/page.tsx.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>initialFormData</code><br><small style="color:var(--muted)">app/my-work/page.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>initialFormData node in app/my-work/page.tsx.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>UserTab</code><br><small style="color:var(--muted)">app/my-work/page.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>UserTab node in app/my-work/page.tsx.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>MyWorkPage()</code><br><small style="color:var(--muted)">app/my-work/page.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>buildAccessScope()</code><br><small style="color:var(--muted)">services/auth-session.ts</small></td>
+  <td>Organizes documentation pages, navigation, or content lookup.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>page.tsx</code><br><small style="color:var(--muted)">app/page.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>AppNavigation.tsx</code><br><small style="color:var(--muted)">components/AppNavigation.tsx</small><br><code>AppUserRow</code><br><small style="color:var(--muted)">types/mvp.ts</small><br><code>auth-session.ts</code><br><small style="color:var(--muted)">services/auth-session.ts</small><br>+6 more</td>
+  <td>Module file in app/page.tsx.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>HomePage()</code><br><small style="color:var(--muted)">app/page.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>buildAccessScope()</code><br><small style="color:var(--muted)">services/auth-session.ts</small></td>
+  <td>Organizes documentation pages, navigation, or content lookup.</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>page.tsx</code><br><small style="color:var(--muted)">app/superadmin/page.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>AppUserRow</code><br><small style="color:var(--muted)">types/mvp.ts</small><br><code>auth-session.ts</code><br><small style="color:var(--muted)">services/auth-session.ts</small><br><code>buildAccessScope()</code><br><small style="color:var(--muted)">services/auth-session.ts</small><br>+7 more</td>
+  <td>Module file in app/superadmin/page.tsx.</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><code>initialFormData</code><br><small style="color:var(--muted)">app/superadmin/page.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>initialFormData node in app/superadmin/page.tsx.</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td><code>SuperadminTab</code><br><small style="color:var(--muted)">app/superadmin/page.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>SuperadminTab node in app/superadmin/page.tsx.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>MENU_ITEMS</code><br><small style="color:var(--muted)">app/superadmin/page.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>MENU_ITEMS node in app/superadmin/page.tsx.</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td><code>SuperadminPage()</code><br><small style="color:var(--muted)">app/superadmin/page.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>buildAccessScope()</code><br><small style="color:var(--muted)">services/auth-session.ts</small></td>
+  <td>Organizes documentation pages, navigation, or content lookup.</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td><code>AccessRibbon.tsx</code><br><small style="color:var(--muted)">components/AccessRibbon.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td><code>page.tsx</code><br><small style="color:var(--muted)">app/my-work/page.tsx</small></td>
+  <td><code>AppUserRow</code><br><small style="color:var(--muted)">types/mvp.ts</small><br><code>auth-session.ts</code><br><small style="color:var(--muted)">services/auth-session.ts</small><br><code>getAccessSummary()</code><br><small style="color:var(--muted)">services/auth-session.ts</small><br>+1 more</td>
+  <td>Module file in components/AccessRibbon.tsx.</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td><code>AccessRibbonProps</code><br><small style="color:var(--muted)">components/AccessRibbon.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>AccessRibbonProps node in components/AccessRibbon.tsx.</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td><code>AppNavigation.tsx</code><br><small style="color:var(--muted)">components/AppNavigation.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td><code>page.tsx</code><br><small style="color:var(--muted)">app/page.tsx</small><br><code>page.tsx</code><br><small style="color:var(--muted)">app/my-work/page.tsx</small></td>
+  <td><code>AppUserRow</code><br><small style="color:var(--muted)">types/mvp.ts</small><br><code>RolePageLayout.tsx</code><br><small style="color:var(--muted)">components/RolePageLayout.tsx</small><br><code>supabase</code><br><small style="color:var(--muted)">services/supabase-client.ts</small><br>+1 more</td>
+  <td>Module file in components/AppNavigation.tsx.</td>
+</tr>
+<tr>
+  <td>21</td>
+  <td><code>NavItem</code><br><small style="color:var(--muted)">components/AppNavigation.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>NavItem node in components/AppNavigation.tsx.</td>
+</tr>
+<tr>
+  <td>22</td>
+  <td><code>AppNavigationProps</code><br><small style="color:var(--muted)">components/AppNavigation.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>AppNavigationProps node in components/AppNavigation.tsx.</td>
+</tr>
+<tr>
+  <td>23</td>
+  <td><code>HeroSection.tsx</code><br><small style="color:var(--muted)">components/HeroSection.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td><code>page.tsx</code><br><small style="color:var(--muted)">app/page.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>Module file in components/HeroSection.tsx.</td>
+</tr>
+<tr>
+  <td>24</td>
+  <td><code>HeroSection()</code><br><small style="color:var(--muted)">components/HeroSection.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>HeroSection() node in components/HeroSection.tsx.</td>
+</tr>
+<tr>
+  <td>25</td>
+  <td><code>IntakeFormSection.tsx</code><br><small style="color:var(--muted)">components/IntakeFormSection.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td><code>page.tsx</code><br><small style="color:var(--muted)">app/superadmin/page.tsx</small><br><code>page.tsx</code><br><small style="color:var(--muted)">app/my-work/page.tsx</small><br><code>page.tsx</code><br><small style="color:var(--muted)">app/admin/page.tsx</small></td>
+  <td><code>IntakeFormData</code><br><small style="color:var(--muted)">types/mvp.ts</small><br><code>supabase</code><br><small style="color:var(--muted)">services/supabase-client.ts</small><br><code>supabase-client.ts</code><br><small style="color:var(--muted)">services/supabase-client.ts</small></td>
+  <td>Module file in components/IntakeFormSection.tsx.</td>
+</tr>
+<tr>
+  <td>26</td>
+  <td><code>AgencyProvinceRow</code><br><small style="color:var(--muted)">components/IntakeFormSection.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>AgencyProvinceRow node in components/IntakeFormSection.tsx.</td>
+</tr>
+<tr>
+  <td>27</td>
+  <td><code>IntakeFormSection()</code><br><small style="color:var(--muted)">components/IntakeFormSection.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>IntakeFormSection() node in components/IntakeFormSection.tsx.</td>
+</tr>
+<tr>
+  <td>28</td>
+  <td><code>RolePageLayout.tsx</code><br><small style="color:var(--muted)">components/RolePageLayout.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td><code>AccessRibbon.tsx</code><br><small style="color:var(--muted)">components/AccessRibbon.tsx</small><br><code>AppNavigation.tsx</code><br><small style="color:var(--muted)">components/AppNavigation.tsx</small><br><code>page.tsx</code><br><small style="color:var(--muted)">app/superadmin/page.tsx</small><br>+1 more</td>
+  <td><code>AppUserRow</code><br><small style="color:var(--muted)">types/mvp.ts</small></td>
+  <td>Module file in components/RolePageLayout.tsx.</td>
+</tr>
+<tr>
+  <td>29</td>
+  <td><code>RoleMenuItem</code><br><small style="color:var(--muted)">components/RolePageLayout.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td><code>page.tsx</code><br><small style="color:var(--muted)">app/superadmin/page.tsx</small><br><code>page.tsx</code><br><small style="color:var(--muted)">app/admin/page.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>RoleMenuItem node in components/RolePageLayout.tsx.</td>
+</tr>
+<tr>
+  <td>30</td>
+  <td><code>RolePageLayoutProps</code><br><small style="color:var(--muted)">components/RolePageLayout.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Organizes documentation pages, navigation, or content lookup.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>app/superadmin/page.tsx</code></td><td>5 nodes</td></tr>
+<tr><td><code>app/admin/page.tsx</code></td><td>4 nodes</td></tr>
+<tr><td><code>app/my-work/page.tsx</code></td><td>4 nodes</td></tr>
+<tr><td><code>components/RolePageLayout.tsx</code></td><td>4 nodes</td></tr>
+<tr><td><code>services/auth-session.ts</code></td><td>4 nodes</td></tr>
+<tr><td><code>components/AppNavigation.tsx</code></td><td>3 nodes</td></tr>
+<tr><td><code>components/IntakeFormSection.tsx</code></td><td>3 nodes</td></tr>
+<tr><td><code>app/login/page.tsx</code></td><td>2 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: imports x33, contains x25, imports x24, calls x4. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 6. Health Map Visualization ====== -->
+<h2 id="health-map-visualization">6. Health Map Visualization</h2>
+<p>Health Map Visualization groups implementation around servicets, mapts, services, types, mostly in types/map.ts, components/InteractiveHealthMapClient.tsx, services/map-boundary-service.ts. This section covers 32 nodes and 47 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Health Map Visualization (32 nodes, 47 edges)
+    subgraph health_map_visualization_types_map_ts_c63e8b38["types/map.ts"]
+        types_map_6272a825("map.ts")
+        types_map_districtboundarycollection_b47feee0("DistrictBoundaryCollection<br/><small>types/map.ts</small>")
+        types_map_districtboundaryproperties_f6da315a("DistrictBoundaryProperties<br/><small>types/map.ts</small>")
+        types_map_provinceboundarycollection_633150c1("ProvinceBoundaryCollection<br/><small>types/map.ts</small>")
+        types_map_provinceboundaryproperties_4b1bfa3f("ProvinceBoundaryProperties<br/><small>types/map.ts</small>")
+        types_map_mapfeaturecollection_e32a0d29("MapFeatureCollection<br/><small>types/map.ts</small>")
+    end
+    subgraph health_map_visualization_components_InteractiveH_726ef713["components/InteractiveHealthMapClient.tsx"]
+        components_interactivehealthmapclient_districtfe_f4b105e6("DistrictFeatureLike<br/><small>components/InteractiveHealthMapClient.tsx</small>")
+        components_interactivehealthmapclient_interactiv_2a6d4489("InteractiveHealthMapClient()<br/><small>components/InteractiveHealthMapClient.tsx</small>")
+        components_interactivehealthmapclient_mapboundsc_76536f8e("MapBoundsController()<br/><small>components/InteractiveHealthMapClient.tsx</small>")
+        components_interactivehealthmapclient_mapcontrol_50b3c51d("MapController()<br/><small>components/InteractiveHealthMapClient.tsx</small>")
+    end
+    subgraph health_map_visualization_services_map_boundary_s_fff05af7["services/map-boundary-service.ts"]
+        services_map_boundary_service_2abcea79("map-boundary-service.ts")
+        services_map_boundary_service_fetchgeojson_55ea2749("fetchGeoJson()<br/><small>services/map-boundary-service.ts</small>")
+        services_map_boundary_service_loaddistrictbounda_d110eea0("loadDistrictBoundaries()<br/><small>services/map-boundary-service.ts</small>")
+        services_map_boundary_service_loadprovincebounda_e77b2584("loadProvinceBoundaries()<br/><small>services/map-boundary-service.ts</small>")
+    end
+    subgraph health_map_visualization_services_health_issue_s_ce877f11["services/health-issue-service.ts"]
+        services_health_issue_service_4fb813bb("health-issue-service.ts")
+        services_health_issue_service_districthealthissu_1642a75c("DistrictHealthIssueSummary<br/><small>services/health-issue-service.ts</small>")
+        services_health_issue_service_loaddistricthealth_a35bb334("loadDistrictHealthIssueSummary()<br/><small>services/health-issue-service.ts</small>")
+    end
+    components_interactivehealthmap_36eb8c48("InteractiveHealthMap.tsx")
+    services_map_boundary_service_fetchgeojson_55ea2749 -->|calls| services_map_boundary_service_loaddistrictbounda_d110eea0
+    services_map_boundary_service_fetchgeojson_55ea2749 -->|calls| services_map_boundary_service_loadprovincebounda_e77b2584
+    components_interactivehealthmap_36eb8c48 -->|imports| services_health_issue_service_4fb813bb
+    components_interactivehealthmap_36eb8c48 -->|imports| services_health_issue_service_districthealthissu_1642a75c
+    components_interactivehealthmap_36eb8c48 -->|imports| services_health_issue_service_loaddistricthealth_a35bb334
+    components_interactivehealthmap_36eb8c48 -->|imports| services_map_boundary_service_2abcea79
+    components_interactivehealthmap_36eb8c48 -->|imports| services_map_boundary_service_loaddistrictbounda_d110eea0
+    components_interactivehealthmap_36eb8c48 -->|imports| services_map_boundary_service_loadprovincebounda_e77b2584
+    components_interactivehealthmap_36eb8c48 -->|imports| types_map_6272a825
+    components_interactivehealthmap_36eb8c48 -->|imports| types_map_districtboundarycollection_b47feee0
+    components_interactivehealthmap_36eb8c48 -->|imports| types_map_districtboundaryproperties_f6da315a
+    components_interactivehealthmap_36eb8c48 -->|imports| types_map_provinceboundarycollection_633150c1
+    components_interactivehealthmap_36eb8c48 -->|imports| types_map_provinceboundaryproperties_4b1bfa3f
+    services_map_boundary_service_2abcea79 -->|imports| types_map_6272a825
+    services_map_boundary_service_2abcea79 -->|imports| types_map_districtboundarycollection_b47feee0
+    services_map_boundary_service_2abcea79 -->|imports| types_map_districtboundaryproperties_f6da315a
+    services_map_boundary_service_2abcea79 -->|imports| types_map_mapfeaturecollection_e32a0d29
+    services_map_boundary_service_2abcea79 -->|imports| types_map_provinceboundarycollection_633150c1
+    services_map_boundary_service_2abcea79 -->|imports| types_map_provinceboundaryproperties_4b1bfa3f
+    %% Omitted for readability: 14 nodes, 0 edges
+    class types_map_6272a825 module;
+    class types_map_districtboundarycollection_b47feee0 klass;
+    class types_map_districtboundaryproperties_f6da315a klass;
+    class types_map_provinceboundarycollection_633150c1 klass;
+    class types_map_provinceboundaryproperties_4b1bfa3f klass;
+    class types_map_mapfeaturecollection_e32a0d29 klass;
+    class components_interactivehealthmapclient_districtfe_f4b105e6 ui;
+    class components_interactivehealthmapclient_interactiv_2a6d4489 entry;
+    class components_interactivehealthmapclient_mapboundsc_76536f8e ui;
+    class components_interactivehealthmapclient_mapcontrol_50b3c51d ui;
+    class services_map_boundary_service_2abcea79 module;
+    class services_map_boundary_service_fetchgeojson_55ea2749 function;
+    class services_map_boundary_service_loaddistrictbounda_d110eea0 function;
+    class services_map_boundary_service_loadprovincebounda_e77b2584 function;
+    class services_health_issue_service_4fb813bb module;
+    class services_health_issue_service_districthealthissu_1642a75c klass;
+    class services_health_issue_service_loaddistricthealth_a35bb334 function;
+    class components_interactivehealthmap_36eb8c48 ui;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>InteractiveHealthMap.tsx</code><br><small style="color:var(--muted)">components/InteractiveHealthMap.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>DistrictBoundaryCollection</code><br><small style="color:var(--muted)">types/map.ts</small><br><code>DistrictBoundaryProperties</code><br><small style="color:var(--muted)">types/map.ts</small><br><code>DistrictHealthIssueSummary</code><br><small style="color:var(--muted)">services/health-issue-service.ts</small><br>+8 more</td>
+  <td>Module file in components/InteractiveHealthMap.tsx.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>thailandCenter</code><br><small style="color:var(--muted)">components/InteractiveHealthMapClient.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>thailandCenter node in components/InteractiveHealthMapClient.tsx.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>agencyPalette</code><br><small style="color:var(--muted)">components/InteractiveHealthMapClient.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>agencyPalette node in components/InteractiveHealthMapClient.tsx.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>ProvinceFeatureLike</code><br><small style="color:var(--muted)">components/InteractiveHealthMapClient.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>ProvinceFeatureLike node in components/InteractiveHealthMapClient.tsx.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>DistrictFeatureLike</code><br><small style="color:var(--muted)">components/InteractiveHealthMapClient.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>DistrictFeatureLike node in components/InteractiveHealthMapClient.tsx.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>buildAgencyColorMap()</code><br><small style="color:var(--muted)">components/InteractiveHealthMapClient.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>buildAgencyColorMap() node in components/InteractiveHealthMapClient.tsx.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>MapBoundsController()</code><br><small style="color:var(--muted)">components/InteractiveHealthMapClient.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>MapBoundsController() node in components/InteractiveHealthMapClient.tsx.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>MapDistrictBoundsController()</code><br><small style="color:var(--muted)">components/InteractiveHealthMapClient.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>MapDistrictBoundsController() node in components/InteractiveHealthMapClient.tsx.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>MapController()</code><br><small style="color:var(--muted)">components/InteractiveHealthMapClient.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>MapController() node in components/InteractiveHealthMapClient.tsx.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>InteractiveHealthMapClient()</code><br><small style="color:var(--muted)">components/InteractiveHealthMapClient.tsx</small></td>
+  <td><span class="tag tag-cmd">Entry</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>InteractiveHealthMapClient() node in components/InteractiveHealthMapClient.tsx.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>health-issue-service.ts</code><br><small style="color:var(--muted)">services/health-issue-service.ts</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td><code>InteractiveHealthMap.tsx</code><br><small style="color:var(--muted)">components/InteractiveHealthMap.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>Module file in services/health-issue-service.ts.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>DistrictHealthIssueRecord</code><br><small style="color:var(--muted)">services/health-issue-service.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>DistrictHealthIssueRecord node in services/health-issue-service.ts.</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>DistrictHealthIssueSummary</code><br><small style="color:var(--muted)">services/health-issue-service.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>InteractiveHealthMap.tsx</code><br><small style="color:var(--muted)">components/InteractiveHealthMap.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>DistrictHealthIssueSummary node in services/health-issue-service.ts.</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><code>loadDistrictHealthIssueSummary()</code><br><small style="color:var(--muted)">services/health-issue-service.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>InteractiveHealthMap.tsx</code><br><small style="color:var(--muted)">components/InteractiveHealthMap.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>loadDistrictHealthIssueSummary() node in services/health-issue-service.ts.</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td><code>loadSubdistrictHealthIssueSummary()</code><br><small style="color:var(--muted)">services/health-issue-service.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>loadSubdistrictHealthIssueSummary() node in services/health-issue-service.ts.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>map-boundary-service.ts</code><br><small style="color:var(--muted)">services/map-boundary-service.ts</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td><code>InteractiveHealthMap.tsx</code><br><small style="color:var(--muted)">components/InteractiveHealthMap.tsx</small></td>
+  <td><code>DistrictBoundaryCollection</code><br><small style="color:var(--muted)">types/map.ts</small><br><code>DistrictBoundaryProperties</code><br><small style="color:var(--muted)">types/map.ts</small><br><code>map.ts</code><br><small style="color:var(--muted)">types/map.ts</small><br>+3 more</td>
+  <td>Module file in services/map-boundary-service.ts.</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td><code>fetchGeoJson()</code><br><small style="color:var(--muted)">services/map-boundary-service.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>loadDistrictBoundaries()</code><br><small style="color:var(--muted)">services/map-boundary-service.ts</small><br><code>loadProvinceBoundaries()</code><br><small style="color:var(--muted)">services/map-boundary-service.ts</small></td>
+  <td>fetchGeoJson() node in services/map-boundary-service.ts.</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td><code>loadProvinceBoundaries()</code><br><small style="color:var(--muted)">services/map-boundary-service.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>fetchGeoJson()</code><br><small style="color:var(--muted)">services/map-boundary-service.ts</small><br><code>InteractiveHealthMap.tsx</code><br><small style="color:var(--muted)">components/InteractiveHealthMap.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>loadProvinceBoundaries() node in services/map-boundary-service.ts.</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td><code>loadDistrictBoundaries()</code><br><small style="color:var(--muted)">services/map-boundary-service.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>fetchGeoJson()</code><br><small style="color:var(--muted)">services/map-boundary-service.ts</small><br><code>InteractiveHealthMap.tsx</code><br><small style="color:var(--muted)">components/InteractiveHealthMap.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>loadDistrictBoundaries() node in services/map-boundary-service.ts.</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td><code>getProvinceFeatureCode()</code><br><small style="color:var(--muted)">services/map-boundary-service.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>getProvinceFeatureCode() node in services/map-boundary-service.ts.</td>
+</tr>
+<tr>
+  <td>21</td>
+  <td><code>getDistrictFeatureCode()</code><br><small style="color:var(--muted)">services/map-boundary-service.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>getDistrictFeatureCode() node in services/map-boundary-service.ts.</td>
+</tr>
+<tr>
+  <td>22</td>
+  <td><code>map.ts</code><br><small style="color:var(--muted)">types/map.ts</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td><code>InteractiveHealthMap.tsx</code><br><small style="color:var(--muted)">components/InteractiveHealthMap.tsx</small><br><code>map-boundary-service.ts</code><br><small style="color:var(--muted)">services/map-boundary-service.ts</small></td>
+  <td>No direct outbound edge</td>
+  <td>Module file in types/map.ts.</td>
+</tr>
+<tr>
+  <td>23</td>
+  <td><code>MapLevel</code><br><small style="color:var(--muted)">types/map.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>MapLevel node in types/map.ts.</td>
+</tr>
+<tr>
+  <td>24</td>
+  <td><code>MapBoundaryKind</code><br><small style="color:var(--muted)">types/map.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>MapBoundaryKind node in types/map.ts.</td>
+</tr>
+<tr>
+  <td>25</td>
+  <td><code>GeoJsonGeometry</code><br><small style="color:var(--muted)">types/map.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>GeoJsonGeometry node in types/map.ts.</td>
+</tr>
+<tr>
+  <td>26</td>
+  <td><code>ProvinceBoundaryProperties</code><br><small style="color:var(--muted)">types/map.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>InteractiveHealthMap.tsx</code><br><small style="color:var(--muted)">components/InteractiveHealthMap.tsx</small><br><code>map-boundary-service.ts</code><br><small style="color:var(--muted)">services/map-boundary-service.ts</small></td>
+  <td>No direct outbound edge</td>
+  <td>ProvinceBoundaryProperties node in types/map.ts.</td>
+</tr>
+<tr>
+  <td>27</td>
+  <td><code>DistrictBoundaryProperties</code><br><small style="color:var(--muted)">types/map.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>InteractiveHealthMap.tsx</code><br><small style="color:var(--muted)">components/InteractiveHealthMap.tsx</small><br><code>map-boundary-service.ts</code><br><small style="color:var(--muted)">services/map-boundary-service.ts</small></td>
+  <td>No direct outbound edge</td>
+  <td>DistrictBoundaryProperties node in types/map.ts.</td>
+</tr>
+<tr>
+  <td>28</td>
+  <td><code>MapFeature</code><br><small style="color:var(--muted)">types/map.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>MapFeature node in types/map.ts.</td>
+</tr>
+<tr>
+  <td>29</td>
+  <td><code>MapFeatureCollection</code><br><small style="color:var(--muted)">types/map.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>map-boundary-service.ts</code><br><small style="color:var(--muted)">services/map-boundary-service.ts</small></td>
+  <td>No direct outbound edge</td>
+  <td>MapFeatureCollection node in types/map.ts.</td>
+</tr>
+<tr>
+  <td>30</td>
+  <td><code>ProvinceBoundaryCollection</code><br><small style="color:var(--muted)">types/map.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>InteractiveHealthMap.tsx</code><br><small style="color:var(--muted)">components/InteractiveHealthMap.tsx</small><br><code>map-boundary-service.ts</code><br><small style="color:var(--muted)">services/map-boundary-service.ts</small></td>
+  <td>No direct outbound edge</td>
+  <td>ProvinceBoundaryCollection node in types/map.ts.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>types/map.ts</code></td><td>11 nodes</td></tr>
+<tr><td><code>components/InteractiveHealthMapClient.tsx</code></td><td>9 nodes</td></tr>
+<tr><td><code>services/map-boundary-service.ts</code></td><td>6 nodes</td></tr>
+<tr><td><code>services/health-issue-service.ts</code></td><td>5 nodes</td></tr>
+<tr><td><code>components/InteractiveHealthMap.tsx</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x28, imports x13, imports x4, calls x2. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 7. Access Permissions ====== -->
+<h2 id="access-permissions">7. Access Permissions</h2>
+<p>Access Permissions groups implementation around access, controlts, services, mvpts, mostly in services/access-control.ts, types/mvp.ts, components/SavedRecordsPanel.tsx. This section covers 31 nodes and 51 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Access Permissions (31 nodes, 51 edges)
+    subgraph access_permissions_services_access_control_ts_9e832780["services/access-control.ts"]
+        services_access_control_cansubmitforownagency_a8fd3917("canSubmitForOwnAgency()<br/><small>services/access-control.ts</small>")
+        services_access_control_canviewagency_098ec312("canViewAgency()<br/><small>services/access-control.ts</small>")
+        services_access_control_canviewall_58443137("canViewAll()<br/><small>services/access-control.ts</small>")
+        services_access_control_buildaccesspermissionsna_1752a58f("buildAccessPermissionSnapshot()<br/><small>services/access-control.ts</small>")
+        services_access_control_canviewprovince_7a7f0fc6("canViewProvince()<br/><small>services/access-control.ts</small>")
+        services_access_control_5ed0c35f("access-control.ts")
+        services_access_control_accessscope_8ad80d22("AccessScope<br/><small>services/access-control.ts</small>")
+    end
+    subgraph access_permissions_types_mvp_ts_6259d339["types/mvp.ts"]
+        types_mvp_9f0be333("mvp.ts")
+        types_mvp_agencyoption_7494d440("AgencyOption<br/><small>types/mvp.ts</small>")
+        types_mvp_district_152279d8("District<br/><small>types/mvp.ts</small>")
+        types_mvp_intakerecordrow_1f9208cd("IntakeRecordRow<br/><small>types/mvp.ts</small>")
+        types_mvp_province_37253d14("Province<br/><small>types/mvp.ts</small>")
+        types_mvp_approle_a37016e5("AppRole<br/><small>types/mvp.ts</small>")
+        types_mvp_appuserstatus_fd70563e("AppUserStatus<br/><small>types/mvp.ts</small>")
+    end
+    components_savedrecordspanel_9130acda("SavedRecordsPanel.tsx")
+    components_superadminuserspanel_d563d9dc("SuperadminUsersPanel.tsx")
+    components_worksummary_83f5f1de("WorkSummary.tsx")
+    services_mvp_data_cf7a4f46("mvp-data.ts")
+    services_access_control_canviewall_58443137 -->|calls| services_access_control_buildaccesspermissionsna_1752a58f
+    services_access_control_canviewagency_098ec312 -->|calls| services_access_control_buildaccesspermissionsna_1752a58f
+    services_access_control_canviewprovince_7a7f0fc6 -->|calls| services_access_control_buildaccesspermissionsna_1752a58f
+    services_access_control_cansubmitforownagency_a8fd3917 -->|calls| services_access_control_buildaccesspermissionsna_1752a58f
+    components_savedrecordspanel_9130acda -->|imports| services_access_control_5ed0c35f
+    components_savedrecordspanel_9130acda -->|imports| services_access_control_accessscope_8ad80d22
+    components_savedrecordspanel_9130acda -->|imports| types_mvp_9f0be333
+    components_savedrecordspanel_9130acda -->|imports| types_mvp_agencyoption_7494d440
+    components_savedrecordspanel_9130acda -->|imports| types_mvp_district_152279d8
+    components_savedrecordspanel_9130acda -->|imports| types_mvp_intakerecordrow_1f9208cd
+    components_savedrecordspanel_9130acda -->|imports| types_mvp_province_37253d14
+    components_superadminuserspanel_d563d9dc -->|imports| services_access_control_5ed0c35f
+    components_superadminuserspanel_d563d9dc -->|imports| services_access_control_accessscope_8ad80d22
+    components_superadminuserspanel_d563d9dc -->|imports| types_mvp_9f0be333
+    components_superadminuserspanel_d563d9dc -->|imports| types_mvp_agencyoption_7494d440
+    components_superadminuserspanel_d563d9dc -->|imports| types_mvp_approle_a37016e5
+    components_superadminuserspanel_d563d9dc -->|imports| types_mvp_appuserstatus_fd70563e
+    components_superadminuserspanel_d563d9dc -->|imports| types_mvp_district_152279d8
+    components_superadminuserspanel_d563d9dc -->|imports| types_mvp_province_37253d14
+    components_worksummary_83f5f1de -->|imports| services_access_control_5ed0c35f
+    components_worksummary_83f5f1de -->|imports| services_access_control_accessscope_8ad80d22
+    components_worksummary_83f5f1de -->|imports| types_mvp_9f0be333
+    services_access_control_5ed0c35f -->|imports| types_mvp_9f0be333
+    services_access_control_5ed0c35f -->|imports| types_mvp_approle_a37016e5
+    %% Omitted for readability: 13 nodes, 2 edges
+    class services_access_control_cansubmitforownagency_a8fd3917 function;
+    class services_access_control_canviewagency_098ec312 function;
+    class services_access_control_canviewall_58443137 function;
+    class services_access_control_buildaccesspermissionsna_1752a58f function;
+    class services_access_control_canviewprovince_7a7f0fc6 function;
+    class services_access_control_5ed0c35f module;
+    class services_access_control_accessscope_8ad80d22 klass;
+    class types_mvp_9f0be333 module;
+    class types_mvp_agencyoption_7494d440 klass;
+    class types_mvp_district_152279d8 klass;
+    class types_mvp_intakerecordrow_1f9208cd klass;
+    class types_mvp_province_37253d14 klass;
+    class types_mvp_approle_a37016e5 klass;
+    class types_mvp_appuserstatus_fd70563e klass;
+    class components_savedrecordspanel_9130acda ui;
+    class components_superadminuserspanel_d563d9dc ui;
+    class components_worksummary_83f5f1de ui;
+    class services_mvp_data_cf7a4f46 module;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>SavedRecordsPanel.tsx</code><br><small style="color:var(--muted)">components/SavedRecordsPanel.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>access-control.ts</code><br><small style="color:var(--muted)">services/access-control.ts</small><br><code>AccessScope</code><br><small style="color:var(--muted)">services/access-control.ts</small><br><code>AgencyOption</code><br><small style="color:var(--muted)">types/mvp.ts</small><br>+4 more</td>
+  <td>Module file in components/SavedRecordsPanel.tsx.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>SavedRecordDraft</code><br><small style="color:var(--muted)">components/SavedRecordsPanel.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>SavedRecordDraft node in components/SavedRecordsPanel.tsx.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>getRelatedLabel()</code><br><small style="color:var(--muted)">components/SavedRecordsPanel.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>getRelatedLabel() node in components/SavedRecordsPanel.tsx.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>SuperadminUsersPanel.tsx</code><br><small style="color:var(--muted)">components/SuperadminUsersPanel.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>access-control.ts</code><br><small style="color:var(--muted)">services/access-control.ts</small><br><code>AccessScope</code><br><small style="color:var(--muted)">services/access-control.ts</small><br><code>AgencyOption</code><br><small style="color:var(--muted)">types/mvp.ts</small><br>+5 more</td>
+  <td>Module file in components/SuperadminUsersPanel.tsx.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>AppUserDraft</code><br><small style="color:var(--muted)">components/SuperadminUsersPanel.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>AppUserDraft node in components/SuperadminUsersPanel.tsx.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>initialDraft</code><br><small style="color:var(--muted)">components/SuperadminUsersPanel.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>initialDraft node in components/SuperadminUsersPanel.tsx.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>WorkSummary.tsx</code><br><small style="color:var(--muted)">components/WorkSummary.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>access-control.ts</code><br><small style="color:var(--muted)">services/access-control.ts</small><br><code>AccessScope</code><br><small style="color:var(--muted)">services/access-control.ts</small><br><code>mvp.ts</code><br><small style="color:var(--muted)">types/mvp.ts</small></td>
+  <td>Module file in components/WorkSummary.tsx.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>WorkSummaryProps</code><br><small style="color:var(--muted)">components/WorkSummary.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>WorkSummaryProps node in components/WorkSummary.tsx.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>WorkSummary()</code><br><small style="color:var(--muted)">components/WorkSummary.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>WorkSummary() node in components/WorkSummary.tsx.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>access-control.ts</code><br><small style="color:var(--muted)">services/access-control.ts</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td><code>SavedRecordsPanel.tsx</code><br><small style="color:var(--muted)">components/SavedRecordsPanel.tsx</small><br><code>SuperadminUsersPanel.tsx</code><br><small style="color:var(--muted)">components/SuperadminUsersPanel.tsx</small><br><code>WorkSummary.tsx</code><br><small style="color:var(--muted)">components/WorkSummary.tsx</small></td>
+  <td><code>AppRole</code><br><small style="color:var(--muted)">types/mvp.ts</small><br><code>mvp.ts</code><br><small style="color:var(--muted)">types/mvp.ts</small></td>
+  <td>Module file in services/access-control.ts.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>AccessScope</code><br><small style="color:var(--muted)">services/access-control.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>SavedRecordsPanel.tsx</code><br><small style="color:var(--muted)">components/SavedRecordsPanel.tsx</small><br><code>SuperadminUsersPanel.tsx</code><br><small style="color:var(--muted)">components/SuperadminUsersPanel.tsx</small><br><code>WorkSummary.tsx</code><br><small style="color:var(--muted)">components/WorkSummary.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>AccessScope node in services/access-control.ts.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>canViewAll()</code><br><small style="color:var(--muted)">services/access-control.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>buildAccessPermissionSnapshot()</code><br><small style="color:var(--muted)">services/access-control.ts</small></td>
+  <td>canViewAll() node in services/access-control.ts.</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>canViewAgency()</code><br><small style="color:var(--muted)">services/access-control.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>buildAccessPermissionSnapshot()</code><br><small style="color:var(--muted)">services/access-control.ts</small></td>
+  <td>canViewAgency() node in services/access-control.ts.</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><code>canViewProvince()</code><br><small style="color:var(--muted)">services/access-control.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>buildAccessPermissionSnapshot()</code><br><small style="color:var(--muted)">services/access-control.ts</small></td>
+  <td>canViewProvince() node in services/access-control.ts.</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td><code>canSubmitForOwnAgency()</code><br><small style="color:var(--muted)">services/access-control.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>buildAccessPermissionSnapshot()</code><br><small style="color:var(--muted)">services/access-control.ts</small></td>
+  <td>canSubmitForOwnAgency() node in services/access-control.ts.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>isScopedUser()</code><br><small style="color:var(--muted)">services/access-control.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>isScopedUser() node in services/access-control.ts.</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td><code>resolveVisibleAgencyCodes()</code><br><small style="color:var(--muted)">services/access-control.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>resolveVisibleAgencyCodes() node in services/access-control.ts.</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td><code>resolveVisibleProvinceCodes()</code><br><small style="color:var(--muted)">services/access-control.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>resolveVisibleProvinceCodes() node in services/access-control.ts.</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td><code>AccessPermissionSnapshot</code><br><small style="color:var(--muted)">services/access-control.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>AccessPermissionSnapshot node in services/access-control.ts.</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td><code>buildAccessPermissionSnapshot()</code><br><small style="color:var(--muted)">services/access-control.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>canSubmitForOwnAgency()</code><br><small style="color:var(--muted)">services/access-control.ts</small><br><code>canViewAgency()</code><br><small style="color:var(--muted)">services/access-control.ts</small><br><code>canViewAll()</code><br><small style="color:var(--muted)">services/access-control.ts</small><br>+1 more</td>
+  <td>No direct outbound edge</td>
+  <td>buildAccessPermissionSnapshot() node in services/access-control.ts.</td>
+</tr>
+<tr>
+  <td>21</td>
+  <td><code>mvp-data.ts</code><br><small style="color:var(--muted)">services/mvp-data.ts</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>AgencyOption</code><br><small style="color:var(--muted)">types/mvp.ts</small><br><code>mvp.ts</code><br><small style="color:var(--muted)">types/mvp.ts</small></td>
+  <td>Module file in services/mvp-data.ts.</td>
+</tr>
+<tr>
+  <td>22</td>
+  <td><code>mvp.ts</code><br><small style="color:var(--muted)">types/mvp.ts</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td><code>access-control.ts</code><br><small style="color:var(--muted)">services/access-control.ts</small><br><code>mvp-data.ts</code><br><small style="color:var(--muted)">services/mvp-data.ts</small><br><code>SavedRecordsPanel.tsx</code><br><small style="color:var(--muted)">components/SavedRecordsPanel.tsx</small><br>+2 more</td>
+  <td>No direct outbound edge</td>
+  <td>Module file in types/mvp.ts.</td>
+</tr>
+<tr>
+  <td>23</td>
+  <td><code>AgencyOption</code><br><small style="color:var(--muted)">types/mvp.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>mvp-data.ts</code><br><small style="color:var(--muted)">services/mvp-data.ts</small><br><code>SavedRecordsPanel.tsx</code><br><small style="color:var(--muted)">components/SavedRecordsPanel.tsx</small><br><code>SuperadminUsersPanel.tsx</code><br><small style="color:var(--muted)">components/SuperadminUsersPanel.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>AgencyOption node in types/mvp.ts.</td>
+</tr>
+<tr>
+  <td>24</td>
+  <td><code>Province</code><br><small style="color:var(--muted)">types/mvp.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>SavedRecordsPanel.tsx</code><br><small style="color:var(--muted)">components/SavedRecordsPanel.tsx</small><br><code>SuperadminUsersPanel.tsx</code><br><small style="color:var(--muted)">components/SuperadminUsersPanel.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>Province node in types/mvp.ts.</td>
+</tr>
+<tr>
+  <td>25</td>
+  <td><code>District</code><br><small style="color:var(--muted)">types/mvp.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>SavedRecordsPanel.tsx</code><br><small style="color:var(--muted)">components/SavedRecordsPanel.tsx</small><br><code>SuperadminUsersPanel.tsx</code><br><small style="color:var(--muted)">components/SuperadminUsersPanel.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>District node in types/mvp.ts.</td>
+</tr>
+<tr>
+  <td>26</td>
+  <td><code>Subdistrict</code><br><small style="color:var(--muted)">types/mvp.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Subdistrict node in types/mvp.ts.</td>
+</tr>
+<tr>
+  <td>27</td>
+  <td><code>IntakeRecordRow</code><br><small style="color:var(--muted)">types/mvp.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>SavedRecordsPanel.tsx</code><br><small style="color:var(--muted)">components/SavedRecordsPanel.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>IntakeRecordRow node in types/mvp.ts.</td>
+</tr>
+<tr>
+  <td>28</td>
+  <td><code>KpiDashboardRow</code><br><small style="color:var(--muted)">types/mvp.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>KpiDashboardRow node in types/mvp.ts.</td>
+</tr>
+<tr>
+  <td>29</td>
+  <td><code>KpiSummaryRow</code><br><small style="color:var(--muted)">types/mvp.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>KpiSummaryRow node in types/mvp.ts.</td>
+</tr>
+<tr>
+  <td>30</td>
+  <td><code>AppRole</code><br><small style="color:var(--muted)">types/mvp.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>access-control.ts</code><br><small style="color:var(--muted)">services/access-control.ts</small><br><code>SuperadminUsersPanel.tsx</code><br><small style="color:var(--muted)">components/SuperadminUsersPanel.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>AppRole node in types/mvp.ts.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>services/access-control.ts</code></td><td>11 nodes</td></tr>
+<tr><td><code>types/mvp.ts</code></td><td>10 nodes</td></tr>
+<tr><td><code>components/SavedRecordsPanel.tsx</code></td><td>3 nodes</td></tr>
+<tr><td><code>components/SuperadminUsersPanel.tsx</code></td><td>3 nodes</td></tr>
+<tr><td><code>components/WorkSummary.tsx</code></td><td>3 nodes</td></tr>
+<tr><td><code>services/mvp-data.ts</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x25, imports x14, imports x8, calls x4. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 8. Dashboard Analytics ====== -->
+<h2 id="dashboard-analytics">8. Dashboard Analytics</h2>
+<p>Dashboard Analytics groups implementation around services, dashboard, analyticsts, dashboardsectiontsx, mostly in services/dashboard-analytics.ts, components/DashboardSection.tsx, services/qa-readiness.ts. This section covers 30 nodes and 42 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Dashboard Analytics (30 nodes, 42 edges)
+    subgraph dashboard_analytics_services_dashboard_analytics_b1c72b36["services/dashboard-analytics.ts"]
+        services_dashboard_analytics_fc5a3bd4("dashboard-analytics.ts")
+        services_dashboard_analytics_forecastlabel_8483f043("forecastLabel()<br/><small>services/dashboard-analytics.ts</small>")
+        services_dashboard_analytics_forecastpercent_ab204125("forecastPercent()<br/><small>services/dashboard-analytics.ts</small>")
+        services_dashboard_analytics_kpistatusfrompercen_b6a79acc("kpiStatusFromPercent()<br/><small>services/dashboard-analytics.ts</small>")
+        services_dashboard_analytics_kpistatuslabel_c394a64f("kpiStatusLabel()<br/><small>services/dashboard-analytics.ts</small>")
+        services_dashboard_analytics_kpistatustone_1b7d0e3d("kpiStatusTone()<br/><small>services/dashboard-analytics.ts</small>")
+        services_dashboard_analytics_overallriskfromcoun_ed098566("overallRiskFromCounts()<br/><small>services/dashboard-analytics.ts</small>")
+        services_dashboard_analytics_overallrisklabel_65cf50e8("overallRiskLabel()<br/><small>services/dashboard-analytics.ts</small>")
+        services_dashboard_analytics_overallrisktone_e0e2bbb8("overallRiskTone()<br/><small>services/dashboard-analytics.ts</small>")
+        services_dashboard_analytics_trenddirectionfromd_129ee64c("trendDirectionFromDelta()<br/><small>services/dashboard-analytics.ts</small>")
+        services_dashboard_analytics_trendlabel_0de9ce48("trendLabel()<br/><small>services/dashboard-analytics.ts</small>")
+    end
+    subgraph dashboard_analytics_services_qa_readiness_ts_d67c8b52["services/qa-readiness.ts"]
+        services_qa_readiness_91d9bf2c("qa-readiness.ts")
+        services_qa_readiness_readinesscheck_61bb40fa("ReadinessCheck<br/><small>services/qa-readiness.ts</small>")
+        services_qa_readiness_readinesslabel_895e7ebf("readinessLabel()<br/><small>services/qa-readiness.ts</small>")
+        services_qa_readiness_readinesstone_77e08118("readinessTone()<br/><small>services/qa-readiness.ts</small>")
+    end
+    subgraph dashboard_analytics_components_DashboardSection_6d6361b4["components/DashboardSection.tsx"]
+        components_dashboardsection_d045d91f("DashboardSection.tsx")
+        components_dashboardsection_agencysubmissionprog_0f5ad74b("AgencySubmissionProgressGroup<br/><small>components/DashboardSection.tsx</small>")
+        components_dashboardsection_coveragechartrow_1182e4df("CoverageChartRow<br/><small>components/DashboardSection.tsx</small>")
+    end
+    components_dashboardsection_d045d91f -->|imports| services_dashboard_analytics_fc5a3bd4
+    components_dashboardsection_d045d91f -->|imports| services_dashboard_analytics_forecastlabel_8483f043
+    components_dashboardsection_d045d91f -->|imports| services_dashboard_analytics_forecastpercent_ab204125
+    components_dashboardsection_d045d91f -->|imports| services_dashboard_analytics_kpistatusfrompercen_b6a79acc
+    components_dashboardsection_d045d91f -->|imports| services_dashboard_analytics_kpistatuslabel_c394a64f
+    components_dashboardsection_d045d91f -->|imports| services_dashboard_analytics_kpistatustone_1b7d0e3d
+    components_dashboardsection_d045d91f -->|imports| services_dashboard_analytics_overallriskfromcoun_ed098566
+    components_dashboardsection_d045d91f -->|imports| services_dashboard_analytics_overallrisklabel_65cf50e8
+    components_dashboardsection_d045d91f -->|imports| services_dashboard_analytics_overallrisktone_e0e2bbb8
+    components_dashboardsection_d045d91f -->|imports| services_dashboard_analytics_trenddirectionfromd_129ee64c
+    components_dashboardsection_d045d91f -->|imports| services_dashboard_analytics_trendlabel_0de9ce48
+    components_dashboardsection_d045d91f -->|imports| services_qa_readiness_91d9bf2c
+    components_dashboardsection_d045d91f -->|imports| services_qa_readiness_readinesscheck_61bb40fa
+    components_dashboardsection_d045d91f -->|imports| services_qa_readiness_readinesslabel_895e7ebf
+    components_dashboardsection_d045d91f -->|imports| services_qa_readiness_readinesstone_77e08118
+    %% Omitted for readability: 12 nodes, 0 edges
+    class services_dashboard_analytics_fc5a3bd4 module;
+    class services_dashboard_analytics_forecastlabel_8483f043 function;
+    class services_dashboard_analytics_forecastpercent_ab204125 function;
+    class services_dashboard_analytics_kpistatusfrompercen_b6a79acc function;
+    class services_dashboard_analytics_kpistatuslabel_c394a64f function;
+    class services_dashboard_analytics_kpistatustone_1b7d0e3d function;
+    class services_dashboard_analytics_overallriskfromcoun_ed098566 function;
+    class services_dashboard_analytics_overallrisklabel_65cf50e8 function;
+    class services_dashboard_analytics_overallrisktone_e0e2bbb8 function;
+    class services_dashboard_analytics_trenddirectionfromd_129ee64c function;
+    class services_dashboard_analytics_trendlabel_0de9ce48 function;
+    class services_qa_readiness_91d9bf2c module;
+    class services_qa_readiness_readinesscheck_61bb40fa klass;
+    class services_qa_readiness_readinesslabel_895e7ebf function;
+    class services_qa_readiness_readinesstone_77e08118 function;
+    class components_dashboardsection_d045d91f ui;
+    class components_dashboardsection_agencysubmissionprog_0f5ad74b ui;
+    class components_dashboardsection_coveragechartrow_1182e4df ui;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>DashboardSection.tsx</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>dashboard-analytics.ts</code><br><small style="color:var(--muted)">services/dashboard-analytics.ts</small><br><code>forecastLabel()</code><br><small style="color:var(--muted)">services/dashboard-analytics.ts</small><br><code>forecastPercent()</code><br><small style="color:var(--muted)">services/dashboard-analytics.ts</small><br>+12 more</td>
+  <td>Module file in components/DashboardSection.tsx.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>DashboardSectionProps</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>DashboardSectionProps node in components/DashboardSection.tsx.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>SavedRecordDraft</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>SavedRecordDraft node in components/DashboardSection.tsx.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>ProvinceSubmissionProgress</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>ProvinceSubmissionProgress node in components/DashboardSection.tsx.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>AgencySubmissionProgressGroup</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>AgencySubmissionProgressGroup node in components/DashboardSection.tsx.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>CoverageChartRow</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Supports retrieval-augmented Q&amp;A or streaming chat.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>ProvinceHealthIssueRecord</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>ProvinceHealthIssueRecord node in components/DashboardSection.tsx.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>HealthIssueDonutRow</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>HealthIssueDonutRow node in components/DashboardSection.tsx.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>fiscalYears</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>fiscalYears node in components/DashboardSection.tsx.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>healthIssueDonutColors</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>healthIssueDonutColors node in components/DashboardSection.tsx.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>getRelatedLabel()</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>getRelatedLabel() node in components/DashboardSection.tsx.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>dashboard-analytics.ts</code><br><small style="color:var(--muted)">services/dashboard-analytics.ts</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td><code>DashboardSection.tsx</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>Module file in services/dashboard-analytics.ts.</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>KpiStatus</code><br><small style="color:var(--muted)">services/dashboard-analytics.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>KpiStatus node in services/dashboard-analytics.ts.</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><code>TrendDirection</code><br><small style="color:var(--muted)">services/dashboard-analytics.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>TrendDirection node in services/dashboard-analytics.ts.</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td><code>RiskLevel</code><br><small style="color:var(--muted)">services/dashboard-analytics.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>RiskLevel node in services/dashboard-analytics.ts.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>kpiStatusFromPercent()</code><br><small style="color:var(--muted)">services/dashboard-analytics.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>DashboardSection.tsx</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>kpiStatusFromPercent() node in services/dashboard-analytics.ts.</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td><code>kpiStatusLabel()</code><br><small style="color:var(--muted)">services/dashboard-analytics.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>DashboardSection.tsx</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>kpiStatusLabel() node in services/dashboard-analytics.ts.</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td><code>kpiStatusTone()</code><br><small style="color:var(--muted)">services/dashboard-analytics.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>DashboardSection.tsx</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>kpiStatusTone() node in services/dashboard-analytics.ts.</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td><code>trendDirectionFromDelta()</code><br><small style="color:var(--muted)">services/dashboard-analytics.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>DashboardSection.tsx</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>trendDirectionFromDelta() node in services/dashboard-analytics.ts.</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td><code>trendLabel()</code><br><small style="color:var(--muted)">services/dashboard-analytics.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>DashboardSection.tsx</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>trendLabel() node in services/dashboard-analytics.ts.</td>
+</tr>
+<tr>
+  <td>21</td>
+  <td><code>forecastPercent()</code><br><small style="color:var(--muted)">services/dashboard-analytics.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>DashboardSection.tsx</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>forecastPercent() node in services/dashboard-analytics.ts.</td>
+</tr>
+<tr>
+  <td>22</td>
+  <td><code>forecastLabel()</code><br><small style="color:var(--muted)">services/dashboard-analytics.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>DashboardSection.tsx</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>forecastLabel() node in services/dashboard-analytics.ts.</td>
+</tr>
+<tr>
+  <td>23</td>
+  <td><code>overallRiskFromCounts()</code><br><small style="color:var(--muted)">services/dashboard-analytics.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>DashboardSection.tsx</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>overallRiskFromCounts() node in services/dashboard-analytics.ts.</td>
+</tr>
+<tr>
+  <td>24</td>
+  <td><code>overallRiskLabel()</code><br><small style="color:var(--muted)">services/dashboard-analytics.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>DashboardSection.tsx</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>overallRiskLabel() node in services/dashboard-analytics.ts.</td>
+</tr>
+<tr>
+  <td>25</td>
+  <td><code>overallRiskTone()</code><br><small style="color:var(--muted)">services/dashboard-analytics.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>DashboardSection.tsx</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>overallRiskTone() node in services/dashboard-analytics.ts.</td>
+</tr>
+<tr>
+  <td>26</td>
+  <td><code>qa-readiness.ts</code><br><small style="color:var(--muted)">services/qa-readiness.ts</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td><code>DashboardSection.tsx</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>Module file in services/qa-readiness.ts.</td>
+</tr>
+<tr>
+  <td>27</td>
+  <td><code>ReadinessSeverity</code><br><small style="color:var(--muted)">services/qa-readiness.ts</small></td>
+  <td><span class="tag tag-async">Async</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>ReadinessSeverity node in services/qa-readiness.ts.</td>
+</tr>
+<tr>
+  <td>28</td>
+  <td><code>ReadinessCheck</code><br><small style="color:var(--muted)">services/qa-readiness.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>DashboardSection.tsx</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>ReadinessCheck node in services/qa-readiness.ts.</td>
+</tr>
+<tr>
+  <td>29</td>
+  <td><code>readinessTone()</code><br><small style="color:var(--muted)">services/qa-readiness.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>DashboardSection.tsx</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>readinessTone() node in services/qa-readiness.ts.</td>
+</tr>
+<tr>
+  <td>30</td>
+  <td><code>readinessLabel()</code><br><small style="color:var(--muted)">services/qa-readiness.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>DashboardSection.tsx</code><br><small style="color:var(--muted)">components/DashboardSection.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>readinessLabel() node in services/qa-readiness.ts.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>services/dashboard-analytics.ts</code></td><td>14 nodes</td></tr>
+<tr><td><code>components/DashboardSection.tsx</code></td><td>11 nodes</td></tr>
+<tr><td><code>services/qa-readiness.ts</code></td><td>5 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x27, imports x13, imports x2. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 9. KPI Calculations ====== -->
+<h2 id="kpi-calculations">9. KPI Calculations</h2>
+<p>KPI Calculations groups implementation around kpi, calculationsts, services, kpiinputsectiontsx, mostly in services/kpi-calculations.ts, components/KpiInputSection.tsx, app/page.tsx. This section covers 14 nodes and 16 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: KPI Calculations (14 nodes, 16 edges)
+    subgraph kpi_calculations_services_kpi_calculations_ts_c3de9e36["services/kpi-calculations.ts"]
+        services_kpi_calculations_parsenonnegativeintege_5a5d70fb("parseNonNegativeInteger()<br/><small>services/kpi-calculations.ts</small>")
+        services_kpi_calculations_validatekpidraft_ba838e04("validateKpiDraft()<br/><small>services/kpi-calculations.ts</small>")
+        services_kpi_calculations_aad21d7e("kpi-calculations.ts")
+        services_kpi_calculations_buildkpipreview_00680357("buildKpiPreview()<br/><small>services/kpi-calculations.ts</small>")
+        services_kpi_calculations_kpicode_7bc369b4("KpiCode<br/><small>services/kpi-calculations.ts</small>")
+        services_kpi_calculations_kpiformdraft_16e2b45a("KpiFormDraft<br/><small>services/kpi-calculations.ts</small>")
+        services_kpi_calculations_kpipreviewrow_a70caa7d("KpiPreviewRow<br/><small>services/kpi-calculations.ts</small>")
+        services_kpi_calculations_kpivalidationresult_a452a56a("KpiValidationResult<br/><small>services/kpi-calculations.ts</small>")
+        services_kpi_calculations_safepercent_1446beb1("safePercent()<br/><small>services/kpi-calculations.ts</small>")
+        services_kpi_calculations_scorefrompercent_9dd5d21c("scoreFromPercent()<br/><small>services/kpi-calculations.ts</small>")
+    end
+    subgraph kpi_calculations_components_KpiInputSection_tsx_eca1299a["components/KpiInputSection.tsx"]
+        components_kpiinputsection_4b1c0724("KpiInputSection.tsx")
+        components_kpiinputsection_kpiform_78926c77("KpiForm<br/><small>components/KpiInputSection.tsx</small>")
+        components_kpiinputsection_kpiinputsection_01b03011("KpiInputSection()<br/><small>components/KpiInputSection.tsx</small>")
+    end
+    app_page_initialformdata_e5cb3aee("initialFormData<br/><small>app/page.tsx</small>")
+    services_kpi_calculations_parsenonnegativeintege_5a5d70fb -->|calls| services_kpi_calculations_validatekpidraft_ba838e04
+    components_kpiinputsection_4b1c0724 -->|imports| services_kpi_calculations_aad21d7e
+    components_kpiinputsection_4b1c0724 -->|imports| services_kpi_calculations_buildkpipreview_00680357
+    components_kpiinputsection_4b1c0724 -->|imports| services_kpi_calculations_validatekpidraft_ba838e04
+    class services_kpi_calculations_parsenonnegativeintege_5a5d70fb function;
+    class services_kpi_calculations_validatekpidraft_ba838e04 function;
+    class services_kpi_calculations_aad21d7e module;
+    class services_kpi_calculations_buildkpipreview_00680357 function;
+    class services_kpi_calculations_kpicode_7bc369b4 klass;
+    class services_kpi_calculations_kpiformdraft_16e2b45a klass;
+    class services_kpi_calculations_kpipreviewrow_a70caa7d klass;
+    class services_kpi_calculations_kpivalidationresult_a452a56a klass;
+    class services_kpi_calculations_safepercent_1446beb1 function;
+    class services_kpi_calculations_scorefrompercent_9dd5d21c function;
+    class components_kpiinputsection_4b1c0724 ui;
+    class components_kpiinputsection_kpiform_78926c77 ui;
+    class components_kpiinputsection_kpiinputsection_01b03011 ui;
+    class app_page_initialformdata_e5cb3aee ui;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>initialFormData</code><br><small style="color:var(--muted)">app/page.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>initialFormData node in app/page.tsx.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>KpiInputSection.tsx</code><br><small style="color:var(--muted)">components/KpiInputSection.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>buildKpiPreview()</code><br><small style="color:var(--muted)">services/kpi-calculations.ts</small><br><code>kpi-calculations.ts</code><br><small style="color:var(--muted)">services/kpi-calculations.ts</small><br><code>validateKpiDraft()</code><br><small style="color:var(--muted)">services/kpi-calculations.ts</small></td>
+  <td>Module file in components/KpiInputSection.tsx.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>KpiForm</code><br><small style="color:var(--muted)">components/KpiInputSection.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>KpiForm node in components/KpiInputSection.tsx.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>KpiInputSection()</code><br><small style="color:var(--muted)">components/KpiInputSection.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>KpiInputSection() node in components/KpiInputSection.tsx.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>kpi-calculations.ts</code><br><small style="color:var(--muted)">services/kpi-calculations.ts</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td><code>KpiInputSection.tsx</code><br><small style="color:var(--muted)">components/KpiInputSection.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>Module file in services/kpi-calculations.ts.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>KpiCode</code><br><small style="color:var(--muted)">services/kpi-calculations.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>KpiCode node in services/kpi-calculations.ts.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>KpiPreviewRow</code><br><small style="color:var(--muted)">services/kpi-calculations.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>KpiPreviewRow node in services/kpi-calculations.ts.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>KpiFormDraft</code><br><small style="color:var(--muted)">services/kpi-calculations.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>KpiFormDraft node in services/kpi-calculations.ts.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>KpiValidationResult</code><br><small style="color:var(--muted)">services/kpi-calculations.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>KpiValidationResult node in services/kpi-calculations.ts.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>scoreFromPercent()</code><br><small style="color:var(--muted)">services/kpi-calculations.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>scoreFromPercent() node in services/kpi-calculations.ts.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>safePercent()</code><br><small style="color:var(--muted)">services/kpi-calculations.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>safePercent() node in services/kpi-calculations.ts.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>parseNonNegativeInteger()</code><br><small style="color:var(--muted)">services/kpi-calculations.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>validateKpiDraft()</code><br><small style="color:var(--muted)">services/kpi-calculations.ts</small></td>
+  <td>parseNonNegativeInteger() node in services/kpi-calculations.ts.</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>validateKpiDraft()</code><br><small style="color:var(--muted)">services/kpi-calculations.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>KpiInputSection.tsx</code><br><small style="color:var(--muted)">components/KpiInputSection.tsx</small><br><code>parseNonNegativeInteger()</code><br><small style="color:var(--muted)">services/kpi-calculations.ts</small></td>
+  <td>No direct outbound edge</td>
+  <td>validateKpiDraft() node in services/kpi-calculations.ts.</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><code>buildKpiPreview()</code><br><small style="color:var(--muted)">services/kpi-calculations.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>KpiInputSection.tsx</code><br><small style="color:var(--muted)">components/KpiInputSection.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>buildKpiPreview() node in services/kpi-calculations.ts.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>services/kpi-calculations.ts</code></td><td>10 nodes</td></tr>
+<tr><td><code>components/KpiInputSection.tsx</code></td><td>3 nodes</td></tr>
+<tr><td><code>app/page.tsx</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x12, imports x2, imports x1, calls x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 10. Thailand Health Zone Map ====== -->
+<h2 id="thailand-health-zone-map">10. Thailand Health Zone Map</h2>
+<p>Thailand Health Zone Map groups implementation around thailandhealthzonemaptsx, components, types, mvpts, mostly in components/ThailandHealthZoneMap.tsx, types/mvp.ts. This section covers 13 nodes and 12 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Thailand Health Zone Map (13 nodes, 12 edges)
+    subgraph thailand_health_zone_map_components_ThailandHeal_cfec68e6["components/ThailandHealthZoneMap.tsx"]
+        components_thailandhealthzonemap_664a42bd("ThailandHealthZoneMap.tsx")
+        components_thailandhealthzonemap_amchartsmap_e57eb39a("AmChartsMap<br/><small>components/ThailandHealthZoneMap.tsx</small>")
+        components_thailandhealthzonemap_amchartsmaparea_54a460c4("AmChartsMapArea<br/><small>components/ThailandHealthZoneMap.tsx</small>")
+        components_thailandhealthzonemap_amchartsmapimag_2f7cb040("AmChartsMapImage<br/><small>components/ThailandHealthZoneMap.tsx</small>")
+        components_thailandhealthzonemap_dpcpoint_17a47eb8("DpcPoint<br/><small>components/ThailandHealthZoneMap.tsx</small>")
+        components_thailandhealthzonemap_window_0e1cf344("Window<br/><small>components/ThailandHealthZoneMap.tsx</small>")
+        components_thailandhealthzonemap_dpcpoints_768bb583("dpcPoints<br/><small>components/ThailandHealthZoneMap.tsx</small>")
+        components_thailandhealthzonemap_getzonecolor_c5714713("getZoneColor()<br/><small>components/ThailandHealthZoneMap.tsx</small>")
+        components_thailandhealthzonemap_loadexportcss_2951d28e("loadExportCss()<br/><small>components/ThailandHealthZoneMap.tsx</small>")
+        components_thailandhealthzonemap_loadscript_41b0b958("loadScript()<br/><small>components/ThailandHealthZoneMap.tsx</small>")
+    end
+    subgraph thailand_health_zone_map_types_mvp_ts_97147a5e["types/mvp.ts"]
+        types_mvp_agencycoveragerow_4e054cb7("AgencyCoverageRow<br/><small>types/mvp.ts</small>")
+        types_mvp_agencyprovincemaprow_0f8554ed("AgencyProvinceMapRow<br/><small>types/mvp.ts</small>")
+        types_mvp_provincecoveragerow_fbcceb46("ProvinceCoverageRow<br/><small>types/mvp.ts</small>")
+    end
+    components_thailandhealthzonemap_664a42bd -->|imports| types_mvp_agencycoveragerow_4e054cb7
+    components_thailandhealthzonemap_664a42bd -->|imports| types_mvp_agencyprovincemaprow_0f8554ed
+    components_thailandhealthzonemap_664a42bd -->|imports| types_mvp_provincecoveragerow_fbcceb46
+    class components_thailandhealthzonemap_664a42bd ui;
+    class components_thailandhealthzonemap_amchartsmap_e57eb39a ui;
+    class components_thailandhealthzonemap_amchartsmaparea_54a460c4 ui;
+    class components_thailandhealthzonemap_amchartsmapimag_2f7cb040 api;
+    class components_thailandhealthzonemap_dpcpoint_17a47eb8 ui;
+    class components_thailandhealthzonemap_window_0e1cf344 ui;
+    class components_thailandhealthzonemap_dpcpoints_768bb583 ui;
+    class components_thailandhealthzonemap_getzonecolor_c5714713 ui;
+    class components_thailandhealthzonemap_loadexportcss_2951d28e ui;
+    class components_thailandhealthzonemap_loadscript_41b0b958 ui;
+    class types_mvp_agencycoveragerow_4e054cb7 klass;
+    class types_mvp_agencyprovincemaprow_0f8554ed klass;
+    class types_mvp_provincecoveragerow_fbcceb46 klass;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>ThailandHealthZoneMap.tsx</code><br><small style="color:var(--muted)">components/ThailandHealthZoneMap.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>AgencyCoverageRow</code><br><small style="color:var(--muted)">types/mvp.ts</small><br><code>AgencyProvinceMapRow</code><br><small style="color:var(--muted)">types/mvp.ts</small><br><code>ProvinceCoverageRow</code><br><small style="color:var(--muted)">types/mvp.ts</small></td>
+  <td>Module file in components/ThailandHealthZoneMap.tsx.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>DpcPoint</code><br><small style="color:var(--muted)">components/ThailandHealthZoneMap.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>DpcPoint node in components/ThailandHealthZoneMap.tsx.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>AmChartsMapImage</code><br><small style="color:var(--muted)">components/ThailandHealthZoneMap.tsx</small></td>
+  <td><span class="tag tag-endpoint">API</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>AmChartsMapImage node in components/ThailandHealthZoneMap.tsx.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>AmChartsMap</code><br><small style="color:var(--muted)">components/ThailandHealthZoneMap.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>AmChartsMap node in components/ThailandHealthZoneMap.tsx.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>AmChartsMapArea</code><br><small style="color:var(--muted)">components/ThailandHealthZoneMap.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>AmChartsMapArea node in components/ThailandHealthZoneMap.tsx.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>Window</code><br><small style="color:var(--muted)">components/ThailandHealthZoneMap.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Window node in components/ThailandHealthZoneMap.tsx.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>dpcPoints</code><br><small style="color:var(--muted)">components/ThailandHealthZoneMap.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>dpcPoints node in components/ThailandHealthZoneMap.tsx.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>getZoneColor()</code><br><small style="color:var(--muted)">components/ThailandHealthZoneMap.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>getZoneColor() node in components/ThailandHealthZoneMap.tsx.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>loadScript()</code><br><small style="color:var(--muted)">components/ThailandHealthZoneMap.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>loadScript() node in components/ThailandHealthZoneMap.tsx.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>loadExportCss()</code><br><small style="color:var(--muted)">components/ThailandHealthZoneMap.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Exports documentation data to a target format.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>AgencyCoverageRow</code><br><small style="color:var(--muted)">types/mvp.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>ThailandHealthZoneMap.tsx</code><br><small style="color:var(--muted)">components/ThailandHealthZoneMap.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>Supports retrieval-augmented Q&amp;A or streaming chat.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>ProvinceCoverageRow</code><br><small style="color:var(--muted)">types/mvp.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>ThailandHealthZoneMap.tsx</code><br><small style="color:var(--muted)">components/ThailandHealthZoneMap.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>Supports retrieval-augmented Q&amp;A or streaming chat.</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>AgencyProvinceMapRow</code><br><small style="color:var(--muted)">types/mvp.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>ThailandHealthZoneMap.tsx</code><br><small style="color:var(--muted)">components/ThailandHealthZoneMap.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>AgencyProvinceMapRow node in types/mvp.ts.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>components/ThailandHealthZoneMap.tsx</code></td><td>10 nodes</td></tr>
+<tr><td><code>types/mvp.ts</code></td><td>3 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x9, imports x3. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 11. Testing and QA ====== -->
+<h2 id="testing-and-qa">11. Testing and QA</h2>
+<p>Testing and QA groups implementation around testing, next, steps, visual, mostly in unmapped files. This section covers 9 nodes and 8 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Testing and QA (9 nodes, 8 edges)
+    node_14_fa35e192("Next Steps")
+    node_15_f1abd670("Visual/Manual QA")
+    node_16_1574bddb("SQL Testing")
+    node_17_0716d970("Role-Based Testing")
+    node_18_9e6a55b6("Security Hardening")
+    node_19_b3f0c7f6("Test/QA Automation")
+    node_20_91032ad7("User Experience Improvements")
+    node_21_472b07b9("KPI/Forecast Testing")
+    node_22_12c6fc06("Export Functionality")
+    node_14_fa35e192 -->|relates| node_15_f1abd670
+    node_14_fa35e192 -->|relates| node_16_1574bddb
+    node_14_fa35e192 -->|relates| node_17_0716d970
+    node_14_fa35e192 -->|relates| node_18_9e6a55b6
+    node_14_fa35e192 -->|relates| node_19_b3f0c7f6
+    node_14_fa35e192 -->|relates| node_20_91032ad7
+    node_14_fa35e192 -->|relates| node_21_472b07b9
+    node_14_fa35e192 -->|relates| node_22_12c6fc06
+    class node_14_fa35e192 klass;
+    class node_15_f1abd670 klass;
+    class node_16_1574bddb klass;
+    class node_17_0716d970 klass;
+    class node_18_9e6a55b6 klass;
+    class node_19_b3f0c7f6 klass;
+    class node_20_91032ad7 klass;
+    class node_21_472b07b9 klass;
+    class node_22_12c6fc06 klass;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>Next Steps</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Next Steps node in project.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>Visual/Manual QA</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Visual/Manual QA node in project.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>SQL Testing</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Verifies imports, entry points, or version behavior.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>Role-Based Testing</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Verifies imports, entry points, or version behavior.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>Security Hardening</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Security Hardening node in project.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>Test/QA Automation</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Verifies imports, entry points, or version behavior.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>User Experience Improvements</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>User Experience Improvements node in project.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>KPI/Forecast Testing</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Verifies imports, entry points, or version behavior.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>Export Functionality</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Exports documentation data to a target format.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td colspan="2">No source file mapping</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: relates x8. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 12. QA Processes ====== -->
+<h2 id="qa-processes">12. QA Processes</h2>
+<p>QA Processes groups implementation around testing, quality, assurance, manual, mostly in unmapped files. This section covers 3 nodes and 2 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: QA Processes (3 nodes, 2 edges)
+    node_8_fe5dbbce("Testing and Quality Assurance")
+    node_10_b1d57811("Automated Testing")
+    node_9_0ade7c2c("Manual Testing")
+    node_8_fe5dbbce -->|relates| node_10_b1d57811
+    node_8_fe5dbbce -->|relates| node_9_0ade7c2c
+    class node_8_fe5dbbce klass;
+    class node_10_b1d57811 klass;
+    class node_9_0ade7c2c klass;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>Testing and Quality Assurance</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Verifies imports, entry points, or version behavior.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>Manual Testing</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Verifies imports, entry points, or version behavior.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>Automated Testing</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Verifies imports, entry points, or version behavior.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td colspan="2">No source file mapping</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: relates x2. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 13. Project Overview ====== -->
+<h2 id="project-overview">13. Project Overview</h2>
+<p>Project Overview groups implementation around overview, project, goals, scope, mostly in unmapped files. This section covers 3 nodes and 2 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Project Overview (3 nodes, 2 edges)
+    node_2_da4b9237("Overview")
+    node_3_77de68da("Project Goals")
+    node_4_1b645389("Scope of Work")
+    node_2_da4b9237 -->|relates| node_3_77de68da
+    node_2_da4b9237 -->|relates| node_4_1b645389
+    class node_2_da4b9237 klass;
+    class node_3_77de68da klass;
+    class node_4_1b645389 klass;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>Overview</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Overview node in project.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>Project Goals</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Project Goals node in project.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>Scope of Work</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Scope of Work node in project.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td colspan="2">No source file mapping</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: relates x2. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 14. Development Requirements ====== -->
+<h2 id="development-requirements">14. Development Requirements</h2>
+<p>Development Requirements groups implementation around development, technical, requirements, frontend, mostly in unmapped files. This section covers 3 nodes and 2 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Development Requirements (3 nodes, 2 edges)
+    node_5_ac3478d6("Technical Requirements")
+    node_6_c1dfd96e("Frontend Development")
+    node_7_902ba3cd("Backend Development")
+    node_5_ac3478d6 -->|relates| node_6_c1dfd96e
+    node_5_ac3478d6 -->|relates| node_7_902ba3cd
+    class node_5_ac3478d6 klass;
+    class node_6_c1dfd96e klass;
+    class node_7_902ba3cd klass;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>Technical Requirements</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Technical Requirements node in project.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>Frontend Development</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Frontend Development node in project.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>Backend Development</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Backend Development node in project.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td colspan="2">No source file mapping</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: relates x2. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 15. Layout and Metadata ====== -->
+<h2 id="layout-and-metadata">15. Layout and Metadata</h2>
+<p>Layout and Metadata groups implementation around layouttsx, app, metadata, rootlayout, mostly in app/layout.tsx. This section covers 3 nodes and 2 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Layout and Metadata (3 nodes, 2 edges)
+    app_layout_ed349684("layout.tsx")
+    app_layout_metadata_57b95e99("metadata<br/><small>app/layout.tsx</small>")
+    app_layout_rootlayout_bcc6c561("RootLayout()<br/><small>app/layout.tsx</small>")
+    app_layout_ed349684 -->|contains| app_layout_metadata_57b95e99
+    app_layout_ed349684 -->|contains| app_layout_rootlayout_bcc6c561
+    class app_layout_ed349684 ui;
+    class app_layout_metadata_57b95e99 ui;
+    class app_layout_rootlayout_bcc6c561 ui;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>layout.tsx</code><br><small style="color:var(--muted)">app/layout.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Module file in app/layout.tsx.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>metadata</code><br><small style="color:var(--muted)">app/layout.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>metadata node in app/layout.tsx.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>RootLayout()</code><br><small style="color:var(--muted)">app/layout.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>RootLayout() node in app/layout.tsx.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>app/layout.tsx</code></td><td>3 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x2. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 16. Other ====== -->
+<h2 id="other">16. Other</h2>
+<p>Other groups implementation around routets, nextconfigjs, app, faviconico, mostly in app/favicon.ico/route.ts, next.config.js, Specification.md. This section covers 12 nodes and 3 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Other (12 nodes, 3 edges)
+    subgraph other_External_generated_9e8859fa["External / generated"]
+        node_1_356a192b("Implementation Plan for Health Map and...")
+        node_11_17ba0791("Known Issues and Risks")
+        node_12_7b52009b("Login/ThaiD Implementation")
+    end
+    subgraph other_Specification_md_98a6f4c9["Specification.md"]
+        specification_md_ui_rendering_rules_3145cafd("UI Rendering Rules<br/><small>Specification.md</small>")
+        specification_md_boilerplate_sample_8ce74ac0("Boilerplate Sample<br/><small>Specification.md</small>")
+    end
+    subgraph other_app_favicon_ico_route_ts_b5d0f350["app/favicon.ico/route.ts"]
+        favicon_ico_route_get_00e089fd("GET()<br/><small>app/favicon.ico/route.ts</small>")
+        favicon_ico_route_eb5b58a2("route.ts")
+    end
+    subgraph other_next_config_js_8653ae64["next.config.js"]
+        next_config_531ff3ba("next.config.js")
+        next_config_path_dffa5e6f("path<br/><small>next.config.js</small>")
+    end
+    components_accessdeniedpanel_e7f27838("AccessDeniedPanel.tsx")
+    dhsd_district_health_system_ddc_34945e5b("district_health_system_ddc<br/><small>dhsd.md</small>")
+    next_env_d_1e14f66a("next-env.d.ts")
+    specification_md_ui_rendering_rules_3145cafd -->|uses| specification_md_boilerplate_sample_8ce74ac0
+    class node_1_356a192b klass;
+    class node_11_17ba0791 klass;
+    class node_12_7b52009b klass;
+    class specification_md_ui_rendering_rules_3145cafd concept;
+    class specification_md_boilerplate_sample_8ce74ac0 concept;
+    class favicon_ico_route_get_00e089fd function;
+    class favicon_ico_route_eb5b58a2 api;
+    class next_config_531ff3ba module;
+    class next_config_path_dffa5e6f function;
+    class components_accessdeniedpanel_e7f27838 ui;
+    class dhsd_district_health_system_ddc_34945e5b concept;
+    class next_env_d_1e14f66a module;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>route.ts</code><br><small style="color:var(--muted)">app/favicon.ico/route.ts</small></td>
+  <td><span class="tag tag-endpoint">API</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Module file in app/favicon.ico/route.ts.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>GET()</code><br><small style="color:var(--muted)">app/favicon.ico/route.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>GET() node in app/favicon.ico/route.ts.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>next.config.js</code><br><small style="color:var(--muted)">next.config.js</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Reads, resolves, or persists project configuration.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>path</code><br><small style="color:var(--muted)">next.config.js</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>path node in next.config.js.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>UI Rendering Rules</code><br><small style="color:var(--muted)">Specification.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>Boilerplate Sample</code><br><small style="color:var(--muted)">Specification.md</small></td>
+  <td>Documentation node describing UI Rendering Rules.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>Boilerplate Sample</code><br><small style="color:var(--muted)">Specification.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td><code>UI Rendering Rules</code><br><small style="color:var(--muted)">Specification.md</small></td>
+  <td>No direct outbound edge</td>
+  <td>Documentation node describing Boilerplate Sample.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>Implementation Plan for Health Map and KPI Dashboard</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Implementation Plan for Health Map and KPI Dashboard node in project.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>Known Issues and Risks</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Known Issues and Risks node in project.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>Login/ThaiD Implementation</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Login/ThaiD Implementation node in project.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>AccessDeniedPanel.tsx</code><br><small style="color:var(--muted)">components/AccessDeniedPanel.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Module file in components/AccessDeniedPanel.tsx.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>district_health_system_ddc</code><br><small style="color:var(--muted)">dhsd.md</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Documentation node describing district_health_system_ddc.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>next-env.d.ts</code><br><small style="color:var(--muted)">next-env.d.ts</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Module file in next-env.d.ts.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>Specification.md</code></td><td>2 nodes</td></tr>
+<tr><td><code>app/favicon.ico/route.ts</code></td><td>2 nodes</td></tr>
+<tr><td><code>next.config.js</code></td><td>2 nodes</td></tr>
+<tr><td><code>components/AccessDeniedPanel.tsx</code></td><td>1 nodes</td></tr>
+<tr><td><code>dhsd.md</code></td><td>1 nodes</td></tr>
+<tr><td><code>next-env.d.ts</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x2, uses x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<h2 id="stats">Project Statistics</h2>
+
+<div class="grid">
+  <div class="card">
+    <h4>Graph</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><td>Nodes</td><td>251</td></tr>
+      <tr><td>Edges</td><td>404</td></tr>
+      <tr><td>Hyperedges</td><td>0</td></tr>
+      <tr><td>Communities</td><td>26</td></tr>
+      <tr><td>Documented Sections</td><td>15</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Edge Confidence</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><td>EXTRACTED</td><td>403</td></tr>
+      <tr><td>INFERRED</td><td>1</td></tr>
+      <tr><td>AMBIGUOUS</td><td>0</td></tr>
+    </table>
+  </div>
+</div>
+
+<div style="text-align:center; padding:40px 0; color: var(--muted); font-size:0.9rem;">
+  <p>web — Architecture Documentation</p>
+  <p>Generated: 2026-06-19 03:33 UTC · graphify callflow-html</p>
+</div>
+
+</div><!-- .container -->
+
+<script>
+(function () {
+  const mermaidConfig = {
+    startOnLoad: false,
+    theme: 'dark',
+    securityLevel: 'loose',
+    flowchart: { htmlLabels: true, useMaxWidth: true },
+    themeVariables: {
+      primaryColor: '#1e293b',
+      primaryTextColor: '#e2e8f0',
+      primaryBorderColor: '#38bdf8',
+      secondaryColor: '#0f172a',
+      tertiaryColor: '#334155',
+      lineColor: '#64748b',
+      textColor: '#e2e8f0',
+    }
+  };
+
+  mermaid.initialize(mermaidConfig);
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function enhanceMermaidDiagrams() {
+    document.querySelectorAll('.mermaid').forEach((container) => {
+      if (container.dataset.zoomReady === 'true') return;
+      const svg = container.querySelector('svg');
+      if (!svg) return;
+
+      container.dataset.zoomReady = 'true';
+      container.classList.add('is-enhanced');
+
+      const viewport = document.createElement('div');
+      viewport.className = 'mermaid-viewport';
+      svg.parentNode.insertBefore(viewport, svg);
+      viewport.appendChild(svg);
+
+      const toolbar = document.createElement('div');
+      toolbar.className = 'mermaid-toolbar';
+      toolbar.innerHTML = [
+        '<button type="button" data-action="zoom-out" title="Zoom out">-</button>',
+        '<span class="zoom-level" data-role="level">100%</span>',
+        '<button type="button" data-action="zoom-in" title="Zoom in">+</button>',
+        '<button type="button" data-action="fit" title="Fit width">Fit</button>',
+        '<button type="button" data-action="reset" title="Reset view">Reset</button>'
+      ].join('');
+      container.insertBefore(toolbar, viewport);
+
+      const state = { scale: 1, x: 0, y: 0, dragging: false, startX: 0, startY: 0, originX: 0, originY: 0 };
+      const level = toolbar.querySelector('[data-role="level"]');
+
+      function applyTransform() {
+        svg.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
+        level.textContent = `${Math.round(state.scale * 100)}%`;
+      }
+
+      function zoomBy(delta) {
+        state.scale = clamp(state.scale + delta, 0.25, 3);
+        applyTransform();
+      }
+
+      function reset() {
+        state.scale = 1;
+        state.x = 0;
+        state.y = 0;
+        applyTransform();
+      }
+
+      function fitWidth() {
+        const rawWidth = svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.width
+          ? svg.viewBox.baseVal.width
+          : svg.getBoundingClientRect().width / state.scale;
+        if (!rawWidth) {
+          reset();
+          return;
+        }
+        state.scale = clamp((viewport.clientWidth - 48) / rawWidth, 0.25, 1.4);
+        state.x = 0;
+        state.y = 0;
+        applyTransform();
+      }
+
+      toolbar.addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-action]');
+        if (!button) return;
+        const action = button.dataset.action;
+        if (action === 'zoom-in') zoomBy(0.15);
+        if (action === 'zoom-out') zoomBy(-0.15);
+        if (action === 'fit') fitWidth();
+        if (action === 'reset') reset();
+      });
+
+      viewport.addEventListener('wheel', (event) => {
+        if (!event.ctrlKey && !event.metaKey) return;
+        event.preventDefault();
+        zoomBy(event.deltaY < 0 ? 0.1 : -0.1);
+      }, { passive: false });
+
+      viewport.addEventListener('pointerdown', (event) => {
+        if (event.button !== 0) return;
+        state.dragging = true;
+        state.startX = event.clientX;
+        state.startY = event.clientY;
+        state.originX = state.x;
+        state.originY = state.y;
+        viewport.classList.add('is-dragging');
+        viewport.setPointerCapture(event.pointerId);
+      });
+
+      viewport.addEventListener('pointermove', (event) => {
+        if (!state.dragging) return;
+        state.x = state.originX + event.clientX - state.startX;
+        state.y = state.originY + event.clientY - state.startY;
+        applyTransform();
+      });
+
+      function endDrag(event) {
+        if (!state.dragging) return;
+        state.dragging = false;
+        viewport.classList.remove('is-dragging');
+        if (viewport.hasPointerCapture(event.pointerId)) {
+          viewport.releasePointerCapture(event.pointerId);
+        }
+      }
+
+      viewport.addEventListener('pointerup', endDrag);
+      viewport.addEventListener('pointercancel', endDrag);
+      applyTransform();
+    });
+  }
+
+  function renderMermaid() {
+    const result = mermaid.run
+      ? mermaid.run({ querySelector: '.mermaid' })
+      : Promise.resolve();
+    Promise.resolve(result)
+      .then(enhanceMermaidDiagrams)
+      .catch((error) => {
+        console.error('Mermaid render failed:', error);
+        enhanceMermaidDiagrams();
+      });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderMermaid);
+  } else {
+    renderMermaid();
+  }
+})();
+</script>
+
+</body>
+</html>

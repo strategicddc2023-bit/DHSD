@@ -1,0 +1,448 @@
+{
+  "communities": {
+    "0": [
+      "admin_page",
+      "admin_page_adminpage",
+      "admin_page_admintab",
+      "admin_page_menu_items",
+      "app_page",
+      "app_page_homepage",
+      "components_accessribbon",
+      "components_accessribbon_accessribbonprops",
+      "components_appnavigation",
+      "components_appnavigation_appnavigationprops",
+      "components_appnavigation_navitem",
+      "components_herosection",
+      "components_herosection_herosection",
+      "components_intakeformsection",
+      "components_intakeformsection_agencyprovincerow",
+      "components_intakeformsection_intakeformsection",
+      "components_rolepagelayout",
+      "components_rolepagelayout_rolemenuitem",
+      "components_rolepagelayout_rolepagelayout",
+      "components_rolepagelayout_rolepagelayoutprops",
+      "login_page",
+      "login_page_loginpage",
+      "my_work_page",
+      "my_work_page_initialformdata",
+      "my_work_page_myworkpage",
+      "my_work_page_usertab",
+      "services_auth_session",
+      "services_auth_session_buildaccessscope",
+      "services_auth_session_getaccesssummary",
+      "services_auth_session_loadcurrentappuser",
+      "services_supabase_client",
+      "services_supabase_client_supabase",
+      "superadmin_page",
+      "superadmin_page_initialformdata",
+      "superadmin_page_menu_items",
+      "superadmin_page_superadminpage",
+      "superadmin_page_superadmintab",
+      "types_mvp_appuserrow",
+      "types_mvp_intakeformdata"
+    ],
+    "1": [
+      "components_interactivehealthmap",
+      "components_interactivehealthmapclient_agencypalette",
+      "components_interactivehealthmapclient_buildagencycolormap",
+      "components_interactivehealthmapclient_districtfeaturelike",
+      "components_interactivehealthmapclient_interactivehealthmapclient",
+      "components_interactivehealthmapclient_mapboundscontroller",
+      "components_interactivehealthmapclient_mapcontroller",
+      "components_interactivehealthmapclient_mapdistrictboundscontroller",
+      "components_interactivehealthmapclient_provincefeaturelike",
+      "components_interactivehealthmapclient_thailandcenter",
+      "services_health_issue_service",
+      "services_health_issue_service_districthealthissuerecord",
+      "services_health_issue_service_districthealthissuesummary",
+      "services_health_issue_service_loaddistricthealthissuesummary",
+      "services_health_issue_service_loadsubdistricthealthissuesummary",
+      "services_map_boundary_service",
+      "services_map_boundary_service_fetchgeojson",
+      "services_map_boundary_service_getdistrictfeaturecode",
+      "services_map_boundary_service_getprovincefeaturecode",
+      "services_map_boundary_service_loaddistrictboundaries",
+      "services_map_boundary_service_loadprovinceboundaries",
+      "types_map",
+      "types_map_districtboundarycollection",
+      "types_map_districtboundaryproperties",
+      "types_map_geojsongeometry",
+      "types_map_mapboundarykind",
+      "types_map_mapfeature",
+      "types_map_mapfeaturecollection",
+      "types_map_maplevel",
+      "types_map_mapselection",
+      "types_map_provinceboundarycollection",
+      "types_map_provinceboundaryproperties"
+    ],
+    "2": [
+      "components_savedrecordspanel",
+      "components_savedrecordspanel_getrelatedlabel",
+      "components_savedrecordspanel_savedrecorddraft",
+      "components_superadminuserspanel",
+      "components_superadminuserspanel_appuserdraft",
+      "components_superadminuserspanel_initialdraft",
+      "components_worksummary",
+      "components_worksummary_worksummary",
+      "components_worksummary_worksummaryprops",
+      "services_access_control",
+      "services_access_control_accesspermissionsnapshot",
+      "services_access_control_accessscope",
+      "services_access_control_buildaccesspermissionsnapshot",
+      "services_access_control_cansubmitforownagency",
+      "services_access_control_canviewagency",
+      "services_access_control_canviewall",
+      "services_access_control_canviewprovince",
+      "services_access_control_isscopeduser",
+      "services_access_control_resolvevisibleagencycodes",
+      "services_access_control_resolvevisibleprovincecodes",
+      "services_mvp_data",
+      "types_mvp",
+      "types_mvp_agencyoption",
+      "types_mvp_approle",
+      "types_mvp_appuserstatus",
+      "types_mvp_district",
+      "types_mvp_intakerecordrow",
+      "types_mvp_kpidashboardrow",
+      "types_mvp_kpisummaryrow",
+      "types_mvp_province",
+      "types_mvp_subdistrict"
+    ],
+    "3": [
+      "components_dashboardsection",
+      "components_dashboardsection_agencysubmissionprogressgroup",
+      "components_dashboardsection_coveragechartrow",
+      "components_dashboardsection_dashboardsectionprops",
+      "components_dashboardsection_fiscalyears",
+      "components_dashboardsection_getrelatedlabel",
+      "components_dashboardsection_healthissuedonutcolors",
+      "components_dashboardsection_healthissuedonutrow",
+      "components_dashboardsection_provincehealthissuerecord",
+      "components_dashboardsection_provincesubmissionprogress",
+      "components_dashboardsection_savedrecorddraft",
+      "services_dashboard_analytics",
+      "services_dashboard_analytics_forecastlabel",
+      "services_dashboard_analytics_forecastpercent",
+      "services_dashboard_analytics_kpistatus",
+      "services_dashboard_analytics_kpistatusfrompercent",
+      "services_dashboard_analytics_kpistatuslabel",
+      "services_dashboard_analytics_kpistatustone",
+      "services_dashboard_analytics_overallriskfromcounts",
+      "services_dashboard_analytics_overallrisklabel",
+      "services_dashboard_analytics_overallrisktone",
+      "services_dashboard_analytics_risklevel",
+      "services_dashboard_analytics_trenddirection",
+      "services_dashboard_analytics_trenddirectionfromdelta",
+      "services_dashboard_analytics_trendlabel",
+      "services_qa_readiness",
+      "services_qa_readiness_readinesscheck",
+      "services_qa_readiness_readinesslabel",
+      "services_qa_readiness_readinessseverity",
+      "services_qa_readiness_readinesstone"
+    ],
+    "4": [
+      "package",
+      "package_dependencies",
+      "package_dependencies_leaflet",
+      "package_dependencies_next",
+      "package_dependencies_react",
+      "package_dependencies_react_dom",
+      "package_dependencies_react_leaflet",
+      "package_dependencies_recharts",
+      "package_dependencies_supabase_supabase_js",
+      "package_devdependencies",
+      "package_devdependencies_eslint",
+      "package_devdependencies_eslint_config_next",
+      "package_devdependencies_types_leaflet",
+      "package_devdependencies_types_node",
+      "package_devdependencies_types_react",
+      "package_devdependencies_typescript",
+      "package_name",
+      "package_private",
+      "package_scripts",
+      "package_scripts_build",
+      "package_scripts_dev",
+      "package_scripts_lint",
+      "package_scripts_start",
+      "package_version"
+    ],
+    "5": [
+      "tsconfig",
+      "tsconfig_compileroptions",
+      "tsconfig_compileroptions_allowjs",
+      "tsconfig_compileroptions_esmoduleinterop",
+      "tsconfig_compileroptions_incremental",
+      "tsconfig_compileroptions_isolatedmodules",
+      "tsconfig_compileroptions_jsx",
+      "tsconfig_compileroptions_lib",
+      "tsconfig_compileroptions_module",
+      "tsconfig_compileroptions_moduleresolution",
+      "tsconfig_compileroptions_noemit",
+      "tsconfig_compileroptions_paths",
+      "tsconfig_compileroptions_plugins",
+      "tsconfig_compileroptions_resolvejsonmodule",
+      "tsconfig_compileroptions_skiplibcheck",
+      "tsconfig_compileroptions_strict",
+      "tsconfig_compileroptions_target",
+      "tsconfig_exclude",
+      "tsconfig_include",
+      "tsconfig_paths_components",
+      "tsconfig_paths_services",
+      "tsconfig_paths_styles",
+      "tsconfig_paths_types"
+    ],
+    "6": [
+      "app_page_initialformdata",
+      "components_kpiinputsection",
+      "components_kpiinputsection_kpiform",
+      "components_kpiinputsection_kpiinputsection",
+      "services_kpi_calculations",
+      "services_kpi_calculations_buildkpipreview",
+      "services_kpi_calculations_kpicode",
+      "services_kpi_calculations_kpiformdraft",
+      "services_kpi_calculations_kpipreviewrow",
+      "services_kpi_calculations_kpivalidationresult",
+      "services_kpi_calculations_parsenonnegativeinteger",
+      "services_kpi_calculations_safepercent",
+      "services_kpi_calculations_scorefrompercent",
+      "services_kpi_calculations_validatekpidraft"
+    ],
+    "7": [
+      "components_thailandhealthzonemap",
+      "components_thailandhealthzonemap_amchartsmap",
+      "components_thailandhealthzonemap_amchartsmaparea",
+      "components_thailandhealthzonemap_amchartsmapimage",
+      "components_thailandhealthzonemap_dpcpoint",
+      "components_thailandhealthzonemap_dpcpoints",
+      "components_thailandhealthzonemap_getzonecolor",
+      "components_thailandhealthzonemap_loadexportcss",
+      "components_thailandhealthzonemap_loadscript",
+      "components_thailandhealthzonemap_window",
+      "types_mvp_agencycoveragerow",
+      "types_mvp_agencyprovincemaprow",
+      "types_mvp_provincecoveragerow"
+    ],
+    "8": [
+      "14",
+      "15",
+      "16",
+      "17",
+      "18",
+      "19",
+      "20",
+      "21",
+      "22"
+    ],
+    "9": [
+      "vercel",
+      "vercel_buildcommand",
+      "vercel_framework",
+      "vercel_installcommand",
+      "vercel_outputdirectory"
+    ],
+    "10": [
+      "specification_md_expected_output_schema",
+      "specification_md_input_data_schema",
+      "specification_md_mathematical_logic",
+      "specification_md_objective"
+    ],
+    "11": [
+      "10",
+      "8",
+      "9"
+    ],
+    "12": [
+      "2",
+      "3",
+      "4"
+    ],
+    "13": [
+      "5",
+      "6",
+      "7"
+    ],
+    "14": [
+      "app_layout",
+      "app_layout_metadata",
+      "app_layout_rootlayout"
+    ],
+    "15": [
+      "favicon_ico_route",
+      "favicon_ico_route_get"
+    ],
+    "16": [
+      "next_config",
+      "next_config_path"
+    ],
+    "17": [
+      "public_favicon_svg",
+      "public_map_boundaries_readme_md"
+    ],
+    "18": [
+      "specification_md_boilerplate_sample",
+      "specification_md_ui_rendering_rules"
+    ],
+    "19": [
+      "1"
+    ],
+    "20": [
+      "11"
+    ],
+    "21": [
+      "12"
+    ],
+    "22": [
+      "13"
+    ],
+    "23": [
+      "components_accessdeniedpanel"
+    ],
+    "24": [
+      "dhsd_district_health_system_ddc"
+    ],
+    "25": [
+      "next_env_d"
+    ]
+  },
+  "cohesion": {
+    "0": 0.11605937921727395,
+    "1": 0.09475806451612903,
+    "2": 0.10967741935483871,
+    "3": 0.09655172413793103,
+    "4": 0.08333333333333333,
+    "5": 0.08695652173913043,
+    "6": 0.17582417582417584,
+    "7": 0.15384615384615385,
+    "8": 0.2222222222222222,
+    "9": 0.4,
+    "10": 0.5,
+    "11": 0.6666666666666666,
+    "12": 0.6666666666666666,
+    "13": 0.6666666666666666,
+    "14": 0.6666666666666666,
+    "15": 1.0,
+    "16": 1.0,
+    "17": 1.0,
+    "18": 1.0,
+    "19": 1.0,
+    "20": 1.0,
+    "21": 1.0,
+    "22": 1.0,
+    "23": 1.0,
+    "24": 1.0,
+    "25": 1.0
+  },
+  "gods": [
+    {
+      "id": "tsconfig_compileroptions",
+      "label": "compilerOptions",
+      "degree": 16
+    },
+    {
+      "id": "services_supabase_client_supabase",
+      "label": "supabase",
+      "degree": 13
+    },
+    {
+      "id": "types_mvp_appuserrow",
+      "label": "AppUserRow",
+      "degree": 12
+    },
+    {
+      "id": "types_mvp_agencyoption",
+      "label": "AgencyOption",
+      "degree": 10
+    },
+    {
+      "id": "services_access_control_accessscope",
+      "label": "AccessScope",
+      "degree": 9
+    },
+    {
+      "id": "services_auth_session_buildaccessscope",
+      "label": "buildAccessScope()",
+      "degree": 9
+    },
+    {
+      "id": "types_mvp_intakeformdata",
+      "label": "IntakeFormData",
+      "degree": 7
+    },
+    {
+      "id": "services_auth_session_loadcurrentappuser",
+      "label": "loadCurrentAppUser()",
+      "degree": 6
+    },
+    {
+      "id": "package_scripts",
+      "label": "scripts",
+      "degree": 5
+    },
+    {
+      "id": "services_access_control_buildaccesspermissionsnapshot",
+      "label": "buildAccessPermissionSnapshot()",
+      "degree": 5
+    }
+  ],
+  "surprises": [
+    {
+      "source": "AdminPage()",
+      "target": "buildAccessScope()",
+      "source_files": [
+        "app/admin/page.tsx",
+        "services/auth-session.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; peripheral node `AdminPage()` unexpectedly reaches hub `buildAccessScope()`"
+    },
+    {
+      "source": "MyWorkPage()",
+      "target": "buildAccessScope()",
+      "source_files": [
+        "app/my-work/page.tsx",
+        "services/auth-session.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; peripheral node `MyWorkPage()` unexpectedly reaches hub `buildAccessScope()`"
+    },
+    {
+      "source": "HomePage()",
+      "target": "buildAccessScope()",
+      "source_files": [
+        "app/page.tsx",
+        "services/auth-session.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; peripheral node `HomePage()` unexpectedly reaches hub `buildAccessScope()`"
+    },
+    {
+      "source": "SuperadminPage()",
+      "target": "buildAccessScope()",
+      "source_files": [
+        "app/superadmin/page.tsx",
+        "services/auth-session.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; peripheral node `SuperadminPage()` unexpectedly reaches hub `buildAccessScope()`"
+    },
+    {
+      "source": "Favicon SVG",
+      "target": "Map Boundaries README",
+      "source_files": [
+        "public/favicon.svg",
+        "public/map-boundaries/README.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "shares_data_with",
+      "why": "inferred connection - not explicitly stated in source; crosses file types (image \u2194 doc)"
+    }
+  ],
+  "tokens": {
+    "input": 26498,
+    "output": 3418
+  }
+}

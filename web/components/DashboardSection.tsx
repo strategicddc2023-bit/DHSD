@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import type { AccessScope } from "@/services/access-control";
 import { resolveVisibleAgencyCodes, resolveVisibleProvinceCodes } from "@/services/access-control";
 import { supabase } from "@/services/supabase-client";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, LabelList } from 'recharts';
 import InteractiveHealthMap from "@/components/InteractiveHealthMap";
 import { loadDistrictHealthIssueSummary } from "@/services/health-issue-service";
 import type { DistrictHealthIssueSummary } from "@/services/health-issue-service";
@@ -95,6 +95,8 @@ type HealthIssueDonutRow = {
 const fiscalYears = [2566, 2567, 2568, 2569, 2570];
 const latestRecordsPageSize = 10;
 const healthIssueDonutColors = ["#00c4b4", "#f43f5e", "#f59e0b", "#3b82f6", "#8b5cf6", "#14b8a6", "#64748b"];
+const recordCountLabelFormatter = (value: unknown) => Number(value ?? 0).toLocaleString("th-TH");
+const recordCountTooltipFormatter = (value: unknown) => [recordCountLabelFormatter(value), "จำนวนข้อมูล"];
 
 const getRelatedLabel = <T,>(value: T | T[] | null | undefined, picker: (item: T) => string | null | undefined) => {
   const item = Array.isArray(value) ? value[0] : value;
@@ -138,6 +140,9 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
   const [provinceHealthIssueRecords, setProvinceHealthIssueRecords] = useState<ProvinceHealthIssueRecord[]>([]);
   const [healthIssueScopeRecords, setHealthIssueScopeRecords] = useState<ProvinceHealthIssueRecord[]>([]);
   const [selectedHealthIssue, setSelectedHealthIssue] = useState("");
+  const [selectedOverviewIssue, setSelectedOverviewIssue] = useState("");
+  const [issueDetailScope, setIssueDetailScope] = useState<"agency" | "province" | "district">("agency");
+  const [overviewFilter, setOverviewFilter] = useState<"agency-order" | "agency-active" | "province-active" | "top-province">("agency-order");
   const [latestRecordsPage, setLatestRecordsPage] = useState(1);
   const [recordsRefreshKey, setRecordsRefreshKey] = useState(0);
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
@@ -166,6 +171,26 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
 
   const visibleAgencies = useMemo(() => agencies.filter((agency) => visibleAgencyCodes.includes(agency.code)), [agencies, visibleAgencyCodes]);
   const visibleProvinces = useMemo(() => provinces.filter((province) => visibleProvinceCodes.includes(province.code)), [provinces, visibleProvinceCodes]);
+  const dashboardProvinceOptions = useMemo(() => {
+    if (!activeAgencyFilter) {
+      return visibleProvinces;
+    }
+
+    const allowedProvinceCodes = new Set(
+      agencyProvinceMap.filter((item) => item.agency_code === activeAgencyFilter).map((item) => item.province_code)
+    );
+
+    return visibleProvinces.filter((province) => allowedProvinceCodes.has(province.code));
+  }, [activeAgencyFilter, agencyProvinceMap, visibleProvinces]);
+  const dashboardDistrictOptions = useMemo(() => {
+    if (!activeProvinceFilter) {
+      return [] as District[];
+    }
+
+    return districts
+      .filter((district) => district.province_code === activeProvinceFilter)
+      .sort((a, b) => a.name_th.localeCompare(b.name_th, "th"));
+  }, [activeProvinceFilter, districts]);
   const editProvinceOptions = useMemo(() => {
     if (!editDraft?.agencyCode) {
       return [] as Province[];
@@ -198,6 +223,10 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
   const latestRecordsPageCount = Math.max(1, Math.ceil(totalCount / latestRecordsPageSize));
   const latestRecordsStart = totalCount === 0 ? 0 : (latestRecordsPage - 1) * latestRecordsPageSize + 1;
   const latestRecordsEnd = Math.min(totalCount, latestRecordsPage * latestRecordsPageSize);
+  const dashboardMenuAgencies = useMemo(
+    () => visibleAgencies.filter((agency) => /^DPC\d{2}$/.test(agency.code)),
+    [visibleAgencies]
+  );
 
   useEffect(() => {
     const loadFilterOptions = async () => {
@@ -613,6 +642,77 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
   }, [districtHealthIssueData, healthIssueScopeRecords, selectedDistrictCode]);
 
   const healthIssueDonutTotal = healthIssueDonutData.reduce((total, item) => total + item.count, 0);
+  const overviewIssueTableRows = useMemo(() => {
+    const grouped = new Map<string, { issue: string; count: number; provinceCodes: Set<string>; districtCodes: Set<string> }>();
+
+    healthIssueScopeRecords.forEach((record) => {
+      const key = record.healthIssue.trim();
+      if (!key) return;
+      if (!grouped.has(key)) {
+        grouped.set(key, { issue: key, count: 0, provinceCodes: new Set<string>(), districtCodes: new Set<string>() });
+      }
+      const row = grouped.get(key);
+      if (!row) return;
+      row.count += 1;
+      row.provinceCodes.add(record.provinceCode);
+      row.districtCodes.add(record.districtCode);
+    });
+
+    return [...grouped.values()]
+      .sort((a, b) => b.count - a.count || a.issue.localeCompare(b.issue, "th"))
+      .slice(0, 8)
+      .map((row) => ({
+        issue: row.issue,
+        count: row.count,
+        provinceCount: row.provinceCodes.size,
+        districtCount: row.districtCodes.size,
+      }));
+  }, [healthIssueScopeRecords]);
+  const selectedOverviewIssueRecords = useMemo(() => {
+    if (!selectedOverviewIssue) {
+      return [] as ProvinceHealthIssueRecord[];
+    }
+
+    return healthIssueScopeRecords.filter((record) => record.healthIssue === selectedOverviewIssue);
+  }, [healthIssueScopeRecords, selectedOverviewIssue]);
+  const selectedOverviewIssueAgencyRows = useMemo<CoverageChartRow[]>(() => {
+    const grouped = new Map<string, CoverageChartRow>();
+    selectedOverviewIssueRecords.forEach((record) => {
+      const agencyName = agencies.find((agency) => agency.code === record.agencyCode)?.label_th ?? record.agencyCode;
+      const row = grouped.get(record.agencyCode) ?? { code: record.agencyCode, name: agencyName, record_count: 0, selected: false };
+      row.record_count += 1;
+      grouped.set(record.agencyCode, row);
+    });
+    return [...grouped.values()].sort((a, b) => b.record_count - a.record_count || a.name.localeCompare(b.name, "th"));
+  }, [agencies, selectedOverviewIssueRecords]);
+  const selectedOverviewIssueProvinceRows = useMemo<CoverageChartRow[]>(() => {
+    const grouped = new Map<string, CoverageChartRow>();
+    selectedOverviewIssueRecords.forEach((record) => {
+      const provinceName = provinces.find((province) => province.code === record.provinceCode)?.name_th ?? record.provinceCode;
+      const row = grouped.get(record.provinceCode) ?? { code: record.provinceCode, name: provinceName, record_count: 0, selected: false };
+      row.record_count += 1;
+      grouped.set(record.provinceCode, row);
+    });
+    return [...grouped.values()].sort((a, b) => b.record_count - a.record_count || a.name.localeCompare(b.name, "th"));
+  }, [provinces, selectedOverviewIssueRecords]);
+  const selectedOverviewIssueDistrictRows = useMemo<CoverageChartRow[]>(() => {
+    const grouped = new Map<string, CoverageChartRow>();
+    selectedOverviewIssueRecords.forEach((record) => {
+      const provinceName = provinces.find((province) => province.code === record.provinceCode)?.name_th ?? record.provinceCode;
+      const key = `${record.provinceCode}::${record.districtCode}`;
+      const row = grouped.get(key) ?? { code: key, name: `${provinceName} / ${record.districtName}`, record_count: 0, selected: false };
+      row.record_count += 1;
+      grouped.set(key, row);
+    });
+    return [...grouped.values()].sort((a, b) => b.record_count - a.record_count || a.name.localeCompare(b.name, "th")).slice(0, 20);
+  }, [provinces, selectedOverviewIssueRecords]);
+  const issueDetailScopeOptions = [
+    { key: "agency" as const, label: "สคร.", title: "พบใน สคร. ใดบ้าง", detail: "เรียงตามจำนวนข้อมูลของประเด็นนี้", color: "#1d9bf0", rows: selectedOverviewIssueAgencyRows, axisWidth: 62 },
+    { key: "province" as const, label: "จังหวัด", title: "พบในจังหวัดใดบ้าง", detail: "จังหวัดที่มีรายการของประเด็นนี้", color: "#00c4b4", rows: selectedOverviewIssueProvinceRows, axisWidth: 96 },
+    { key: "district" as const, label: "อำเภอ", title: "พบในอำเภอใดบ้าง", detail: "แสดง 20 อำเภอแรกที่มีจำนวนข้อมูลสูงสุด", color: "#f59e0b", rows: selectedOverviewIssueDistrictRows, axisWidth: 160 },
+  ];
+  const activeIssueDetailScope = issueDetailScopeOptions.find((option) => option.key === issueDetailScope) ?? issueDetailScopeOptions[0];
+  const selectedOverviewIssueChartHeight = (rows: CoverageChartRow[]) => Math.max(260, rows.length * 34 + 58);
   const selectedHealthIssueCount = healthIssueDonutData.find((item) => item.issue === selectedHealthIssue)?.count ?? 0;
   const selectedHealthIssueRecords = useMemo(() => {
     if (!selectedHealthIssue || selectedDistrictCode) {
@@ -635,11 +735,63 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
     }
   }, [healthIssueDonutData, selectedHealthIssue]);
 
+  const overviewFilterOptions = [
+    { key: "agency-active" as const, label: "สคร.ที่มีข้อมูลสูงสุด" },
+    { key: "province-active" as const, label: "จังหวัดที่มีข้อมูล" },    { key: "top-province" as const, label: "จังหวัดข้อมูลสูงสุด" },
+  ];
+  const overviewChartRows = useMemo<CoverageChartRow[]>(() => {
+    const agencyCodeOrder = (code: string) => Number(code.replace(/\D/g, "")) || 999;
+    const agencyRowsByCode = visibleAgencyCoverage
+      .map((agency) => ({
+        code: agency.agency_code,
+        name: agency.agency_name,
+        record_count: agency.record_count,
+        selected: false,
+      }))
+      .sort((a, b) => agencyCodeOrder(a.code) - agencyCodeOrder(b.code) || a.name.localeCompare(b.name, "th"));
+    const agencyRowsByCount = [...agencyRowsByCode].sort((a, b) => b.record_count - a.record_count || agencyCodeOrder(a.code) - agencyCodeOrder(b.code));
+    const provinceRows = visibleProvinceCoverage
+      .map((province) => ({
+        code: province.province_code,
+        name: province.province_name,
+        record_count: province.record_count,
+        selected: false,
+      }))
+      .sort((a, b) => b.record_count - a.record_count || a.name.localeCompare(b.name, "th"));
+
+    switch (overviewFilter) {
+      case "province-active":
+        return provinceRows.filter((row) => row.record_count > 0);
+      case "top-province":
+        return provinceRows.slice(0, 13);      case "agency-active":
+        return agencyRowsByCount.filter((row) => row.record_count > 0);
+      case "agency-order":
+      default:
+        return agencyRowsByCode;
+    }
+  }, [overviewFilter, visibleAgencyCoverage, visibleProvinceCoverage]);
+  const overviewChartTitle = overviewFilterOptions.find((item) => item.key === overviewFilter)?.label ?? "รายการตาม สคร.";
+  const overviewChartUnit = overviewFilter.includes("province") ? "จังหวัด" : "หน่วยงาน";
+  const overviewChartHeight = Math.max(330, overviewChartRows.length * 34 + 58);
+  const overviewChartYAxisWidth = overviewFilter.includes("province") ? 96 : 58;
+  const isOverviewMode = !activeAgencyFilter && !activeProvinceFilter && !selectedDistrictCode;
   const coverageChartTitle = isDistrictMode
-    ? `จำนวนรายการตามอำเภอในจังหวัด${selectedIssueProvinceName}`
+    ? `จำนวนข้อมูลตามอำเภอในจังหวัด${selectedIssueProvinceName}`
     : activeAgencyFilter
       ? `ความครอบคลุมข้อมูลรายจังหวัดใน ${agencies.find((item) => item.code === activeAgencyFilter)?.label_th ?? activeAgencyFilter}`
       : "ความครอบคลุมข้อมูลตาม สคร.";
+  const coverageChartHeight = Math.max(340, coverageChartRows.length * 34 + 64);
+  const coverageChartUnit = isDistrictMode ? "อำเภอ" : activeAgencyFilter ? "จังหวัด" : "หน่วยงาน";
+  const dashboardContextLabel = selectedDistrictCode
+    ? `อำเภอ${selectedDistrictName}`
+    : activeProvinceFilter
+      ? `จังหวัด${selectedIssueProvinceName}`
+      : activeAgencyFilter
+        ? agencies.find((item) => item.code === activeAgencyFilter)?.label_th ?? activeAgencyFilter
+        : "ภาพรวมทั้งหมด";
+  const topCoverageRow = coverageChartRows
+    .filter((item) => item.record_count > 0)
+    .sort((a, b) => b.record_count - a.record_count || a.name.localeCompare(b.name, "th"))[0];
 
   const selectedProvinceIssueRecords = useMemo(() => {
     if (!selectedIssueProvinceCode) {
@@ -654,6 +806,35 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
         return a.healthIssue.localeCompare(b.healthIssue, "th");
       });
   }, [provinceHealthIssueRecords, selectedIssueProvinceCode]);
+
+  const handleOverviewChartBarClick = (entry: { payload?: CoverageChartRow }) => {
+    const code = entry.payload?.code;
+    if (!code) {
+      return;
+    }
+
+    if (overviewFilter.includes("province")) {
+      const agencyCode = agencyProvinceMap.find((item) => item.province_code === code)?.agency_code;
+      if (agencyCode && !accessScope?.agencyCode) {
+        setFilterAgency(agencyCode);
+      }
+      if (!accessScope?.provinceCode) {
+        setFilterProvince(code);
+      }
+      setSelectedDistrictCode("");
+      setSelectedSubdistrictCode("");
+      setSelectedHealthIssue("");
+      return;
+    }
+
+    if (!accessScope?.agencyCode) {
+      setFilterAgency(code);
+    }
+    setFilterProvince("");
+    setSelectedDistrictCode("");
+    setSelectedSubdistrictCode("");
+    setSelectedHealthIssue("");
+  };
 
   const handleCoverageChartBarClick = (entry: { payload?: CoverageChartRow }) => {
     const code = entry.payload?.code;
@@ -700,6 +881,58 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
     }
     setFilterProvince("");
     setSelectedDistrictCode("");
+  };
+
+  const selectDashboardOverview = () => {
+    if (!accessScope?.agencyCode) {
+      setFilterAgency("");
+    }
+    if (!accessScope?.provinceCode) {
+      setFilterProvince("");
+    }
+    setSelectedDistrictCode("");
+    setSelectedSubdistrictCode("");
+    setSelectedHealthIssue("");
+    setSelectedOverviewIssue("");
+  };
+
+  const selectDashboardAgency = (agencyCode: string) => {
+    if (!accessScope?.agencyCode) {
+      setFilterAgency(agencyCode);
+    }
+    if (!accessScope?.provinceCode) {
+      setFilterProvince("");
+    }
+    setSelectedDistrictCode("");
+    setSelectedSubdistrictCode("");
+    setSelectedHealthIssue("");
+    setSelectedOverviewIssue("");
+  };
+
+  const handleDashboardAgencyChange = (agencyCode: string) => {
+    if (!agencyCode) {
+      selectDashboardOverview();
+      return;
+    }
+
+    selectDashboardAgency(agencyCode);
+  };
+
+  const handleDashboardProvinceChange = (provinceCode: string) => {
+    if (!accessScope?.provinceCode) {
+      setFilterProvince(provinceCode);
+    }
+    setSelectedDistrictCode("");
+    setSelectedSubdistrictCode("");
+    setSelectedHealthIssue("");
+    setSelectedOverviewIssue("");
+  };
+
+  const handleDashboardDistrictChange = (districtCode: string) => {
+    setSelectedDistrictCode(districtCode);
+    setSelectedSubdistrictCode("");
+    setSelectedHealthIssue("");
+    setSelectedOverviewIssue("");
   };
 
   const beginEditRecord = (row: IntakeRecordRow) => {
@@ -1133,31 +1366,284 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
 
   return (
     <section className="section" id="dashboard-section">
-      <div className="section__header">
-        <h2>Dashboard Preview</h2>
-        <p>โครงแสดงผลแผนที่ สคร. 13 เขต และรายการข้อมูลล่าสุดจากฐานข้อมูล</p>
-      </div>
-
-      <div className="dashboard-summary">
-        <article className="summary-card">
-          <p>ปีงบประมาณ KPI</p>
-          <h3>{selectedFiscalYear}</h3>
-          <span>ใช้สรุปผล KPI Summary</span>
-        </article>
-        <article className="summary-card">
-          <p>ตัวกรองข้อมูล</p>
-          <h3>{activeFilterChips.length}</h3>
-          <span>{activeFilterChips.length ? activeFilterChips.join(" · ") : "ยังไม่ได้กรองข้อมูล"}</span>
-        </article>
-        <article className="summary-card">
-          <p>หน่วยงานบนแผนที่</p>
-          <h3>{selectedMapAgencyLabel}</h3>
-          <span>คลิกที่แผนที่เพื่อเปลี่ยนบริบท</span>
-        </article>
-      </div>
-
       {!hideSavedRecords && savedRecordsPanel}
 
+      <div className="dashboard-workspace">
+        <aside className="dashboard-side-menu" aria-label="เลือกมุมมอง Dashboard">
+          <button
+            type="button"
+            className={`dashboard-side-menu__item${!activeAgencyFilter && !activeProvinceFilter && !selectedDistrictCode ? " is-active" : ""}`}
+            onClick={selectDashboardOverview}
+            disabled={Boolean(accessScope?.agencyCode)}
+          >
+            <span>หน้าแรก</span>
+            <strong>สรุปภาพรวม</strong>
+          </button>
+          {dashboardMenuAgencies.map((agency) => (
+            <button
+              key={agency.code}
+              type="button"
+              className={`dashboard-side-menu__item${activeAgencyFilter === agency.code && !activeProvinceFilter ? " is-active" : ""}`}
+              onClick={() => selectDashboardAgency(agency.code)}
+              disabled={Boolean(accessScope?.agencyCode && accessScope.agencyCode !== agency.code)}
+            >
+              <span>{agency.code.replace("DPC", "สคร.")}</span>
+              <strong>{agency.label_th}</strong>
+            </button>
+          ))}
+        </aside>
+
+        <div className="dashboard-workspace__main">
+          {!isOverviewMode ? (
+            <div className="dashboard-filter-panel" aria-label="เลือกขอบเขตข้อมูล Dashboard">
+              <div className="dashboard-filter-panel__header">
+                <div>
+                  <h3>เลือกข้อมูลที่ต้องการดู</h3>
+                  <p>{dashboardContextLabel}</p>
+                </div>
+                <button
+                  type="button"
+                  className="cta cta--ghost"
+                  onClick={selectDashboardOverview}
+                  disabled={!activeAgencyFilter && !activeProvinceFilter && !selectedDistrictCode}
+                >
+                  ล้างการเลือก
+                </button>
+              </div>
+              <div className="dashboard-filter-grid">
+                <label>
+                  สคร.
+                  {accessScope?.agencyCode ? (
+                    <input value={agencies.find((agency) => agency.code === accessScope.agencyCode)?.label_th ?? accessScope.agencyCode} disabled />
+                  ) : (
+                    <select value={activeAgencyFilter} onChange={(event) => handleDashboardAgencyChange(event.target.value)}>
+                      <option value="">ทั้งหมด</option>
+                      {dashboardMenuAgencies.map((agency) => (
+                        <option key={agency.code} value={agency.code}>{agency.label_th}</option>
+                      ))}
+                    </select>
+                  )}
+                </label>
+                <label>
+                  จังหวัด
+                  <select
+                    value={activeProvinceFilter}
+                    onChange={(event) => handleDashboardProvinceChange(event.target.value)}
+                    disabled={Boolean(accessScope?.provinceCode) || dashboardProvinceOptions.length === 0}
+                  >
+                    <option value="">ทั้งหมด</option>
+                    {dashboardProvinceOptions.map((province) => (
+                      <option key={province.code} value={province.code}>{province.name_th}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  อำเภอ
+                  <select
+                    value={selectedDistrictCode}
+                    onChange={(event) => handleDashboardDistrictChange(event.target.value)}
+                    disabled={!activeProvinceFilter || dashboardDistrictOptions.length === 0}
+                  >
+                    <option value="">ทั้งหมด</option>
+                    {dashboardDistrictOptions.map((district) => (
+                      <option key={district.code} value={district.code}>{district.name_th}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </div>
+          ) : null}
+
+          {isOverviewMode ? (
+            <div className="dashboard-overview">
+              {selectedOverviewIssue ? (
+                <div className="issue-detail-view">
+                  <div className="issue-detail-view__header">
+                    <div>
+                      <span>รายละเอียดประเด็นโรคและสุขภาพ</span>
+                      <h3>{selectedOverviewIssue}</h3>
+                      <p>{selectedOverviewIssueRecords.length.toLocaleString("th-TH")} ข้อมูล จาก {selectedOverviewIssueAgencyRows.length.toLocaleString("th-TH")} สคร. / {selectedOverviewIssueProvinceRows.length.toLocaleString("th-TH")} จังหวัด / {selectedOverviewIssueDistrictRows.length.toLocaleString("th-TH")} อำเภอ</p>
+                    </div>
+                    <button type="button" className="cta cta--ghost" onClick={() => setSelectedOverviewIssue("")}>กลับสรุปภาพรวม</button>
+                  </div>
+
+                  <div className="issue-detail-view__metrics">
+                    <article><span>จำนวนข้อมูล</span><strong>{selectedOverviewIssueRecords.length.toLocaleString("th-TH")}</strong></article>
+                    <article><span>สคร.ที่พบ</span><strong>{selectedOverviewIssueAgencyRows.length.toLocaleString("th-TH")}</strong></article>
+                    <article><span>จังหวัดที่พบ</span><strong>{selectedOverviewIssueProvinceRows.length.toLocaleString("th-TH")}</strong></article>
+                    <article><span>อำเภอที่พบ</span><strong>{selectedOverviewIssueDistrictRows.length.toLocaleString("th-TH")}</strong></article>
+                  </div>
+
+                  <article className="panel issue-detail-chart">
+                    <div className="dashboard-overview__section-head">
+                      <div><h3>{activeIssueDetailScope.title}</h3><p>{activeIssueDetailScope.detail}</p></div>
+                      <span>{activeIssueDetailScope.rows.length.toLocaleString("th-TH")} ข้อมูล</span>
+                    </div>
+                    <div className="issue-detail-tabs" aria-label="เลือกมุมมองพื้นที่ของประเด็น">
+                      {issueDetailScopeOptions.map((option) => (
+                        <button key={option.key} type="button" className={issueDetailScope === option.key ? "is-active" : ""} onClick={() => setIssueDetailScope(option.key)}>
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{ width: "100%", height: selectedOverviewIssueChartHeight(activeIssueDetailScope.rows) }}>
+                      <ResponsiveContainer>
+                        <BarChart layout="vertical" data={activeIssueDetailScope.rows} margin={{ top: 12, right: 46, bottom: 12, left: 0 }}>
+                          <XAxis type="number" allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#4b647d" }} />
+                          <YAxis type="category" dataKey="name" width={activeIssueDetailScope.axisWidth} interval={0} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#4b647d" }} />
+                          <Tooltip cursor={{ fill: "rgba(16, 36, 62, 0.04)" }} formatter={recordCountTooltipFormatter} contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 10px 30px rgba(16,36,62,0.1)" }} />
+                          <Bar dataKey="record_count" radius={[0, 8, 8, 0]} barSize={22}>{activeIssueDetailScope.rows.map((entry) => (<Cell key={entry.code} fill={activeIssueDetailScope.color} />))}<LabelList dataKey="record_count" position="right" formatter={recordCountLabelFormatter} /></Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </article>
+                </div>
+              ) : (
+              <>
+              <div className="dashboard-overview__hero">
+                <div>
+                  <span>district health system ddc</span>
+                  <h3>สรุปภาพรวม</h3>
+                </div>
+              </div>
+
+              <div className="dashboard-overview__metrics" aria-label="ตัวชี้วัดภาพรวม">
+                <article>
+                  <span>ประเด็นโรคและสุขภาพ</span>
+                  <strong>{healthIssueDonutTotal.toLocaleString("th-TH")}</strong>
+                  <p>รายการประเด็นที่บันทึกในระบบ</p>
+                </article>
+                <article>
+                  <span>สคร.ที่มีข้อมูล</span>
+                  <strong>{agencyActiveCount.toLocaleString("th-TH")}</strong>
+                  <p>หน่วยงานที่มีรายการส่งเข้ามา</p>
+                </article>
+                <article>
+                  <span>จังหวัดที่มีข้อมูล</span>
+                  <strong>{provinceActiveCount.toLocaleString("th-TH")}</strong>
+                  <p>จังหวัดที่พบข้อมูลอย่างน้อย 1 รายการ</p>
+                </article>
+                <article>
+                  <span>หน่วยงานข้อมูลสูงสุด</span>
+                  <strong>{topAgency}</strong>
+                  <p>จัดอันดับจากจำนวนข้อมูล</p>
+                </article>
+                <article>
+                  <span>จังหวัดข้อมูลสูงสุด</span>
+                  <strong>{topProvince}</strong>
+                  <p>จัดอันดับจากจำนวนข้อมูล</p>
+                </article>
+              </div>
+
+              <div className="dashboard-overview__content">
+                <article className="dashboard-overview__chart panel">
+                  <div className="dashboard-overview__section-head">
+                    <div>
+                      <h3>รายการตาม สคร.</h3>
+                      <p>คลิกแท่งเพื่อดูรายละเอียดตามตัวกรอง</p>
+                    </div>
+                    <span>{overviewChartRows.length.toLocaleString("th-TH")} {overviewChartUnit}</span>
+                  </div>
+                  <div className="dashboard-overview__filters" aria-label="กรองรายการหน้าแรก">
+                    {overviewFilterOptions.map((option) => (
+                      <button
+                        key={option.key}
+                        type="button"
+                        className={overviewFilter === option.key ? "is-active" : ""}
+                        onClick={() => setOverviewFilter(option.key)}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="dashboard-overview__chart-body" style={{ width: "100%", height: overviewChartHeight }}>
+                    <ResponsiveContainer>
+                      <BarChart layout="vertical" data={overviewChartRows} margin={{ top: 12, right: 46, bottom: 12, left: 0 }}>
+                        <XAxis type="number" allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#4b647d" }} />
+                        <YAxis type="category" dataKey="name" width={overviewChartYAxisWidth} interval={0} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#4b647d" }} />
+                        <Tooltip cursor={{ fill: "rgba(16, 36, 62, 0.04)" }} formatter={recordCountTooltipFormatter} contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 10px 30px rgba(16,36,62,0.1)" }} />
+                        <Bar dataKey="record_count" radius={[0, 8, 8, 0]} barSize={22} onClick={handleOverviewChartBarClick}>
+                          {overviewChartRows.map((entry, index) => (
+                            <Cell key={`overview-cell-${entry.code}-${index}`} fill={entry.record_count > 0 ? "#1d9bf0" : "#cbd5e1"} style={{ cursor: "pointer" }} />
+                          ))}
+                                                  <LabelList dataKey="record_count" position="right" formatter={recordCountLabelFormatter} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </article>
+
+                <article className="dashboard-overview__issues panel">
+                  <div className="dashboard-overview__section-head">
+                    <div>
+                      <h3>สัดส่วนประเด็นยอดนิยม</h3>
+                      <p>ประเด็นโรคและภัยสุขภาพที่ถูกบันทึกมากที่สุด</p>
+                    </div>
+                    <span>{healthIssueDonutTotal.toLocaleString("th-TH")} ข้อมูล</span>
+                  </div>
+                  {healthIssueDonutData.length === 0 ? (
+                    <p className="province-issue-empty">ยังไม่มีข้อมูลประเด็นโรค/ภัยสุขภาพ</p>
+                  ) : (
+                    <>
+                      <div className="dashboard-overview__donut">
+                        <ResponsiveContainer width="100%" height={220}>
+                          <PieChart>
+                            <Pie data={healthIssueDonutData} dataKey="count" nameKey="issue" innerRadius={56} outerRadius={88} paddingAngle={2} stroke="#ffffff" strokeWidth={3}>
+                              {healthIssueDonutData.map((entry) => (
+                                <Cell key={entry.issue} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <Tooltip formatter={(value, name) => [`${Number(value ?? 0).toLocaleString("th-TH")} ข้อมูล`, name]} contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 10px 30px rgba(16,36,62,0.1)" }} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="dashboard-overview__legend">
+                        {healthIssueDonutData.map((item) => (
+                          <div key={item.issue}>
+                            <span style={{ background: item.color }} />
+                            <p>{item.issue}</p>
+                            <strong>{item.count.toLocaleString("th-TH")}</strong>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </article>
+              </div>
+
+              <article className="dashboard-overview__table panel">
+                <div className="dashboard-overview__section-head">
+                  <div>
+                    <h3>รายการประเด็นโรคและภัยสุขภาพแยกตามพื้นที่</h3>
+                    <p>สรุปจากข้อมูลที่ระบบมีอยู่ในปัจจุบัน</p>
+                  </div>
+                </div>
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr><th>ประเด็น</th><th>จำนวนข้อมูล</th><th>จังหวัด</th><th>อำเภอ</th></tr>
+                    </thead>
+                    <tbody>
+                      {overviewIssueTableRows.length === 0 ? (
+                        <tr><td colSpan={4}>ยังไม่มีข้อมูลประเด็นโรค/ภัยสุขภาพ</td></tr>
+                      ) : (
+                        overviewIssueTableRows.map((item) => (
+                          <tr key={item.issue} className="issue-detail-link-row" onClick={() => { setSelectedOverviewIssue(item.issue); setIssueDetailScope("agency"); }}>
+                            <td><button type="button" className="issue-detail-link" onClick={() => { setSelectedOverviewIssue(item.issue); setIssueDetailScope("agency"); }}>{item.issue}</button></td>
+                            <td>{item.count.toLocaleString("th-TH")}</td>
+                            <td>{item.provinceCount.toLocaleString("th-TH")}</td>
+                            <td>{item.districtCount.toLocaleString("th-TH")}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+              </>
+              )}
+            </div>
+          ) : (
       <div className="dashboard-grid">
         <article className="panel panel--map">
           <div className="map-panel-header">
@@ -1220,7 +1706,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
                 <h4>ประเด็นโรค/ภัยสุขภาพ</h4>
                 <p>{healthIssueDonutScopeLabel}</p>
               </div>
-              <span>{healthIssueDonutTotal.toLocaleString("th-TH")} รายการ</span>
+              <span>{healthIssueDonutTotal.toLocaleString("th-TH")} ข้อมูล</span>
             </div>
 
             {healthIssueDonutData.length === 0 ? (
@@ -1256,7 +1742,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(value, name) => [`${Number(value ?? 0).toLocaleString("th-TH")} รายการ`, name]}
+                        formatter={(value, name) => [`${Number(value ?? 0).toLocaleString("th-TH")} ข้อมูล`, name]}
                         contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 10px 30px rgba(16,36,62,0.1)" }}
                       />
                     </PieChart>
@@ -1285,7 +1771,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
                 {selectedHealthIssue ? (
                   <div className="health-issue-donut-detail">
                     <strong>{selectedHealthIssue}</strong>
-                    <span>{selectedHealthIssueCount.toLocaleString("th-TH")} รายการ</span>
+                    <span>{selectedHealthIssueCount.toLocaleString("th-TH")} ข้อมูล</span>
                     {selectedHealthIssueRecords.length > 0 ? (
                       <div className="health-issue-donut-detail__list">
                         {selectedHealthIssueRecords.map((record, index) => (
@@ -1303,6 +1789,37 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
         </article>
 
         <article className="panel">
+          <div className="dashboard-context-head">
+            <div>
+              <span>{dashboardContextLabel}</span>
+              <h3>{coverageChartTitle}</h3>
+            </div>
+            {(activeAgencyFilter || activeProvinceFilter || selectedDistrictCode) ? (
+              <button type="button" className="cta cta--ghost" onClick={selectDashboardOverview}>
+                กลับภาพรวม
+              </button>
+            ) : null}
+          </div>
+
+          <div className="dashboard-context-metrics" aria-label="ตัวชี้วัดตามบริบท Dashboard">
+            <div>
+              <span>สคร.ที่มีข้อมูล</span>
+              <strong>{agencyActiveCount.toLocaleString("th-TH")}</strong>
+            </div>
+            <div>
+              <span>จังหวัดที่มีข้อมูล</span>
+              <strong>{provinceActiveCount.toLocaleString("th-TH")}</strong>
+            </div>
+            <div>
+              <span>หน่วยงานข้อมูลสูงสุด</span>
+              <strong>{topAgency}</strong>
+            </div>
+            <div>
+              <span>จังหวัดข้อมูลสูงสุด</span>
+              <strong>{topProvince}</strong>
+            </div>
+          </div>
+
           {selectedDistrictCode ? (
             // District mode: show ONLY district health issues
             <div className="province-issue-panel" aria-label="ประเด็นโรคภัยสุขภาพของอำเภอที่เลือก">
@@ -1331,7 +1848,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
                   {districtHealthIssueData.map((item) => (
                     <div key={item.issue} className="province-issue-item">
                       <strong>{item.issue}</strong>
-                      <span>{item.count.toLocaleString("th-TH")} รายการ</span>
+                      <span>{item.count.toLocaleString("th-TH")} ข้อมูล</span>
                     </div>
                   ))}
                 </div>
@@ -1344,7 +1861,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
                 <div className="province-progress-panel__header">
                   <div>
                     <h4>ประเด็นโรค/ภัยสุขภาพ</h4>
-                    <p>จังหวัด{selectedIssueProvinceName}{selectedProvinceIssueRecords.length > 0 ? ` — ${selectedProvinceIssueRecords.length.toLocaleString("th-TH")} รายการ` : ""}</p>
+                    <p>จังหวัด{selectedIssueProvinceName}{selectedProvinceIssueRecords.length > 0 ? ` — ${selectedProvinceIssueRecords.length.toLocaleString("th-TH")} ข้อมูล` : ""}</p>
                   </div>
                 </div>
 
@@ -1393,7 +1910,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
                           <div className="province-progress-row__meta">
                             <strong>{district.name}</strong>
                             <span>
-                              {submitted ? `ส่งแล้ว ${district.record_count} รายการ` : "ยังไม่มีข้อมูล"}
+                              {submitted ? `ส่งแล้ว ${district.record_count} ข้อมูล` : "ยังไม่มีข้อมูล"}
                             </span>
                           </div>
                           <div
@@ -1418,32 +1935,44 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
           ) : (
             // Agency/SCR mode: show bar chart + province progress + province issues
             <>
-              <h3>{coverageChartTitle}</h3>
-              <div style={{ width: "100%", height: 350, marginTop: 16 }}>
-                <ResponsiveContainer>
-                  <BarChart data={coverageChartRows} margin={{ top: 20, right: 20, bottom: 40, left: -20 }}>
-                    <XAxis
-                      dataKey="name"
-                      tick={{ fontSize: 12, fill: "#4b647d" }}
-                      interval={0}
-                      angle={-45}
-                      textAnchor="end"
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#4b647d" }} />
-                    <Tooltip cursor={{ fill: "rgba(16, 36, 62, 0.04)" }} contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 10px 30px rgba(16,36,62,0.1)" }} />
-                    <Bar dataKey="record_count" radius={[6, 6, 0, 0]} onClick={handleCoverageChartBarClick}>
-                      {coverageChartRows.map((entry, index) => (
-                        <Cell
-                          key={`cell-${entry.code}-${index}`}
-                          fill={entry.selected ? "#f9007a" : "#00c4b4"}
-                          style={{ cursor: !activeProvinceFilter && !accessScope?.agencyCode ? "pointer" : "default" }}
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+              <div className="horizontal-chart-shell">
+                <div className="horizontal-chart-shell__meta">
+                  <span>{coverageChartRows.length.toLocaleString("th-TH")} {coverageChartUnit}</span>
+                  <strong>{topCoverageRow ? `${topCoverageRow.name} ${topCoverageRow.record_count.toLocaleString("th-TH")} ข้อมูล` : "ยังไม่มีข้อมูล"}</strong>
+                </div>
+                <div style={{ width: "100%", height: coverageChartHeight, marginTop: 8 }}>
+                  <ResponsiveContainer>
+                    <BarChart layout="vertical" data={coverageChartRows} margin={{ top: 12, right: 56, bottom: 12, left: 86 }}>
+                      <XAxis
+                        type="number"
+                        allowDecimals={false}
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 12, fill: "#4b647d" }}
+                      />
+                      <YAxis
+                        type="category"
+                        dataKey="name"
+                        width={130}
+                        interval={0}
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 12, fill: "#4b647d" }}
+                      />
+                      <Tooltip cursor={{ fill: "rgba(16, 36, 62, 0.04)" }} formatter={recordCountTooltipFormatter} contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 10px 30px rgba(16,36,62,0.1)" }} />
+                      <Bar dataKey="record_count" radius={[0, 8, 8, 0]} barSize={22} onClick={handleCoverageChartBarClick}>
+                        {coverageChartRows.map((entry, index) => (
+                          <Cell
+                            key={`cell-${entry.code}-${index}`}
+                            fill={entry.selected ? "#f9007a" : "#00c4b4"}
+                            style={{ cursor: "pointer" }}
+                          />
+                        ))}
+                                                <LabelList dataKey="record_count" position="right" formatter={recordCountLabelFormatter} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </>
           )}
@@ -1522,7 +2051,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
                         : "เลือก สคร. จากแผนที่ก่อน แล้วคลิกแท่งจังหวัด"}
                   </p>
                 </div>
-                {selectedIssueProvinceName ? <span>{selectedProvinceIssueRecords.length.toLocaleString("th-TH")} รายการ</span> : null}
+                {selectedIssueProvinceName ? <span>{selectedProvinceIssueRecords.length.toLocaleString("th-TH")} ข้อมูล</span> : null}
               </div>
 
               {!activeAgencyFilter ? (
@@ -1544,6 +2073,9 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
             </div>
           ) : null}
         </article>
+      </div>
+          )}
+        </div>
       </div>
 
       {accessScope?.agencyCode ? (
@@ -1655,13 +2187,6 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
       </article>
       */}
 
-      <div className="metrics-grid">
-        <article className="metric-card"><p>จำนวนรายการตามตัวกรอง</p><h3>{totalCount.toLocaleString("th-TH")}</h3></article>
-        <article className="metric-card"><p>สคร.ที่มีข้อมูล</p><h3>{agencyActiveCount.toLocaleString("th-TH")}</h3></article>
-        <article className="metric-card"><p>จังหวัดที่มีข้อมูล</p><h3>{provinceActiveCount.toLocaleString("th-TH")}</h3></article>
-        <article className="metric-card"><p>หน่วยงานข้อมูลสูงสุด</p><h3>{topAgency}</h3></article>
-        <article className="metric-card"><p>จังหวัดข้อมูลสูงสุด</p><h3>{topProvince}</h3></article>
-      </div>
 
       {/*
       <article className="panel table-panel">
