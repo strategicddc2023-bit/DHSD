@@ -6,6 +6,23 @@ export type AccessScope = {
   provinceCode?: string | null;
 };
 
+export function normalizeAgencyCode(value?: string | null): string | null {
+  if (!value) return value ?? null;
+
+  const trimmed = value.trim();
+  const dpcMatch = trimmed.match(/^DPC(\d{1,2})$/i);
+  if (dpcMatch) {
+    return `DPC${dpcMatch[1].padStart(2, "0")}`;
+  }
+
+  const thaiDpcMatch = trimmed.match(/^สคร\.?\s*(\d{1,2})$/);
+  if (thaiDpcMatch) {
+    return `DPC${thaiDpcMatch[1].padStart(2, "0")}`;
+  }
+
+  return trimmed;
+}
+
 export function canViewAll(scope: AccessScope): boolean {
   return scope.role === "superadmin";
 }

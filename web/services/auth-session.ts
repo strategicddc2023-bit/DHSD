@@ -1,5 +1,5 @@
 import { supabase } from "@/services/supabase-client";
-import type { AccessScope } from "@/services/access-control";
+import { normalizeAgencyCode, type AccessScope } from "@/services/access-control";
 import type { AppUserRow } from "@/types/mvp";
 
 const appUserSelect = "id,auth_user_id,thai_d_sub,role,agency_code,province_code,district_code,status,last_login_at";
@@ -21,7 +21,7 @@ export async function loadCurrentAppUser(): Promise<AppUserRow | null> {
     return null;
   }
 
-  return data as AppUserRow;
+  return { ...(data as AppUserRow), agency_code: normalizeAgencyCode(data.agency_code) };
 }
 
 export function buildAccessScope(user: AppUserRow | null): AccessScope | null {

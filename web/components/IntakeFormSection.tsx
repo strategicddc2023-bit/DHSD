@@ -1,7 +1,7 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { AccessScope } from "@/services/access-control";
+import { normalizeAgencyCode, type AccessScope } from "@/services/access-control";
 import { supabase } from "@/services/supabase-client";
 import type { AgencyOption, District, IntakeFormData, Province } from "@/types/mvp";
 
@@ -45,7 +45,8 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
       ]);
 
       if (agencyRes.error || provinceRes.error || mappingRes.error) {
-        setMessage("โหลดข้อมูลตั้งต้นไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อ Supabase");
+        const errorMessage = mappingRes.error?.message ?? agencyRes.error?.message ?? provinceRes.error?.message;
+        setMessage(`โหลดข้อมูลตั้งต้นไม่สำเร็จ: ${errorMessage ?? "กรุณาตรวจสอบการเชื่อมต่อ Supabase"}`);
       }
 
       setAgencies(agencyRes.data ?? []);
@@ -67,19 +68,25 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
   }, []);
 
   useEffect(() => {
-    if (!accessScope?.agencyCode) {
+    const normalizedAgencyCode = normalizeAgencyCode(accessScope?.agencyCode ?? formData.agencyCode);
+    if (!normalizedAgencyCode || agencies.length === 0) {
       return;
     }
 
-    if (formData.agencyCode !== accessScope.agencyCode) {
-      onChange({
-        ...formData,
-        agencyCode: accessScope.agencyCode,
-        provinceCode: "",
-        districtCode: "",
-      });
+    const agencyExists = agencies.some(
+      (agency) => agency.code === normalizedAgencyCode || agency.label_th === formData.agencyCode
+    );
+    if (!agencyExists || formData.agencyCode === normalizedAgencyCode) {
+      return;
     }
-  }, [accessScope?.agencyCode, formData, onChange]);
+
+    onChange({
+      ...formData,
+      agencyCode: normalizedAgencyCode,
+      provinceCode: "",
+      districtCode: "",
+    });
+  }, [accessScope?.agencyCode, agencies, formData, onChange]);
 
   const filteredProvinces = useMemo(() => {
     if (!formData.agencyCode) {

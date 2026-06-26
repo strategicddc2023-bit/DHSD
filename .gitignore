@@ -2,6 +2,12 @@
 node_modules/
 .next/
 out/
+.vscode/
+phase-0/
+phase-1/
+phase-map/
+tmp_docx_extract/
+tmp_xlsx_extract/
 
 # Env files (must never be committed)
 .env
