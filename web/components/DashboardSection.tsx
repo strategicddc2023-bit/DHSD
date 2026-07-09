@@ -227,6 +227,15 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
     () => visibleAgencies.filter((agency) => /^DPC\d{2}$/.test(agency.code)),
     [visibleAgencies]
   );
+  const overviewAreaTotals = useMemo(() => {
+    const provinceCodes = new Set(visibleProvinces.map((province) => province.code));
+
+    return {
+      agencyCount: dashboardMenuAgencies.length,
+      provinceCount: visibleProvinces.length,
+      districtCount: districts.filter((district) => provinceCodes.has(district.province_code)).length,
+    };
+  }, [dashboardMenuAgencies.length, districts, visibleProvinces]);
 
   useEffect(() => {
     const loadFilterOptions = async () => {
@@ -537,6 +546,23 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
   ]);
 
   const selectedIssueProvinceCode = activeProvinceFilter;
+
+  const selectedAgencyAreaTotals = useMemo(() => {
+    if (!activeAgencyFilter) {
+      return { provinceCount: agencyActiveCount, districtCount: provinceActiveCount };
+    }
+
+    const provinceCodes = new Set(
+      agencyProvinceMap
+        .filter((item) => item.agency_code === activeAgencyFilter)
+        .map((item) => item.province_code)
+    );
+
+    return {
+      provinceCount: provinceCodes.size,
+      districtCount: districts.filter((district) => provinceCodes.has(district.province_code)).length,
+    };
+  }, [activeAgencyFilter, agencyActiveCount, agencyProvinceMap, districts, provinceActiveCount]);
 
   // Load district health issues
   useEffect(() => {
@@ -1387,7 +1413,6 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
               onClick={() => selectDashboardAgency(agency.code)}
               disabled={Boolean(accessScope?.agencyCode && accessScope.agencyCode !== agency.code)}
             >
-              <span>{agency.code.replace("DPC", "สคร.")}</span>
               <strong>{agency.label_th}</strong>
             </button>
           ))}
@@ -1502,36 +1527,26 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
               <>
               <div className="dashboard-overview__hero">
                 <div>
-                  <span>district health system ddc</span>
                   <h3>สรุปภาพรวม</h3>
                 </div>
               </div>
 
               <div className="dashboard-overview__metrics" aria-label="ตัวชี้วัดภาพรวม">
                 <article>
-                  <span>ประเด็นโรคและสุขภาพ</span>
+                  <span>รวมประเด็นโรคและสุขภาพทั้งหมด</span>
                   <strong>{healthIssueDonutTotal.toLocaleString("th-TH")}</strong>
-                  <p>รายการประเด็นที่บันทึกในระบบ</p>
                 </article>
                 <article>
-                  <span>สคร.ที่มีข้อมูล</span>
-                  <strong>{agencyActiveCount.toLocaleString("th-TH")}</strong>
-                  <p>หน่วยงานที่มีรายการส่งเข้ามา</p>
+                  <span>สคร ทั้งหมด</span>
+                  <strong>{overviewAreaTotals.agencyCount.toLocaleString("th-TH")}</strong>
                 </article>
                 <article>
-                  <span>จังหวัดที่มีข้อมูล</span>
-                  <strong>{provinceActiveCount.toLocaleString("th-TH")}</strong>
-                  <p>จังหวัดที่พบข้อมูลอย่างน้อย 1 รายการ</p>
+                  <span>จังหวัดทั้งหมด</span>
+                  <strong>{overviewAreaTotals.provinceCount.toLocaleString("th-TH")}</strong>
                 </article>
                 <article>
-                  <span>หน่วยงานข้อมูลสูงสุด</span>
-                  <strong>{topAgency}</strong>
-                  <p>จัดอันดับจากจำนวนข้อมูล</p>
-                </article>
-                <article>
-                  <span>จังหวัดข้อมูลสูงสุด</span>
-                  <strong>{topProvince}</strong>
-                  <p>จัดอันดับจากจำนวนข้อมูล</p>
+                  <span>อำเภอ ทั้งหมด</span>
+                  <strong>{overviewAreaTotals.districtCount.toLocaleString("th-TH")}</strong>
                 </article>
               </div>
 
@@ -1803,20 +1818,16 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
 
           <div className="dashboard-context-metrics" aria-label="ตัวชี้วัดตามบริบท Dashboard">
             <div>
-              <span>สคร.ที่มีข้อมูล</span>
-              <strong>{agencyActiveCount.toLocaleString("th-TH")}</strong>
+              <span>{activeAgencyFilter ? "จังหวัดใน สคร." : "สคร.ที่มีข้อมูล"}</span>
+              <strong>{selectedAgencyAreaTotals.provinceCount.toLocaleString("th-TH")}</strong>
             </div>
             <div>
-              <span>จังหวัดที่มีข้อมูล</span>
-              <strong>{provinceActiveCount.toLocaleString("th-TH")}</strong>
+              <span>{activeAgencyFilter ? "อำเภอทั้งหมดใน สคร." : "จังหวัดที่มีข้อมูล"}</span>
+              <strong>{selectedAgencyAreaTotals.districtCount.toLocaleString("th-TH")}</strong>
             </div>
             <div>
-              <span>หน่วยงานข้อมูลสูงสุด</span>
-              <strong>{topAgency}</strong>
-            </div>
-            <div>
-              <span>จังหวัดข้อมูลสูงสุด</span>
-              <strong>{topProvince}</strong>
+              <span>ประเด็นโรคและสุขภาพทั้งหมด</span>
+              <strong>{healthIssueDonutTotal.toLocaleString("th-TH")}</strong>
             </div>
           </div>
 
@@ -2280,3 +2291,4 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
     </section>
   );
 }
+
