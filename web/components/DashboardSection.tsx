@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import type { AccessScope } from "@/services/access-control";
@@ -1633,8 +1633,7 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
               <article className="dashboard-overview__table panel">
                 <div className="dashboard-overview__section-head">
                   <div>
-                    <h3>รายการประเด็นโรคและภัยสุขภาพแยกตามพื้นที่</h3>
-                    <p>สรุปจากข้อมูลที่ระบบมีอยู่ในปัจจุบัน</p>
+                    <h3>รายการประเด็นโรคและภัยสุขภาพ</h3>
                   </div>
                 </div>
                 <div className="table-wrap">
