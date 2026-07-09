@@ -4,10 +4,7 @@ import { GeoJSON, MapContainer, TileLayer, useMap } from "react-leaflet";
 import type { Layer, PathOptions } from "leaflet";
 import type { FeatureCollection } from "geojson";
 import type { InteractiveHealthMapProps } from "@/components/InteractiveHealthMap";
-import { canSubmitForOwnAgency } from "@/services/access-control";
-import { loadDistrictHealthIssueSummary } from "@/services/health-issue-service";
 import { loadDistrictBoundaries, loadProvinceBoundaries } from "@/services/map-boundary-service";
-import type { DistrictHealthIssueSummary } from "@/services/health-issue-service";
 import type { DistrictBoundaryCollection, DistrictBoundaryProperties, ProvinceBoundaryCollection, ProvinceBoundaryProperties } from "@/types/map";
 
 const thailandCenter: [number, number] = [13.736, 100.523];
@@ -69,7 +66,6 @@ export default function InteractiveHealthMapClient({
   onSelectProvince,
   onSelectDistrict,
   onSelectSubdistrict,
-  accessScope,
   forwardedRef,
 }: InteractiveHealthMapProps) {
   const [boundaries, setBoundaries] = useState<ProvinceBoundaryCollection | null>(null);
@@ -106,7 +102,7 @@ export default function InteractiveHealthMapClient({
   const selectedAgencyName = selectedAgencyCode ? agencyLabelMap.get(selectedAgencyCode) ?? selectedAgencyCode : "";
   const selectedProvinceName = selectedProvinceCode ? provinceNameMap.get(selectedProvinceCode) ?? selectedProvinceCode : "";
   const isMapBusy = status === "loading" || districtStatus === "loading";
-  const canReturnToAllZones = Boolean(selectedAgencyCode && !accessScope?.agencyCode);
+
 
   // Sync from external chart province selection
   useEffect(() => {
@@ -217,30 +213,8 @@ export default function InteractiveHealthMapClient({
 
   if (status === "error") return <div className="interactive-map__loading interactive-map__loading--error"><p>โหลดไฟล์ขอบเขตจังหวัดไม่สำเร็จ</p><span>ตรวจสอบ `web/public/map-boundaries/provinces.geojson`</span></div>;
 
-  const resetToAgencyLevel = () => {
-    setSelectedProvinceCode("");
-    setSelectedDistrictCode("");
-    onSelectProvince?.("");
-    onSelectDistrict?.("");
-  };
-  const resetToAllZones = () => {
-    setSelectedProvinceCode("");
-    setSelectedDistrictCode("");
-    onSelectProvince?.("");
-    onSelectDistrict?.("");
-    if (selectedAgencyCode) {
-      onSelectAgency?.(selectedAgencyCode);
-    }
-  };
-
   return (
     <div className="interactive-map">
-      <div className="interactive-map__breadcrumb" aria-label="ลำดับพื้นที่แผนที่">
-        <button type="button" className="interactive-map__crumb interactive-map__crumb--active" onClick={resetToAllZones} disabled={!canReturnToAllZones}>13 เขตสุขภาพ</button>
-        <button type="button" className={selectedAgencyCode ? "interactive-map__crumb interactive-map__crumb--active" : "interactive-map__crumb"} onClick={resetToAgencyLevel} disabled={!selectedProvinceCode}>จังหวัดในเขต</button>
-        <button type="button" className={districtBoundaries ? "interactive-map__crumb interactive-map__crumb--active" : "interactive-map__crumb"} disabled>อำเภอ</button>
-      </div>
-
       <div className="interactive-map__canvas-wrap">
         <MapContainer className="interactive-map__canvas" center={thailandCenter} zoom={5.4} scrollWheelZoom={false} attributionControl>
           <MapController setMapInstance={setMapInstance} />
@@ -262,7 +236,6 @@ export default function InteractiveHealthMapClient({
         </MapContainer>
         {isMapBusy ? <div className="interactive-map__overlay" role="status"><span></span><p>{districtStatus === "loading" ? `กำลังโหลดอำเภอของจังหวัด${selectedProvinceName}` : "กำลังโหลดแผนที่"}</p></div> : null}
       </div>
-
 
       <div className="interactive-map__legend">
         <span><i className="interactive-map__swatch interactive-map__swatch--zone" />เขตสุขภาพ</span>

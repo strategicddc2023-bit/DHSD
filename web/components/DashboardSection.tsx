@@ -229,13 +229,36 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
   );
   const overviewAreaTotals = useMemo(() => {
     const provinceCodes = new Set(visibleProvinces.map((province) => province.code));
+    const visibleDistricts = districts.filter((district) => provinceCodes.has(district.province_code));
+    const districtKeys = new Set(visibleDistricts.map((district) => `${district.province_code}::${district.code}`));
+    const submittedDistrictKeys = new Set<string>();
+
+    Object.entries(submittedDistrictCodesByProvince).forEach(([provinceCode, districtCodes]) => {
+      if (!provinceCodes.has(provinceCode)) return;
+      districtCodes.forEach((districtCode) => {
+        const key = `${provinceCode}::${districtCode}`;
+        if (districtKeys.has(key)) {
+          submittedDistrictKeys.add(key);
+        }
+      });
+    });
+
+    const districtCount = visibleDistricts.length;
+    const submittedDistrictCount = submittedDistrictKeys.size;
+    const pendingDistrictCount = Math.max(0, districtCount - submittedDistrictCount);
+    const submittedPercent = districtCount > 0 ? Number(((submittedDistrictCount / districtCount) * 100).toFixed(2)) : 0;
+    const pendingPercent = districtCount > 0 ? Number(((pendingDistrictCount / districtCount) * 100).toFixed(2)) : 0;
 
     return {
       agencyCount: dashboardMenuAgencies.length,
       provinceCount: visibleProvinces.length,
-      districtCount: districts.filter((district) => provinceCodes.has(district.province_code)).length,
+      districtCount,
+      submittedDistrictCount,
+      pendingDistrictCount,
+      submittedPercent,
+      pendingPercent,
     };
-  }, [dashboardMenuAgencies.length, districts, visibleProvinces]);
+  }, [dashboardMenuAgencies.length, districts, submittedDistrictCodesByProvince, visibleProvinces]);
 
   useEffect(() => {
     const loadFilterOptions = async () => {
@@ -549,7 +572,14 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
 
   const selectedAgencyAreaTotals = useMemo(() => {
     if (!activeAgencyFilter) {
-      return { provinceCount: agencyActiveCount, districtCount: provinceActiveCount };
+      return {
+        provinceCount: agencyActiveCount,
+        districtCount: provinceActiveCount,
+        submittedDistrictCount: 0,
+        pendingDistrictCount: 0,
+        submittedPercent: 0,
+        pendingPercent: 0,
+      };
     }
 
     const provinceCodes = new Set(
@@ -557,12 +587,35 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
         .filter((item) => item.agency_code === activeAgencyFilter)
         .map((item) => item.province_code)
     );
+    const agencyDistricts = districts.filter((district) => provinceCodes.has(district.province_code));
+    const districtKeys = new Set(agencyDistricts.map((district) => `${district.province_code}::${district.code}`));
+    const submittedDistrictKeys = new Set<string>();
+
+    Object.entries(submittedDistrictCodesByProvince).forEach(([provinceCode, districtCodes]) => {
+      if (!provinceCodes.has(provinceCode)) return;
+      districtCodes.forEach((districtCode) => {
+        const key = `${provinceCode}::${districtCode}`;
+        if (districtKeys.has(key)) {
+          submittedDistrictKeys.add(key);
+        }
+      });
+    });
+
+    const districtCount = agencyDistricts.length;
+    const submittedDistrictCount = submittedDistrictKeys.size;
+    const pendingDistrictCount = Math.max(0, districtCount - submittedDistrictCount);
+    const submittedPercent = districtCount > 0 ? Number(((submittedDistrictCount / districtCount) * 100).toFixed(2)) : 0;
+    const pendingPercent = districtCount > 0 ? Number(((pendingDistrictCount / districtCount) * 100).toFixed(2)) : 0;
 
     return {
       provinceCount: provinceCodes.size,
-      districtCount: districts.filter((district) => provinceCodes.has(district.province_code)).length,
+      districtCount,
+      submittedDistrictCount,
+      pendingDistrictCount,
+      submittedPercent,
+      pendingPercent,
     };
-  }, [activeAgencyFilter, agencyActiveCount, agencyProvinceMap, districts, provinceActiveCount]);
+  }, [activeAgencyFilter, agencyActiveCount, agencyProvinceMap, districts, provinceActiveCount, submittedDistrictCodesByProvince]);
 
   // Load district health issues
   useEffect(() => {
@@ -687,13 +740,19 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
     return [...grouped.values()]
       .sort((a, b) => b.count - a.count || a.issue.localeCompare(b.issue, "th"))
       .slice(0, 8)
-      .map((row) => ({
-        issue: row.issue,
-        count: row.count,
-        provinceCount: row.provinceCodes.size,
-        districtCount: row.districtCodes.size,
-      }));
-  }, [healthIssueScopeRecords]);
+      .map((row) => {
+        const totalDistrictCount = [...row.provinceCodes].reduce((total, provinceCode) => total + (districtCountByProvince.get(provinceCode) ?? 0), 0);
+        const districtCount = row.districtCodes.size;
+        return {
+          issue: row.issue,
+          count: row.count,
+          provinceCount: row.provinceCodes.size,
+          totalDistrictCount,
+          districtCount,
+          percent: totalDistrictCount > 0 ? Number(((districtCount / totalDistrictCount) * 100).toFixed(2)) : 0,
+        };
+      });
+  }, [districtCountByProvince, healthIssueScopeRecords]);
   const selectedOverviewIssueRecords = useMemo(() => {
     if (!selectedOverviewIssue) {
       return [] as ProvinceHealthIssueRecord[];
@@ -887,15 +946,13 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
   };
 
   const clearMapFilters = () => {
-    if (!accessScope?.agencyCode) {
-      setFilterAgency("");
-    }
     if (!accessScope?.provinceCode) {
       setFilterProvince("");
     }
     setSelectedDistrictCode("");
     setSelectedSubdistrictCode("");
     setSelectedHealthIssue("");
+    setSelectedOverviewIssue("");
     if (mapRef.current) {
       mapRef.current.resetView();
     }
@@ -1419,65 +1476,6 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
         </aside>
 
         <div className="dashboard-workspace__main">
-          {!isOverviewMode ? (
-            <div className="dashboard-filter-panel" aria-label="เลือกขอบเขตข้อมูล Dashboard">
-              <div className="dashboard-filter-panel__header">
-                <div>
-                  <h3>เลือกข้อมูลที่ต้องการดู</h3>
-                  <p>{dashboardContextLabel}</p>
-                </div>
-                <button
-                  type="button"
-                  className="cta cta--ghost"
-                  onClick={selectDashboardOverview}
-                  disabled={!activeAgencyFilter && !activeProvinceFilter && !selectedDistrictCode}
-                >
-                  ล้างการเลือก
-                </button>
-              </div>
-              <div className="dashboard-filter-grid">
-                <label>
-                  สคร.
-                  {accessScope?.agencyCode ? (
-                    <input value={agencies.find((agency) => agency.code === accessScope.agencyCode)?.label_th ?? accessScope.agencyCode} disabled />
-                  ) : (
-                    <select value={activeAgencyFilter} onChange={(event) => handleDashboardAgencyChange(event.target.value)}>
-                      <option value="">ทั้งหมด</option>
-                      {dashboardMenuAgencies.map((agency) => (
-                        <option key={agency.code} value={agency.code}>{agency.label_th}</option>
-                      ))}
-                    </select>
-                  )}
-                </label>
-                <label>
-                  จังหวัด
-                  <select
-                    value={activeProvinceFilter}
-                    onChange={(event) => handleDashboardProvinceChange(event.target.value)}
-                    disabled={Boolean(accessScope?.provinceCode) || dashboardProvinceOptions.length === 0}
-                  >
-                    <option value="">ทั้งหมด</option>
-                    {dashboardProvinceOptions.map((province) => (
-                      <option key={province.code} value={province.code}>{province.name_th}</option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  อำเภอ
-                  <select
-                    value={selectedDistrictCode}
-                    onChange={(event) => handleDashboardDistrictChange(event.target.value)}
-                    disabled={!activeProvinceFilter || dashboardDistrictOptions.length === 0}
-                  >
-                    <option value="">ทั้งหมด</option>
-                    {dashboardDistrictOptions.map((district) => (
-                      <option key={district.code} value={district.code}>{district.name_th}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-            </div>
-          ) : null}
 
           {isOverviewMode ? (
             <div className="dashboard-overview">
@@ -1533,20 +1531,26 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
 
               <div className="dashboard-overview__metrics" aria-label="ตัวชี้วัดภาพรวม">
                 <article>
-                  <span>รวมประเด็นโรคและสุขภาพทั้งหมด</span>
-                  <strong>{healthIssueDonutTotal.toLocaleString("th-TH")}</strong>
-                </article>
-                <article>
-                  <span>สคร ทั้งหมด</span>
-                  <strong>{overviewAreaTotals.agencyCount.toLocaleString("th-TH")}</strong>
-                </article>
-                <article>
                   <span>จังหวัดทั้งหมด</span>
                   <strong>{overviewAreaTotals.provinceCount.toLocaleString("th-TH")}</strong>
                 </article>
                 <article>
                   <span>อำเภอ ทั้งหมด</span>
                   <strong>{overviewAreaTotals.districtCount.toLocaleString("th-TH")}</strong>
+                </article>
+                <article>
+                  <span>รวมประเด็นโรคและสุขภาพทั้งหมด</span>
+                  <strong>{healthIssueDonutTotal.toLocaleString("th-TH")}</strong>
+                </article>
+                <article>
+                  <span>ร้อยละอำเภอที่ส่งแล้ว</span>
+                  <strong>{overviewAreaTotals.submittedPercent.toLocaleString("th-TH", { maximumFractionDigits: 2 })}%</strong>
+                  <p>ส่ง {overviewAreaTotals.submittedDistrictCount.toLocaleString("th-TH")} อำเภอ</p>
+                </article>
+                <article>
+                  <span>ร้อยละอำเภอที่ยังไม่ส่ง</span>
+                  <strong>{overviewAreaTotals.pendingPercent.toLocaleString("th-TH", { maximumFractionDigits: 2 })}%</strong>
+                  <p>ยังไม่ส่ง {overviewAreaTotals.pendingDistrictCount.toLocaleString("th-TH")} อำเภอ</p>
                 </article>
               </div>
 
@@ -1636,18 +1640,20 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
                 <div className="table-wrap">
                   <table>
                     <thead>
-                      <tr><th>ประเด็น</th><th>จำนวนข้อมูล</th><th>จังหวัด</th><th>อำเภอ</th></tr>
+                      <tr><th>ลำดับที่</th><th>ประเด็น</th><th>จังหวัดที่มีข้อมูล</th><th>อำเภอทั้งหมด</th><th>อำเภอที่มีข้อมูล</th><th>ร้อยละ</th></tr>
                     </thead>
                     <tbody>
                       {overviewIssueTableRows.length === 0 ? (
-                        <tr><td colSpan={4}>ยังไม่มีข้อมูลประเด็นโรค/ภัยสุขภาพ</td></tr>
+                        <tr><td colSpan={6}>ยังไม่มีข้อมูลประเด็นโรค/ภัยสุขภาพ</td></tr>
                       ) : (
-                        overviewIssueTableRows.map((item) => (
+                        overviewIssueTableRows.map((item, index) => (
                           <tr key={item.issue} className="issue-detail-link-row" onClick={() => { setSelectedOverviewIssue(item.issue); setIssueDetailScope("agency"); }}>
+                            <td>{(index + 1).toLocaleString("th-TH")}</td>
                             <td><button type="button" className="issue-detail-link" onClick={() => { setSelectedOverviewIssue(item.issue); setIssueDetailScope("agency"); }}>{item.issue}</button></td>
-                            <td>{item.count.toLocaleString("th-TH")}</td>
                             <td>{item.provinceCount.toLocaleString("th-TH")}</td>
+                            <td>{item.totalDistrictCount.toLocaleString("th-TH")}</td>
                             <td>{item.districtCount.toLocaleString("th-TH")}</td>
+                            <td>{item.percent.toLocaleString("th-TH", { maximumFractionDigits: 2 })}%</td>
                           </tr>
                         ))
                       )}
@@ -1663,14 +1669,6 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
         <article className="panel panel--map">
           <div className="map-panel-header">
             <h3>แผนที่เขตสุขภาพ</h3>
-            <button
-              type="button"
-              className="cta cta--ghost"
-              onClick={clearMapFilters}
-              disabled={!filterAgency && !filterProvince && !selectedDistrictCode && !selectedSubdistrictCode}
-            >
-              ล้างตัวกรองแผนที่
-            </button>
           </div>
           <InteractiveHealthMap
             ref={mapRef}
@@ -1806,12 +1804,15 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
         <article className="panel">
           <div className="dashboard-context-head">
             <div>
-              <span>{dashboardContextLabel}</span>
               <h3>{coverageChartTitle}</h3>
             </div>
-            {(activeAgencyFilter || activeProvinceFilter || selectedDistrictCode) ? (
-              <button type="button" className="cta cta--ghost" onClick={selectDashboardOverview}>
-                กลับภาพรวม
+            {activeAgencyFilter && (activeProvinceFilter || selectedDistrictCode || selectedSubdistrictCode || selectedHealthIssue || selectedOverviewIssue) ? (
+              <button
+                type="button"
+                className="cta cta--ghost"
+                onClick={clearMapFilters}
+              >
+                ล้างตัวกรอง
               </button>
             ) : null}
           </div>
@@ -1828,6 +1829,16 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
             <div>
               <span>ประเด็นโรคและสุขภาพทั้งหมด</span>
               <strong>{healthIssueDonutTotal.toLocaleString("th-TH")}</strong>
+            </div>
+            <div>
+              <span>ร้อยละอำเภอที่ส่งแล้ว</span>
+              <strong>{selectedAgencyAreaTotals.submittedPercent.toLocaleString("th-TH", { maximumFractionDigits: 2 })}%</strong>
+              <p>ส่ง {selectedAgencyAreaTotals.submittedDistrictCount.toLocaleString("th-TH")} อำเภอ</p>
+            </div>
+            <div>
+              <span>ร้อยละอำเภอที่ยังไม่ส่ง</span>
+              <strong>{selectedAgencyAreaTotals.pendingPercent.toLocaleString("th-TH", { maximumFractionDigits: 2 })}%</strong>
+              <p>ยังไม่ส่ง {selectedAgencyAreaTotals.pendingDistrictCount.toLocaleString("th-TH")} อำเภอ</p>
             </div>
           </div>
 
@@ -1879,13 +1890,21 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
                 {selectedProvinceIssueRecords.length === 0 ? (
                   <p className="province-issue-empty">ยังไม่มีประเด็นโรค/ภัยสุขภาพของจังหวัด{selectedIssueProvinceName}</p>
                 ) : (
-                  <div className="province-issue-list">
-                    {selectedProvinceIssueRecords.map((record) => (
-                      <div key={`${record.districtCode}-${record.healthIssue}`} className="province-issue-item">
-                        <strong>{record.districtName}</strong>
-                        <span>{record.healthIssue}</span>
-                      </div>
-                    ))}
+                  <div className="table-wrap">
+                    <table>
+                      <thead>
+                        <tr><th>ลำดับที่</th><th>อำเภอ</th><th>ประเด็นโรคและสุขภาพ</th></tr>
+                      </thead>
+                      <tbody>
+                        {selectedProvinceIssueRecords.map((record, index) => (
+                          <tr key={`${record.districtCode}-${record.healthIssue}-${index}`}>
+                            <td>{(index + 1).toLocaleString("th-TH")}</td>
+                            <td>{record.districtName}</td>
+                            <td>{record.healthIssue}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>
@@ -2072,13 +2091,21 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
               ) : selectedProvinceIssueRecords.length === 0 ? (
                 <p className="province-issue-empty">ยังไม่มีประเด็นโรค/ภัยสุขภาพของจังหวัด{selectedIssueProvinceName}</p>
               ) : (
-                <div className="province-issue-list">
-                  {selectedProvinceIssueRecords.map((record) => (
-                    <div key={`${record.districtCode}-${record.healthIssue}`} className="province-issue-item">
-                      <strong>{record.districtName}</strong>
-                      <span>{record.healthIssue}</span>
-                    </div>
-                  ))}
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr><th>ลำดับที่</th><th>อำเภอ</th><th>ประเด็นโรคและสุขภาพ</th></tr>
+                    </thead>
+                    <tbody>
+                      {selectedProvinceIssueRecords.map((record, index) => (
+                        <tr key={`${record.districtCode}-${record.healthIssue}-${index}`}>
+                          <td>{(index + 1).toLocaleString("th-TH")}</td>
+                          <td>{record.districtName}</td>
+                          <td>{record.healthIssue}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
