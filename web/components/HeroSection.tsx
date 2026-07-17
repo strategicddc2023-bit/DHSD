@@ -8,14 +8,7 @@ export default function HeroSection() {
 
       {/* Content */}
       <div className="hero__content">
-        <div className="hero__badge">
-          <span>district_health_system_ddc</span>
-        </div>
-        <h1>ระบบรายงาน พชอ.<br />ระดับประเทศ</h1>
-        <p>
-          โครงต้นแบบแบบ Single-Page Application เพื่อให้เห็นภาพการกรอกข้อมูลและการแสดงผล Dashboard
-          ก่อนพัฒนาเต็มรูปแบบ
-        </p>
+        <h1>ระบบรายงานข้อมูล พชอ.<br />กรมควบคุมโรค</h1>
       </div>
 
       {/* Gradient blob - bottom */}

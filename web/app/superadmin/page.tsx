@@ -1,68 +1,50 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import RolePageLayout, { type RoleMenuItem } from "@/components/RolePageLayout";
 import SuperadminUsersPanel from "@/components/SuperadminUsersPanel";
 
 import IntakeFormSection from "@/components/IntakeFormSection";
-import KpiInputSection from "@/components/KpiInputSection";
 import SavedRecordsPanel from "@/components/SavedRecordsPanel";
 import { buildAccessScope, loadCurrentAppUser } from "@/services/auth-session";
-import { supabase } from "@/services/supabase-client";
-import type { AgencyOption, AppUserRow, IntakeFormData } from "@/types/mvp";
+import type { AppUserRow, IntakeFormData } from "@/types/mvp";
 
 const initialFormData: IntakeFormData = {
   agencyCode: "",
   provinceCode: "",
   districtCode: "",
   healthIssue: "",
+  evaluationStatus: "",
 };
 
-type SuperadminTab = "users" | "intake" | "kpi";
+type SuperadminTab = "users" | "intake";
 
 const MENU_ITEMS: RoleMenuItem[] = [
-  {
-    key: "users",
-    label: "จัดการผู้ใช้งาน",
-    icon: "👥",
-    description: "เพิ่ม แก้ไข และจัดการ allowlist",
-  },
-
   {
     key: "intake",
     label: "กรอกข้อมูลอำเภอ",
     icon: "📝",
     description: "บันทึกข้อมูล พชอ. รายอำเภอ",
   },
+
   {
-    key: "kpi",
-    label: "กรอก KPI",
-    icon: "🎯",
-    description: "บันทึกค่า KPI รายปีงบประมาณ",
+    key: "users",
+    label: "จัดการผู้ใช้งาน",
+    icon: "👥",
+    description: "เพิ่ม แก้ไข และจัดการ allowlist",
+    groupLabel: "สำหรับ Admin",
   },
 ];
 
 export default function SuperadminPage() {
   const [formData, setFormData] = useState<IntakeFormData>(initialFormData);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [agencies, setAgencies] = useState<AgencyOption[]>([]);
   const [currentUser, setCurrentUser] = useState<AppUserRow | null>(null);
   const [userLoaded, setUserLoaded] = useState(false);
-  const [activeTab, setActiveTab] = useState<SuperadminTab>("users");
+  const [activeTab, setActiveTab] = useState<SuperadminTab>("intake");
   const router = useRouter();
   const accessScope = buildAccessScope(currentUser);
-
-  useEffect(() => {
-    const loadAgencies = async () => {
-      const { data } = await supabase
-        .from("master_agencies")
-        .select("code,label_th")
-        .order("code", { ascending: true });
-      setAgencies(data ?? []);
-    };
-    void loadAgencies();
-  }, []);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -126,8 +108,7 @@ export default function SuperadminPage() {
       {activeTab === "intake" && (
         <section className="role-section">
           <div className="role-section__header">
-            <h1>📝 กรอกข้อมูลอำเภอ</h1>
-            <p>บันทึกข้อมูลการดำเนินงาน พชอ. รายอำเภอ (สามารถกรอกแทนทุกหน่วยงาน)</p>
+            <h1>📝 กรอกข้อมูล</h1>
           </div>
           <IntakeFormSection
             formData={formData}
@@ -144,20 +125,6 @@ export default function SuperadminPage() {
         </section>
       )}
 
-      {/* กรอก KPI */}
-      {activeTab === "kpi" && (
-        <section className="role-section">
-          <div className="role-section__header">
-            <h1>🎯 กรอก KPI รายปีงบประมาณ</h1>
-            <p>บันทึกค่า KPI และเป้าหมายรายปีงบประมาณ</p>
-          </div>
-          <KpiInputSection
-            agencies={agencies}
-            onSaved={() => setRefreshKey((prev) => prev + 1)}
-            accessScope={accessScope ?? undefined}
-          />
-        </section>
-      )}
     </RolePageLayout>
   );
 }

@@ -14,6 +14,7 @@ const initialFormData: IntakeFormData = {
   provinceCode: "",
   districtCode: "",
   healthIssue: "",
+  evaluationStatus: "",
 };
 
 export default function HomePage() {

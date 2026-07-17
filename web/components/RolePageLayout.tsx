@@ -10,6 +10,7 @@ export type RoleMenuItem = {
   label: string;
   icon: string;
   description?: string;
+  groupLabel?: string;
 };
 
 type RolePageLayoutProps = {
@@ -63,25 +64,32 @@ export default function RolePageLayout({
           </div>
 
           <nav className="role-sidebar__nav" aria-label="เมนูหลัก">
-            {menuItems.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                className={`role-sidebar__item ${activeKey === item.key ? "role-sidebar__item--active" : ""}`}
-                onClick={() => {
-                  onMenuChange(item.key);
-                  setSidebarOpen(false);
-                }}
-              >
-                <span className="role-sidebar__item-icon">{item.icon}</span>
-                <span className="role-sidebar__item-body">
-                  <span className="role-sidebar__item-label">{item.label}</span>
-                  {item.description && (
-                    <span className="role-sidebar__item-desc">{item.description}</span>
-                  )}
-                </span>
-              </button>
-            ))}
+            {menuItems.map((item, index) => {
+              const previousGroupLabel = index > 0 ? menuItems[index - 1]?.groupLabel : undefined;
+              const shouldShowGroupLabel = Boolean(item.groupLabel && item.groupLabel !== previousGroupLabel);
+
+              return (
+                <div key={item.key} className="role-sidebar__nav-entry">
+                  {shouldShowGroupLabel && <div className="role-sidebar__group-label">{item.groupLabel}</div>}
+                  <button
+                    type="button"
+                    className={`role-sidebar__item ${activeKey === item.key ? "role-sidebar__item--active" : ""}`}
+                    onClick={() => {
+                      onMenuChange(item.key);
+                      setSidebarOpen(false);
+                    }}
+                  >
+                    <span className="role-sidebar__item-icon">{item.icon}</span>
+                    <span className="role-sidebar__item-body">
+                      <span className="role-sidebar__item-label">{item.label}</span>
+                      {item.description && (
+                        <span className="role-sidebar__item-desc">{item.description}</span>
+                      )}
+                    </span>
+                  </button>
+                </div>
+              );
+            })}
           </nav>
 
           <div className="role-sidebar__user-info">

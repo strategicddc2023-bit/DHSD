@@ -1074,6 +1074,50 @@ input {
   font-size: 0.86rem;
 }
 
+.health-issue-evaluation-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.health-issue-evaluation {
+  display: grid;
+  gap: 12px;
+}
+
+.health-issue-evaluation__chart {
+  min-height: 260px;
+  border: 1px solid #d9e8f0;
+  border-radius: 12px;
+  background: #fbfdff;
+  padding: 8px 10px;
+}
+
+.health-issue-evaluation__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: #315269;
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.health-issue-evaluation__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.health-issue-evaluation__legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.health-issue-evaluation__table {
+  margin-top: 2px;
+}
+
 .issue-detail-link-row {
   cursor: pointer;
 }
@@ -1551,6 +1595,12 @@ input {
   padding-right: 4px;
   display: grid;
   gap: 12px;
+}
+
+.province-progress-list--expanded {
+  max-height: none;
+  overflow-y: visible;
+  padding-right: 0;
 }
 
 .province-progress-group {
@@ -2898,6 +2948,23 @@ ul {
   flex-direction: column;
   gap: 4px;
   flex: 1 1 auto;
+}
+
+.role-sidebar__nav-entry {
+  display: grid;
+  gap: 6px;
+}
+
+.role-sidebar__group-label {
+  margin: 14px 0 4px;
+  padding: 10px 12px;
+  border: 1px solid #cfe0ea;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #eaf6f8 0%, #ffffff 100%);
+  color: #0d3348;
+  font-size: 0.86rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
 }
 
 .role-sidebar__item {

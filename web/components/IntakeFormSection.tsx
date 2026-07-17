@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { normalizeAgencyCode, type AccessScope } from "@/services/access-control";
 import { supabase } from "@/services/supabase-client";
-import type { AgencyOption, District, IntakeFormData, Province } from "@/types/mvp";
+import type { AgencyOption, District, IntakeFormData, IntakeEvaluationStatus, Province } from "@/types/mvp";
 
 type IntakeFormSectionProps = {
   formData: IntakeFormData;
@@ -16,6 +16,11 @@ type AgencyProvinceRow = {
   agency_code: string;
   province_code: string;
 };
+
+const evaluationStatusOptions: Array<{ value: IntakeEvaluationStatus; label: string }> = [
+  { value: "pass", label: "ผ่าน" },
+  { value: "fail", label: "ไม่ผ่าน" },
+];
 
 export default function IntakeFormSection({ formData, onChange, onSaved, accessScope }: IntakeFormSectionProps) {
   const [agencies, setAgencies] = useState<AgencyOption[]>([]);
@@ -123,7 +128,7 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
   }, [formData.provinceCode]);
 
   const canSubmit = useMemo(() => {
-    return Boolean(formData.agencyCode && formData.provinceCode && formData.districtCode && formData.healthIssue.trim().length >= 3);
+    return Boolean(formData.agencyCode && formData.provinceCode && formData.districtCode && formData.healthIssue.trim().length >= 3 && formData.evaluationStatus);
   }, [formData]);
 
   const handleSubmit = async () => {
@@ -140,6 +145,7 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
       province_code: formData.provinceCode,
       district_code: formData.districtCode,
       health_issue_text: formData.healthIssue.trim(),
+      evaluation_status: formData.evaluationStatus,
     });
 
     setSaving(false);
@@ -150,7 +156,7 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
     }
 
     setMessage("บันทึกข้อมูลสำเร็จแล้ว");
-    onChange({ ...formData, healthIssue: "" });
+    onChange({ ...formData, healthIssue: "", evaluationStatus: "" });
     onSaved?.();
   };
 
@@ -159,7 +165,6 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
   return (
     <section className="section" id="input-section">
       <div className="section__header">
-        <h2>MVP Input (เชื่อม Supabase แล้ว)</h2>
         <p>เมื่อเลือกหน่วยงาน ระบบจะแสดงเฉพาะจังหวัดตามเขตสุขภาพที่ map ไว้</p>
       </div>
 
@@ -222,6 +227,21 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
             {districts.map((district) => (
               <option key={district.code} value={district.code}>
                 {district.name_th}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          ผลการคัดเกณฑ์
+          <select
+            value={formData.evaluationStatus}
+            onChange={(event) => onChange({ ...formData, evaluationStatus: event.target.value as IntakeEvaluationStatus | "" })}
+          >
+            <option value="">เลือกผลการประเมิน</option>
+            {evaluationStatusOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>

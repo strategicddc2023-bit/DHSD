@@ -16,6 +16,7 @@ const initialFormData: IntakeFormData = {
   provinceCode: "",
   districtCode: "",
   healthIssue: "",
+  evaluationStatus: "",
 };
 
 type AdminTab = "overview" | "intake" | "dashboard" | "kpi";

@@ -5,6 +5,7 @@ import { supabase } from "@/services/supabase-client";
 import type {
   AgencyOption,
   District,
+  IntakeEvaluationStatus,
   IntakeRecordRow,
   Province,
 } from "@/types/mvp";
@@ -15,6 +16,7 @@ type SavedRecordDraft = {
   provinceCode: string;
   districtCode: string;
   healthIssue: string;
+  evaluationStatus: IntakeEvaluationStatus | "";
 };
 
 type SavedRecordsPanelProps = {
@@ -23,6 +25,15 @@ type SavedRecordsPanelProps = {
 };
 
 const PAGE_SIZE = 10;
+
+const evaluationStatusOptions: Array<{ value: IntakeEvaluationStatus; label: string }> = [
+  { value: "pass", label: "ผ่าน" },
+  { value: "fail", label: "ไม่ผ่าน" },
+];
+
+const evaluationStatusLabel = (status: IntakeEvaluationStatus | "" | null | undefined) => {
+  return evaluationStatusOptions.find((option) => option.value === status)?.label ?? "-";
+};
 
 const getRelatedLabel = <T,>(value: T | T[] | null | undefined, picker: (item: T) => string | null | undefined) => {
   const item = Array.isArray(value) ? value[0] : value;
@@ -87,7 +98,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
       let query = supabase
         .from("intake_records")
         .select(
-          "id,created_at,health_issue_text,agency_code,province_code,district_code,master_agencies(label_th),master_provinces(name_th),master_districts(name_th)"
+          "id,created_at,health_issue_text,evaluation_status,agency_code,province_code,district_code,master_agencies(label_th),master_provinces(name_th),master_districts(name_th)"
         )
         .order("created_at", { ascending: false })
         .range(from, to);
@@ -146,6 +157,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
       provinceCode: row.province_code,
       districtCode: row.district_code,
       healthIssue: row.health_issue_text ?? "",
+      evaluationStatus: row.evaluation_status ?? "",
     });
   };
 
@@ -156,7 +168,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
 
   const saveEdit = async () => {
     if (!editingRecordId || !editDraft) return;
-    if (!editDraft.agencyCode || !editDraft.provinceCode || !editDraft.districtCode || editDraft.healthIssue.trim().length < 3) {
+    if (!editDraft.agencyCode || !editDraft.provinceCode || !editDraft.districtCode || editDraft.healthIssue.trim().length < 3 || !editDraft.evaluationStatus) {
       setRecordActionMessage("กรอกข้อมูลให้ครบก่อนบันทึกการแก้ไข");
       return;
     }
@@ -171,6 +183,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
         province_code: editDraft.provinceCode,
         district_code: editDraft.districtCode,
         health_issue_text: editDraft.healthIssue.trim(),
+        evaluation_status: editDraft.evaluationStatus,
       })
       .eq("id", editingRecordId);
 
@@ -209,13 +222,14 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
 
   const exportCsv = () => {
     if (rows.length === 0) return;
-    const headers = ["เวลา", "หน่วยงาน", "จังหวัด", "อำเภอ", "ประเด็นโรค/ภัยสุขภาพ"];
+    const headers = ["เวลา", "หน่วยงาน", "จังหวัด", "อำเภอ", "ประเด็นโรค/ภัยสุขภาพ", "ผลการคัดเกณฑ์"];
     const body = rows.map((row) => [
       new Date(row.created_at).toLocaleString("th-TH"),
       getRelatedLabel(row.master_agencies, (a) => a.label_th) ?? row.agency_code ?? "-",
       getRelatedLabel(row.master_provinces, (p) => p.name_th) ?? row.province_code ?? "-",
       getRelatedLabel(row.master_districts, (d) => d.name_th) ?? row.district_code ?? "-",
       row.health_issue_text ?? "-",
+      evaluationStatusLabel(row.evaluation_status),
     ]);
     const csvLines = [headers, ...body]
       .map((line) => line.map((cell) => `"${String(cell).replaceAll("\"", "\"\"")}"`).join(","))
@@ -283,11 +297,11 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
       <div className="table-wrap">
         <table>
           <thead>
-            <tr><th>เวลา</th><th>หน่วยงาน</th><th>จังหวัด</th><th>อำเภอ</th><th>ประเด็นโรค/ภัยสุขภาพ</th><th>จัดการ</th></tr>
+            <tr><th>เวลา</th><th>หน่วยงาน</th><th>จังหวัด</th><th>อำเภอ</th><th>ประเด็นโรค/ภัยสุขภาพ</th><th>ผลการคัดเกณฑ์</th><th>จัดการ</th></tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={6}>ยังไม่มีข้อมูล</td></tr>
+              <tr><td colSpan={7}>ยังไม่มีข้อมูล</td></tr>
             ) : (
               rows.map((row) => {
                 const isEditing = editingRecordId === row.id && editDraft;
@@ -341,6 +355,18 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
                           />
                         </td>
                         <td>
+                          <select
+                            className="table-input"
+                            value={editDraft.evaluationStatus}
+                            onChange={(e) => setEditDraft({ ...editDraft, evaluationStatus: e.target.value as IntakeEvaluationStatus | "" })}
+                          >
+                            <option value="">เลือกผล</option>
+                            {evaluationStatusOptions.map((option) => (
+                              <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td>
                           <div className="record-actions">
                             <button type="button" className="cta cta--solid" onClick={saveEdit} disabled={savingRecordId === row.id}>
                               {savingRecordId === row.id ? "กำลังบันทึก..." : "บันทึก"}
@@ -357,6 +383,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
                         <td>{getRelatedLabel(row.master_provinces, (p) => p.name_th) ?? row.province_code ?? "-"}</td>
                         <td>{getRelatedLabel(row.master_districts, (d) => d.name_th) ?? row.district_code ?? "-"}</td>
                         <td>{row.health_issue_text}</td>
+                        <td>{evaluationStatusLabel(row.evaluation_status)}</td>
                         <td>
                           <div className="record-actions">
                             <button type="button" className="cta cta--ghost" onClick={() => beginEdit(row)} disabled={Boolean(savingRecordId || deletingRecordId)}>

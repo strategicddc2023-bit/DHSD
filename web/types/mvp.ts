@@ -21,17 +21,21 @@ export type Subdistrict = {
   province_code: string;
 };
 
+export type IntakeEvaluationStatus = "pass" | "fail";
+
 export type IntakeFormData = {
   agencyCode: string;
   provinceCode: string;
   districtCode: string;
   healthIssue: string;
+  evaluationStatus: IntakeEvaluationStatus | "";
 };
 
 export type IntakeRecordRow = {
   id: string;
   created_at: string;
   health_issue_text: string;
+  evaluation_status: IntakeEvaluationStatus | null;
   agency_code: string;
   province_code: string;
   district_code: string;

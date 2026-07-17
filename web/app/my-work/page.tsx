@@ -14,6 +14,7 @@ const initialFormData: IntakeFormData = {
   provinceCode: "",
   districtCode: "",
   healthIssue: "",
+  evaluationStatus: "",
 };
 
 type UserTab = "overview" | "intake";
