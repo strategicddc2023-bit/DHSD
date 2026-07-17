@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { normalizeAgencyCode, type AccessScope } from "@/services/access-control";
 import { supabase } from "@/services/supabase-client";
-import type { AgencyOption, District, IntakeFormData, IntakeEvaluationStatus, Province } from "@/types/mvp";
+import type { AgencyOption, District, HealthIssueOption, IntakeFormData, IntakeEvaluationStatus, Province } from "@/types/mvp";
 
 type IntakeFormSectionProps = {
   formData: IntakeFormData;
@@ -21,11 +21,14 @@ const evaluationStatusOptions: Array<{ value: IntakeEvaluationStatus; label: str
   { value: "pass", label: "ผ่าน" },
   { value: "fail", label: "ไม่ผ่าน" },
 ];
+const OTHER_HEALTH_ISSUE_LABEL = "ประเด็นโรค/ภัยสุขภาพ อื่นๆ";
 
 export default function IntakeFormSection({ formData, onChange, onSaved, accessScope }: IntakeFormSectionProps) {
   const [agencies, setAgencies] = useState<AgencyOption[]>([]);
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
+  const [healthIssueOptions, setHealthIssueOptions] = useState<HealthIssueOption[]>([]);
+  const [otherHealthIssue, setOtherHealthIssue] = useState("");
   const [agencyProvinceMap, setAgencyProvinceMap] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -43,19 +46,27 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
       setLoading(true);
       setMessage("");
 
-      const [agencyRes, provinceRes, mappingRes] = await Promise.all([
+      const [agencyRes, provinceRes, mappingRes, healthIssueRes] = await Promise.all([
         supabase.from("master_agencies").select("code,label_th").order("code", { ascending: true }),
         supabase.from("master_provinces").select("code,name_th").order("name_th", { ascending: true }),
         supabase.from("agency_provinces").select("agency_code,province_code"),
+        supabase
+          .from("master_health_issues")
+          .select("id,name_th,issue_group,is_active,sort_order,created_at,updated_at")
+          .eq("is_active", true)
+          .order("issue_group", { ascending: true })
+          .order("sort_order", { ascending: true })
+          .order("name_th", { ascending: true }),
       ]);
 
-      if (agencyRes.error || provinceRes.error || mappingRes.error) {
-        const errorMessage = mappingRes.error?.message ?? agencyRes.error?.message ?? provinceRes.error?.message;
+      if (agencyRes.error || provinceRes.error || mappingRes.error || healthIssueRes.error) {
+        const errorMessage = healthIssueRes.error?.message ?? mappingRes.error?.message ?? agencyRes.error?.message ?? provinceRes.error?.message;
         setMessage(`โหลดข้อมูลตั้งต้นไม่สำเร็จ: ${errorMessage ?? "กรุณาตรวจสอบการเชื่อมต่อ Supabase"}`);
       }
 
       setAgencies(agencyRes.data ?? []);
       setProvinces(provinceRes.data ?? []);
+      setHealthIssueOptions((healthIssueRes.data as HealthIssueOption[] | null) ?? []);
 
       const map: Record<string, string[]> = {};
       ((mappingRes.data as AgencyProvinceRow[] | null) ?? []).forEach((row) => {
@@ -127,9 +138,13 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
     void loadDistricts();
   }, [formData.provinceCode]);
 
+  const resolvedHealthIssue = formData.healthIssue === OTHER_HEALTH_ISSUE_LABEL
+    ? otherHealthIssue.trim()
+    : formData.healthIssue.trim();
+
   const canSubmit = useMemo(() => {
-    return Boolean(formData.agencyCode && formData.provinceCode && formData.districtCode && formData.healthIssue.trim().length >= 3 && formData.evaluationStatus);
-  }, [formData]);
+    return Boolean(formData.agencyCode && formData.provinceCode && formData.districtCode && resolvedHealthIssue.length >= 3 && formData.evaluationStatus);
+  }, [formData, resolvedHealthIssue]);
 
   const handleSubmit = async () => {
     if (!canSubmit) {
@@ -144,7 +159,7 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
       agency_code: formData.agencyCode,
       province_code: formData.provinceCode,
       district_code: formData.districtCode,
-      health_issue_text: formData.healthIssue.trim(),
+      health_issue_text: resolvedHealthIssue,
       evaluation_status: formData.evaluationStatus,
     });
 
@@ -156,6 +171,7 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
     }
 
     setMessage("บันทึกข้อมูลสำเร็จแล้ว");
+    setOtherHealthIssue("");
     onChange({ ...formData, healthIssue: "", evaluationStatus: "" });
     onSaved?.();
   };
@@ -249,13 +265,31 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
 
         <label className="full-width">
           ประเด็นโรค/ภัยสุขภาพ
-          <textarea
+          <input
+            list="health-issue-options"
             value={formData.healthIssue}
             onChange={(event) => onChange({ ...formData, healthIssue: event.target.value })}
-            rows={4}
-            placeholder="ระบุประเด็นโรคหรือภัยสุขภาพ"
+            placeholder="ค้นหาและเลือกประเด็นโรค/ภัยสุขภาพ"
           />
+          <datalist id="health-issue-options">
+            {healthIssueOptions.map((option) => (
+              <option key={option.id} value={option.name_th} />
+            ))}
+            <option value={OTHER_HEALTH_ISSUE_LABEL} />
+          </datalist>
         </label>
+
+        {formData.healthIssue === OTHER_HEALTH_ISSUE_LABEL ? (
+          <label className="full-width">
+            ระบุประเด็นโรค/ภัยสุขภาพอื่นๆ
+            <textarea
+              value={otherHealthIssue}
+              onChange={(event) => setOtherHealthIssue(event.target.value)}
+              rows={3}
+              placeholder="ระบุชื่อประเด็นโรค/ภัยสุขภาพ"
+            />
+          </label>
+        ) : null}
       </form>
 
       <div className="actions-row">

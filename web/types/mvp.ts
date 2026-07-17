@@ -21,6 +21,18 @@ export type Subdistrict = {
   province_code: string;
 };
 
+export type HealthIssueGroup = "disease_health_risk" | "context_driver";
+
+export type HealthIssueOption = {
+  id: string;
+  name_th: string;
+  issue_group: HealthIssueGroup;
+  is_active: boolean;
+  sort_order: number;
+  created_at?: string;
+  updated_at?: string;
+};
+
 export type IntakeEvaluationStatus = "pass" | "fail";
 
 export type IntakeFormData = {

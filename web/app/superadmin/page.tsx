@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import RolePageLayout, { type RoleMenuItem } from "@/components/RolePageLayout";
 import SuperadminUsersPanel from "@/components/SuperadminUsersPanel";
 
+import HealthIssueMasterPanel from "@/components/HealthIssueMasterPanel";
 import IntakeFormSection from "@/components/IntakeFormSection";
 import SavedRecordsPanel from "@/components/SavedRecordsPanel";
 import { buildAccessScope, loadCurrentAppUser } from "@/services/auth-session";
@@ -18,14 +19,18 @@ const initialFormData: IntakeFormData = {
   evaluationStatus: "",
 };
 
-type SuperadminTab = "users" | "intake";
+type SuperadminTab = "users" | "intake" | "healthIssues";
 
 const MENU_ITEMS: RoleMenuItem[] = [
   {
     key: "intake",
     label: "กรอกข้อมูลอำเภอ",
     icon: "📝",
-    description: "บันทึกข้อมูล พชอ. รายอำเภอ",
+  },
+  {
+    key: "healthIssues",
+    label: "เพิ่มรายการประเด็นโรค/ภัยสุขภาพ",
+    icon: "📋",
   },
 
   {
@@ -122,6 +127,16 @@ export default function SuperadminPage() {
               accessScope={accessScope ?? undefined}
             />
           </div>
+        </section>
+      )}
+
+      {/* เพิ่มรายการประเด็น */}
+      {activeTab === "healthIssues" && (
+        <section className="role-section">
+          <div className="role-section__header">
+            <h1>📋 เพิ่มรายการประเด็นโรค/ภัยสุขภาพ</h1>
+          </div>
+          <HealthIssueMasterPanel />
         </section>
       )}
 

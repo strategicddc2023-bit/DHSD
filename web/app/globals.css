@@ -811,7 +811,7 @@ input {
 .dashboard-workspace {
   display: grid;
   grid-template-columns: 152px minmax(0, 1fr);
-  gap: 12px;
+  gap: 10px;
   align-items: start;
 }
 
@@ -874,6 +874,43 @@ input {
   white-space: nowrap;
 }
 
+.dashboard-side-menu__section {
+  display: grid;
+  gap: 6px;
+  border-top: 1px solid #d6e7f0;
+  margin-top: 2px;
+  padding-top: 8px;
+}.dashboard-agency-selector {
+  display: grid;
+  gap: 6px;
+  color: #0f3349;
+  font-weight: 800;
+}
+
+.dashboard-agency-selector span {
+  color: #11615d;
+  font-size: 0.76rem;
+}
+
+.dashboard-agency-selector select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #dce8f1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f3349;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.dashboard-agency-selector select:focus {
+  border-color: #00a99d;
+  box-shadow: 0 0 0 3px rgba(0, 169, 157, 0.14);
+  outline: none;
+}
+
 .dashboard-overview {
   display: grid;
   gap: 10px;
@@ -888,7 +925,7 @@ input {
   border-top: 7px solid #f9007a;
   border-radius: 14px;
   background: linear-gradient(90deg, #ffffff 0%, #f7fbff 100%);
-  padding: 14px 18px;
+  padding: 5px 18px;
 }
 
 .dashboard-overview__hero span {
@@ -956,7 +993,7 @@ input {
 .dashboard-overview__content {
   display: grid;
   grid-template-columns: minmax(360px, 1.15fr) minmax(300px, 0.85fr);
-  gap: 12px;
+  gap: 10px;
   align-items: start;
 }
 
@@ -993,6 +1030,9 @@ input {
 .dashboard-overview__issues,
 .dashboard-overview__table {
   background: #ffffff;
+}
+.dashboard-overview__chart--full {
+  grid-column: 1 / -1;
 }
 
 .dashboard-overview__filters {
@@ -1072,6 +1112,79 @@ input {
 .dashboard-overview__legend strong {
   color: #0f3349;
   font-size: 0.86rem;
+}
+
+
+
+.health-issue-group-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.health-issue-group-list {
+  display: grid;
+  gap: 10px;
+}
+
+.health-issue-group-card {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #d6e7f0;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 10px 12px;
+}
+
+.health-issue-group-card__head {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.health-issue-group-card__head span {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.health-issue-group-card__head strong {
+  min-width: 0;
+  color: #0f3349;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.health-issue-group-card__head b {
+  color: #0f3349;
+  font-size: 0.9rem;
+}
+
+.health-issue-group-card p {
+  margin: 0;
+  color: #5d7590;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.health-issue-group-bar {
+  height: 24px;
+  border: 1px solid #d6e7f0;
+  border-radius: 8px;
+  background: #edf4f8;
+  overflow: hidden;
+}
+
+.health-issue-group-bar span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-width: 0;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 900;
 }
 
 .health-issue-evaluation-panel {
@@ -1518,7 +1631,7 @@ input {
 .readiness-card__top {
   display: flex;
   justify-content: space-between;
-  gap: 10px;
+  gap: 6px;
   align-items: center;
 }
 
@@ -1602,6 +1715,123 @@ input {
   overflow-y: visible;
   padding-right: 0;
 }
+.dashboard-overview-progress-list {
+  margin-top: 8px;
+}
+
+.dashboard-overview-progress-list {
+  gap: 1px;
+}
+
+.dashboard-overview-progress-list .province-progress-row {
+  grid-template-columns: 70px minmax(260px, 1fr);
+  gap: 2px;
+  min-height: 24px;
+  padding: 2px 8px 2px 0;
+}
+
+.dashboard-overview-progress-list .province-progress-bar {
+  height: 24px;
+}
+.dashboard-overview-combined-panel {
+  display: grid;
+  grid-template-columns: minmax(390px, 0.88fr) minmax(460px, 1.12fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.dashboard-overview-combined-panel__section {
+  display: grid;
+  gap: 12px;
+  border-left: 1px solid #d6e7f0;
+  padding-left: 14px;
+}
+
+.overview-issue-donut-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  align-items: center;
+}
+
+.overview-issue-donut-chart {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 0;
+  justify-self: center;
+  width: min(100%, 640px);
+}
+
+.overview-issue-donut-tooltip {
+  display: grid;
+  gap: 4px;
+  min-width: 180px;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(16, 36, 62, 0.12);
+  color: #0f3349;
+  padding: 10px 12px;
+}
+
+.overview-issue-donut-tooltip strong {
+  font-size: 0.9rem;
+}
+
+.overview-issue-donut-tooltip span {
+  color: #5d7590;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+.overview-issue-donut-detail {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  max-width: 520px;
+  justify-self: center;
+}
+
+.overview-issue-donut-detail__item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid #d6e7f0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f3349;
+  padding: 8px 10px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.overview-issue-donut-detail__item:hover {
+  border-color: #00a99d;
+  background: #f2fffd;
+}
+
+.overview-issue-donut-detail__swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.overview-issue-donut-detail__name {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overview-issue-donut-detail__item strong {
+  color: #0f3349;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
 
 .province-progress-group {
   display: grid;
@@ -1629,6 +1859,40 @@ input {
 .province-progress-group__rows {
   display: grid;
   gap: 10px;
+}
+.province-progress-list--compact {
+  gap: 6px;
+}
+
+.province-progress-list--compact .province-progress-group {
+  gap: 5px;
+  padding: 6px 8px;
+}
+
+.province-progress-list--compact .province-progress-group__rows {
+  gap: 5px;
+}
+
+.province-progress-list--compact .province-progress-row {
+  gap: 8px;
+  min-height: 30px;
+}
+
+.province-progress-list--compact .province-progress-row--clickable {
+  padding: 2px 6px;
+}
+
+.province-progress-list--compact .province-progress-row__meta {
+  gap: 0;
+}
+
+.province-progress-list--compact .province-progress-row__meta span {
+  font-size: 0.8rem;
+  line-height: 1.25;
+}
+
+.province-progress-list--compact .province-progress-bar {
+  height: 24px;
 }
 
 .province-progress-row {
@@ -1810,6 +2074,73 @@ input {
   align-items: flex-end;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.health-issue-master-table-tools {
+  display: flex;
+  justify-content: flex-start;
+  margin: 12px 0 0;
+}
+
+.health-issue-master-table-tools label {
+  display: grid;
+  gap: 6px;
+  min-width: min(320px, 100%);
+  color: #173a52;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.health-issue-master-table-tools select {
+  height: 38px;
+  border: 1px solid var(--stroke);
+  border-radius: 9px;
+  background: #ffffff;
+  padding: 0 10px;
+  font: inherit;
+}
+
+.health-issue-master-table {
+  table-layout: fixed;
+}
+
+.health-issue-master-table th,
+.health-issue-master-table td {
+  vertical-align: middle;
+}
+
+.health-issue-master-table th:nth-child(1),
+.health-issue-master-table td:nth-child(1) {
+  width: 74px;
+  text-align: center;
+}
+
+.health-issue-master-table th:nth-child(2),
+.health-issue-master-table td:nth-child(2) {
+  width: 240px;
+}
+
+.health-issue-master-table th:nth-child(4),
+.health-issue-master-table td:nth-child(4) {
+  width: 110px;
+  text-align: center;
+}
+
+.health-issue-master-table th:nth-child(5),
+.health-issue-master-table td:nth-child(5) {
+  width: 230px;
+}
+
+.health-issue-master-table td:nth-child(2),
+.health-issue-master-table td:nth-child(3),
+.health-issue-master-table td:nth-child(4) {
+  color: #10243e;
+  font-weight: 700;
+}
+
+.health-issue-master-table .record-actions {
+  justify-content: flex-start;
+  flex-wrap: nowrap;
 }
 
 .table-wrap {
@@ -2554,7 +2885,7 @@ ul {
   .content-wrap,
   .login-page {
     padding-top: 146px;
-    padding-left: 12px;
+    padding-left: 14px;
     padding-right: 12px;
   }
 
@@ -2703,6 +3034,19 @@ ul {
     grid-template-columns: 1fr;
     gap: 8px;
   }
+
+  .dashboard-overview-combined-panel,
+  .overview-issue-donut-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-overview-combined-panel__section {
+    border-left: 0;
+    border-top: 1px solid #d6e7f0;
+    padding-left: 0;
+    padding-top: 16px;
+  }
+
 
   .province-issue-panel__header {
     align-items: flex-start;
