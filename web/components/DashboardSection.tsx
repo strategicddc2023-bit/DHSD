@@ -989,6 +989,61 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
     if (!activeOverviewMapIssue) return healthIssueScopeRecords;
     return healthIssueScopeRecords.filter((record) => record.healthIssue === activeOverviewMapIssue);
   }, [activeOverviewMapIssue, healthIssueScopeRecords]);
+  const overviewMetricTotals = useMemo(() => {
+    const hasFocusedMapSelection = Boolean(activeOverviewMapIssue || selectedOverviewMapProvinceCode || selectedOverviewMapDistrictCode);
+    if (!hasFocusedMapSelection) {
+      return {
+        ...overviewAreaTotals,
+        issueCount: healthIssueDonutTotal,
+      };
+    }
+
+    const scopedRecords = overviewMapActiveRecords.filter((record) => {
+      if (selectedOverviewMapProvinceCode && record.provinceCode !== selectedOverviewMapProvinceCode) return false;
+      if (selectedOverviewMapDistrictCode && record.districtCode !== selectedOverviewMapDistrictCode) return false;
+      return true;
+    });
+
+    const recordProvinceCodes = new Set(scopedRecords.map((record) => record.provinceCode).filter(Boolean));
+    const scopedProvinceCodes = selectedOverviewMapProvinceCode
+      ? [selectedOverviewMapProvinceCode]
+      : [...recordProvinceCodes];
+    const scopedProvinceCodeSet = new Set(scopedProvinceCodes);
+    const scopedDistricts = selectedOverviewMapDistrictCode
+      ? districts.filter((district) => district.province_code === selectedOverviewMapProvinceCode && district.code === selectedOverviewMapDistrictCode)
+      : districts.filter((district) => scopedProvinceCodeSet.has(district.province_code));
+    const scopedDistrictKeys = new Set(scopedDistricts.map((district) => `${district.province_code}::${district.code}`));
+    const submittedDistrictKeys = new Set<string>();
+
+    scopedRecords.forEach((record) => {
+      const key = `${record.provinceCode}::${record.districtCode}`;
+      if (selectedOverviewMapDistrictCode || scopedDistrictKeys.has(key)) {
+        submittedDistrictKeys.add(key);
+      }
+    });
+
+    const provinceCount = selectedOverviewMapDistrictCode || selectedOverviewMapProvinceCode
+      ? scopedProvinceCodes.length
+      : recordProvinceCodes.size;
+    const districtCount = selectedOverviewMapDistrictCode ? 1 : scopedDistricts.length;
+    const submittedDistrictCount = selectedOverviewMapDistrictCode
+      ? Math.min(submittedDistrictKeys.size, 1)
+      : Math.min(submittedDistrictKeys.size, districtCount);
+    const pendingDistrictCount = Math.max(0, districtCount - submittedDistrictCount);
+    const submittedPercent = districtCount > 0 ? Number(((submittedDistrictCount / districtCount) * 100).toFixed(2)) : 0;
+    const pendingPercent = districtCount > 0 ? Number((100 - submittedPercent).toFixed(2)) : 0;
+
+    return {
+      agencyCount: overviewAreaTotals.agencyCount,
+      provinceCount,
+      districtCount,
+      submittedDistrictCount,
+      pendingDistrictCount,
+      submittedPercent,
+      pendingPercent,
+      issueCount: scopedRecords.length,
+    };
+  }, [activeOverviewMapIssue, districts, healthIssueDonutTotal, overviewAreaTotals, overviewMapActiveRecords, selectedOverviewMapDistrictCode, selectedOverviewMapProvinceCode]);
   const selectedOverviewMapProvinceName = selectedOverviewMapProvinceCode
     ? provinces.find((province) => province.code === selectedOverviewMapProvinceCode)?.name_th ?? selectedOverviewMapProvinceCode
     : "";
@@ -1857,25 +1912,25 @@ export default function DashboardSection({ formData, refreshKey, accessScope, vi
               <div className="dashboard-overview__metrics" aria-label="ตัวชี้วัดภาพรวม">
                 <article>
                   <span>จังหวัดทั้งหมด</span>
-                  <strong>{overviewAreaTotals.provinceCount.toLocaleString("th-TH")}</strong>
+                  <strong>{overviewMetricTotals.provinceCount.toLocaleString("th-TH")}</strong>
                 </article>
                 <article>
                   <span>อำเภอทั้งหมด</span>
-                  <strong>{overviewAreaTotals.districtCount.toLocaleString("th-TH")}</strong>
+                  <strong>{overviewMetricTotals.districtCount.toLocaleString("th-TH")}</strong>
                 </article>
                 <article>
                   <span>ภาพรวมประเด็นการขับเคลื่อนงาน พชอ/พชข</span>
-                  <strong>{healthIssueDonutTotal.toLocaleString("th-TH")}</strong>
+                  <strong>{overviewMetricTotals.issueCount.toLocaleString("th-TH")}</strong>
                 </article>
                 <article>
                   <span>ภาพรวมร้อยละการรายงานของอำเภอ</span>
-                  <strong>{overviewAreaTotals.submittedPercent.toLocaleString("th-TH", { maximumFractionDigits: 2 })}%</strong>
-                  <p>ส่ง {overviewAreaTotals.submittedDistrictCount.toLocaleString("th-TH")} อำเภอ</p>
+                  <strong>{overviewMetricTotals.submittedPercent.toLocaleString("th-TH", { maximumFractionDigits: 2 })}%</strong>
+                  <p>ส่ง {overviewMetricTotals.submittedDistrictCount.toLocaleString("th-TH")} อำเภอ</p>
                 </article>
                 <article>
                   <span>ร้อยละอำเภอที่ยังไม่ส่ง</span>
-                  <strong>{overviewAreaTotals.pendingPercent.toLocaleString("th-TH", { maximumFractionDigits: 2 })}%</strong>
-                  <p>ยังไม่ส่ง {overviewAreaTotals.pendingDistrictCount.toLocaleString("th-TH")} อำเภอ</p>
+                  <strong>{overviewMetricTotals.pendingPercent.toLocaleString("th-TH", { maximumFractionDigits: 2 })}%</strong>
+                  <p>ยังไม่ส่ง {overviewMetricTotals.pendingDistrictCount.toLocaleString("th-TH")} อำเภอ</p>
                 </article>
               </div>
 
