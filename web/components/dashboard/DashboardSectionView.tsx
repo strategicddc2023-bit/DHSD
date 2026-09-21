@@ -9,6 +9,7 @@ import { readinessLabel, readinessTone } from "@/services/qa-readiness";
 import { donutPercentLabelFormatter, evaluationStatusTooltipFormatter, recordCountLabelFormatter, recordCountTooltipFormatter } from "./dashboard-shared";
 import DashboardSavedRecordsPanel from "./DashboardSavedRecordsPanel";
 import type { DashboardModel } from "./DashboardSectionImpl";
+import OverviewIssueDrilldown from "./OverviewIssueDrilldown";
 type DashboardSectionViewProps = { model: DashboardModel };
 export default function DashboardSectionView({ model }: DashboardSectionViewProps) {
   const { formData, accessScope, hideSavedRecords, onSelectDistrictForIntake, mapRef, rows, totalCount, agencies, provinces, agencyProvinceMap, agencyCoverage, provinceCoverage, kpiSummaryRows, previousKpiSummaryRows, selectedFiscalYear, setSelectedFiscalYear, filterAgency, setFilterAgency, filterProvince, setFilterProvince, selectedDistrictCode, setSelectedDistrictCode, selectedSubdistrictCode, selectedDistrictName, districtHealthIssueData, districtHealthIssueTotal, districtHealthIssueLoading, dashboardInsightTab, selectedHealthIssue, setSelectedHealthIssue, selectedOverviewIssue, setSelectedOverviewIssue, selectedOverviewMapIssue, setSelectedOverviewMapIssue, selectedOverviewMapProvinceCode, setSelectedOverviewMapProvinceCode, selectedOverviewMapDistrictCode, setSelectedOverviewMapDistrictCode, issueDetailScope, setIssueDetailScope, overviewFilter, setOverviewFilter, activeAgencyFilter, activeProvinceFilter, visibleAgencies, visibleProvinces, visibleAgencyCoverage, visibleProvinceCoverage, showAdvancedPanels, dashboardMenuAgencies, provinceSubmissionGroups, selectedIssueProvinceCode, selectedAgencyAreaTotals, coverageChartRows, selectedIssueProvinceName, isDistrictMode, healthIssueDonutScopeLabel, healthIssueDonutData, healthIssueDonutTotal, overviewIssueDonutRows, healthIssueGroupRows, healthIssueGroupTotal, healthIssueEvaluationRows, healthIssueEvaluationChartHeight, selectedOverviewIssueRecords, selectedOverviewIssueAgencyRows, selectedOverviewIssueProvinceRows, selectedOverviewIssueDistrictRows, issueDetailScopeOptions, activeIssueDetailScope, overviewIssueColorMap, selectedOverviewIssueColor, activeOverviewMapIssueColor, overviewMapRecords, overviewMetricTotals, selectedOverviewMapProvinceName, selectedOverviewMapDistrictRows, selectedOverviewMapDistrictName, selectedOverviewIssueChartHeight, selectedHealthIssueCount, selectedHealthIssueRecords, overviewFilterOptions, overviewChartRows, isOverviewMode, coverageChartTitle, selectedProvinceIssueRecords, handleOverviewChartBarClick, clearMapFilters, clearTableFilters, selectDashboardOverview, selectDashboardAgency, selectDashboardInsight, exportKpiSummaryCsv, kpiStatusRows, kpiAlerts, kpiStatusCounts, overallRiskLevel, readinessChecks } = model;
@@ -328,13 +329,11 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                             </div>
                           </div>
                         )}
-
-
                       </aside>
                     </div>
+                    <OverviewIssueDrilldown model={model} />
                   </div>
                 ) : null}
-
                 {dashboardInsightTab === "evaluation" ? (
                   <article className="dashboard-overview__table panel health-issue-evaluation-panel">
                     <div className="dashboard-overview__section-head">
