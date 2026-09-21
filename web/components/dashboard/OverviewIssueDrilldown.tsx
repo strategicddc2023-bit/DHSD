@@ -109,7 +109,6 @@ export default function OverviewIssueDrilldown({ model }: { model: DashboardMode
                   onClick={() => setSelectedOverviewMapDistrictCode((current) => current === district.code ? "" : district.code)}
                 >
                   <span><b>{district.name}</b><small>{selectedOverviewMapIssue}</small></span>
-                  <strong>{district.record_count.toLocaleString("th-TH")} รายการ</strong>
                 </button>
               ))}
             </div>
