@@ -62,7 +62,7 @@ function topIssuesLabel(summary: AreaIssueSummary | undefined) {
     .join("<br/>");
 }
 
-function MapBoundsController({ boundaries, selectedDistrictCode, maxZoom, zoomOffset = 0 }: { boundaries: DistrictBoundaryCollection | ProvinceBoundaryCollection | null; selectedDistrictCode?: string; maxZoom: number; zoomOffset?: number }) {
+function MapBoundsController({ boundaries, selectedDistrictCode, maxZoom }: { boundaries: DistrictBoundaryCollection | ProvinceBoundaryCollection | null; selectedDistrictCode?: string; maxZoom: number }) {
   const map = useMap();
 
   useEffect(() => {
@@ -74,12 +74,10 @@ function MapBoundsController({ boundaries, selectedDistrictCode, maxZoom, zoomOf
     const layer = L.geoJSON({ type: "FeatureCollection", features } as FeatureCollection);
     const bounds = layer.getBounds();
     if (bounds.isValid()) {
-      map.fitBounds(bounds, { padding: [0, 0], maxZoom });
-      if (zoomOffset > 0) {
-        map.setZoom(Math.min(map.getZoom() + zoomOffset, maxZoom), { animate: false });
-      }
+      map.invalidateSize({ pan: false });
+      map.fitBounds(bounds, { padding: [12, 12], maxZoom, animate: false });
     }
-  }, [boundaries, map, maxZoom, selectedDistrictCode, zoomOffset]);
+  }, [boundaries, map, maxZoom, selectedDistrictCode]);
 
   return null;
 }
@@ -237,7 +235,7 @@ export default function HealthIssueDistributionMapClient({
             </>
           ) : provinceBoundaries ? (
             <>
-              <MapBoundsController boundaries={provinceBoundaries} maxZoom={8.2} zoomOffset={0.55} />
+              <MapBoundsController boundaries={provinceBoundaries} maxZoom={8.2} />
               <GeoJSON key={`issue-province-${selectedIssue || "all"}-${visibleRecords.length}`} data={provinceBoundaries} style={provinceStyle} onEachFeature={onEachProvince} />
             </>
           ) : null}
