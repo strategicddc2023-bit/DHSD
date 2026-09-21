@@ -8,6 +8,19 @@ phase-1/
 phase-map/
 tmp_docx_extract/
 tmp_xlsx_extract/
+graphify-out/
+
+# Local planning and reference files
+/implementation-plan.md
+/implementation-planv2.md
+/implementation-planv3.md
+/Modules.md
+/dhsd.md
+/hero.html
+/ThepExcel-Thailand-Tambon.xlsx
+/ข้อมูลเขตสุขภาพ.docx
+/คำสั่ง.md
+/แผนที่กดเขตสุขภาพ.md
 
 # Env files (must never be committed)
 .env
