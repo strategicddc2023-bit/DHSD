@@ -8,6 +8,12 @@ const PAGE_SIZE = 10;
 const normalizeIssueName = (value: string) => value.trim().replace(/\s+/g, " ");
 
 const healthIssueGroupOptions: Array<{ value: HealthIssueGroup; label: string }> = [
+  { value: "royal_initiative", label: "โครงการพระราชดำริ โครงการเฉลิมพระเกียรติฯ" },
+  { value: "communicable_disease", label: "กลุ่มโรคติดต่อ" },
+  { value: "noncommunicable_disease", label: "กลุ่มโรคไม่ติดต่อ" },
+  { value: "health_risk_factor", label: "กลุ่มปัจจัยเสี่ยงด้านสุขภาพ" },
+  { value: "occupational_environmental_disease", label: "กลุ่มโรคจากการประกอบอาชีพและสิ่งแวดล้อม" },
+  { value: "systemic_prevention_mechanism", label: "กลุ่มการพัฒนากลไกป้องกันควบคุมโรคเชิงระบบ" },
   { value: "disease_health_risk", label: "โรคและภัยสุขภาพ" },
   { value: "context_driver", label: "ประเด็นการขับเคลื่อนตามบริบท" },
 ];
@@ -19,7 +25,7 @@ const healthIssueGroupLabel = (group: HealthIssueGroup | string | null | undefin
 export default function HealthIssueMasterPanel() {
   const [issues, setIssues] = useState<HealthIssueOption[]>([]);
   const [newIssueName, setNewIssueName] = useState("");
-  const [newIssueGroup, setNewIssueGroup] = useState<HealthIssueGroup>("disease_health_risk");
+  const [newIssueGroup, setNewIssueGroup] = useState<HealthIssueGroup>("royal_initiative");
   const [filterGroup, setFilterGroup] = useState<HealthIssueGroup | "all">("all");
   const [page, setPage] = useState(1);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -88,7 +94,7 @@ export default function HealthIssueMasterPanel() {
     }
 
     setNewIssueName("");
-    setNewIssueGroup("disease_health_risk");
+    setNewIssueGroup("royal_initiative");
     setMessage("เพิ่มรายการประเด็นโรค/ภัยสุขภาพแล้ว");
     void loadIssues();
   };

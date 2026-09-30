@@ -21,7 +21,15 @@ export type Subdistrict = {
   province_code: string;
 };
 
-export type HealthIssueGroup = "disease_health_risk" | "context_driver";
+export type HealthIssueGroup =
+  | "disease_health_risk"
+  | "context_driver"
+  | "royal_initiative"
+  | "communicable_disease"
+  | "noncommunicable_disease"
+  | "health_risk_factor"
+  | "occupational_environmental_disease"
+  | "systemic_prevention_mechanism";
 
 export type HealthIssueOption = {
   id: string;

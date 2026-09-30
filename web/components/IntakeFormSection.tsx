@@ -143,7 +143,7 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
     : formData.healthIssue.trim();
 
   const canSubmit = useMemo(() => {
-    return Boolean(formData.agencyCode && formData.provinceCode && formData.districtCode && resolvedHealthIssue.length >= 3 && formData.evaluationStatus);
+    return Boolean(formData.agencyCode && formData.provinceCode && formData.districtCode && resolvedHealthIssue.length >= 3);
   }, [formData, resolvedHealthIssue]);
 
   const handleSubmit = async () => {
@@ -160,7 +160,7 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
       province_code: formData.provinceCode,
       district_code: formData.districtCode,
       health_issue_text: resolvedHealthIssue,
-      evaluation_status: formData.evaluationStatus,
+      evaluation_status: formData.evaluationStatus || null,
     });
 
     setSaving(false);
