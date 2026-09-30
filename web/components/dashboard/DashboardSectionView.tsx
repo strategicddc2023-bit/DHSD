@@ -314,24 +314,29 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                               </ResponsiveContainer>
                             </div>
                             <div className="overview-issue-donut-detail">
-                              {overviewIssueDonutRows.map((item) => (
-                                <button
-                                  key={item.issue}
-                                  type="button"
-                                  className={`overview-issue-donut-detail__item${selectedOverviewMapIssue === item.issue ? " is-active" : ""}`}
-                                  onClick={() => setSelectedOverviewMapIssue((current) => (current === item.issue ? "" : item.issue))}
-                                >
-                                  <span className="overview-issue-donut-detail__swatch" style={{ background: item.color }} />
-                                  <span className="overview-issue-donut-detail__name">{item.issue}</span>
-                                  <strong>{item.districtCount.toLocaleString("th-TH")} อำเภอ</strong>
-                                </button>
-                              ))}
+                              {overviewIssueDonutRows.map((item) => {
+                                const isExpanded = selectedOverviewMapIssue === item.issue;
+                                return (
+                                  <div key={item.issue} className="overview-issue-donut-detail__group">
+                                    <button
+                                      type="button"
+                                      className={`overview-issue-donut-detail__item${isExpanded ? " is-active" : ""}`}
+                                      onClick={() => setSelectedOverviewMapIssue((current) => (current === item.issue ? "" : item.issue))}
+                                      aria-expanded={isExpanded}
+                                    >
+                                      <span className="overview-issue-donut-detail__swatch" style={{ background: item.color }} />
+                                      <span className="overview-issue-donut-detail__name">{item.issue}</span>
+                                      <strong>{item.districtCount.toLocaleString("th-TH")} อำเภอ</strong>
+                                    </button>
+                                    {isExpanded ? <OverviewIssueDrilldown model={model} /> : null}
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
                         )}
                       </aside>
                     </div>
-                    <OverviewIssueDrilldown model={model} />
                   </div>
                 ) : null}
                 {dashboardInsightTab === "evaluation" ? (

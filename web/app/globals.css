@@ -2180,6 +2180,10 @@ input {
   justify-self: center;
 }
 
+.overview-issue-donut-detail__group {
+  min-width: 0;
+}
+
 .overview-issue-donut-detail__item {
   width: 100%;
   display: grid;
