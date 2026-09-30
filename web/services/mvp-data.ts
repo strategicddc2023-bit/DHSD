@@ -13,5 +13,5 @@ export const agencyOptions: AgencyOption[] = [
   { code: "DPC10", label_th: "สคร.10" },
   { code: "DPC11", label_th: "สคร.11" },
   { code: "DPC12", label_th: "สคร.12" },
-  { code: "DPC13", label_th: "สคร.13" },
+  { code: "DPC13", label_th: "กทม" },
 ];

@@ -8,6 +8,7 @@ import IntakeFormSection from "@/components/IntakeFormSection";
 import KpiInputSection from "@/components/KpiInputSection";
 import WorkSummary from "@/components/WorkSummary";
 import { buildAccessScope, loadCurrentAppUser } from "@/services/auth-session";
+import { withAgencyDisplayLabel } from "@/services/agency-display";
 import { supabase } from "@/services/supabase-client";
 import type { AgencyOption, AppUserRow, IntakeFormData } from "@/types/mvp";
 
@@ -64,7 +65,7 @@ export default function AdminPage() {
         .from("master_agencies")
         .select("code,label_th")
         .order("code", { ascending: true });
-      setAgencies(data ?? []);
+      setAgencies((data ?? []).map(withAgencyDisplayLabel));
     };
     void loadAgencies();
   }, []);

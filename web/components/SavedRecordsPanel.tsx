@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/services/supabase-client";
+import { getAgencyDisplayLabel, withAgencyDisplayLabel } from "@/services/agency-display";
 import type {
   AgencyOption,
   District,
@@ -75,7 +76,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
         supabase.from("master_districts").select("code,name_th,province_code").order("name_th", { ascending: true }),
         supabase.from("agency_provinces").select("agency_code,province_code"),
       ]);
-      setAgencies(agencyRes.data ?? []);
+      setAgencies((agencyRes.data ?? []).map(withAgencyDisplayLabel));
       setProvinces(provinceRes.data ?? []);
       setDistricts(districtRes.data ?? []);
       setAgencyProvinceMap((mappingRes.data as { agency_code: string; province_code: string }[]) ?? []);
@@ -225,7 +226,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
     const headers = ["เวลา", "หน่วยงาน", "จังหวัด", "อำเภอ", "ประเด็นโรค/ภัยสุขภาพ", "ผลการคัดเกณฑ์"];
     const body = rows.map((row) => [
       new Date(row.created_at).toLocaleString("th-TH"),
-      getRelatedLabel(row.master_agencies, (a) => a.label_th) ?? row.agency_code ?? "-",
+      getAgencyDisplayLabel(row.agency_code, getRelatedLabel(row.master_agencies, (a) => a.label_th)),
       getRelatedLabel(row.master_provinces, (p) => p.name_th) ?? row.province_code ?? "-",
       getRelatedLabel(row.master_districts, (d) => d.name_th) ?? row.district_code ?? "-",
       row.health_issue_text ?? "-",
@@ -379,7 +380,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
                       </>
                     ) : (
                       <>
-                        <td>{getRelatedLabel(row.master_agencies, (a) => a.label_th) ?? row.agency_code ?? "-"}</td>
+                        <td>{getAgencyDisplayLabel(row.agency_code, getRelatedLabel(row.master_agencies, (a) => a.label_th))}</td>
                         <td>{getRelatedLabel(row.master_provinces, (p) => p.name_th) ?? row.province_code ?? "-"}</td>
                         <td>{getRelatedLabel(row.master_districts, (d) => d.name_th) ?? row.district_code ?? "-"}</td>
                         <td>{row.health_issue_text}</td>

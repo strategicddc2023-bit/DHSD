@@ -6,6 +6,7 @@ import { forecastLabel, forecastPercent, overallRiskFromCounts, kpiStatusFromPer
 import type { ReadinessCheck } from "@/services/qa-readiness";
 import type { IntakeRecordRow } from "@/types/mvp";
 import { getRelatedLabel } from "./dashboard-shared";
+import { getAgencyDisplayLabel } from "@/services/agency-display";
 import type { CoverageChartRow, DashboardInsightTab, SavedRecordDraft } from "./dashboard-shared";
 
 type DashboardActionInput = ReturnType<typeof import("./useDashboardBase").useDashboardBase> & ReturnType<typeof import("./useDashboardInsights").useDashboardInsights>;
@@ -240,7 +241,7 @@ export function useDashboardActions(model: DashboardActionInput) {
     const headers = ["เวลา", "หน่วยงาน", "จังหวัด", "อำเภอ", "ประเด็นโรค/ภัยสุขภาพ"];
     const body = rows.map((row) => [
       new Date(row.created_at).toLocaleString("th-TH"),
-      getRelatedLabel(row.master_agencies, (agency) => agency.label_th) ?? row.agency_code ?? "-",
+      getAgencyDisplayLabel(row.agency_code, getRelatedLabel(row.master_agencies, (agency) => agency.label_th)),
       getRelatedLabel(row.master_provinces, (province) => province.name_th) ?? row.province_code ?? "-",
       getRelatedLabel(row.master_districts, (district) => district.name_th) ?? row.district_code ?? "-",
       row.health_issue_text ?? "-",

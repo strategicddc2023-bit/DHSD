@@ -68,7 +68,7 @@ const dpcPoints: DpcPoint[] = [
   { agencyCode: "DPC10", label: "สคร.10", latitude: 15.24, longitude: 104.85 },
   { agencyCode: "DPC11", label: "สคร.11", latitude: 9.14, longitude: 99.33 },
   { agencyCode: "DPC12", label: "สคร.12", latitude: 7.88, longitude: 98.40 },
-  { agencyCode: "DPC13", label: "สคร.13", latitude: 13.75, longitude: 100.50 },
+  { agencyCode: "DPC13", label: "กทม", latitude: 13.75, longitude: 100.50 },
 ];
 
 function getZoneColor(value: number, max: number, selected: boolean): string {

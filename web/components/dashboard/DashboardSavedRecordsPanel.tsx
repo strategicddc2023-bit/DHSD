@@ -1,6 +1,7 @@
 "use client";
 
 import { getRelatedLabel } from "./dashboard-shared";
+import { getAgencyDisplayLabel } from "@/services/agency-display";
 import type { DashboardModel } from "./DashboardSectionImpl";
 
 type DashboardSavedRecordsPanelProps = { model: DashboardModel };
@@ -165,7 +166,7 @@ export default function DashboardSavedRecordsPanel({ model }: DashboardSavedReco
                       </>
                     ) : (
                       <>
-                        <td>{getRelatedLabel(row.master_agencies, (agency) => agency.label_th) ?? row.agency_code ?? "-"}</td>
+                        <td>{getAgencyDisplayLabel(row.agency_code, getRelatedLabel(row.master_agencies, (agency) => agency.label_th))}</td>
                         <td>{getRelatedLabel(row.master_provinces, (province) => province.name_th) ?? row.province_code ?? "-"}</td>
                         <td>{getRelatedLabel(row.master_districts, (district) => district.name_th) ?? row.district_code ?? "-"}</td>
                         <td>{row.health_issue_text}</td>

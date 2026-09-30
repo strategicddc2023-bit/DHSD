@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { normalizeAgencyCode, type AccessScope } from "@/services/access-control";
+import { withAgencyDisplayLabel } from "@/services/agency-display";
 import { supabase } from "@/services/supabase-client";
 import type { AgencyOption, District, HealthIssueOption, IntakeFormData, IntakeEvaluationStatus, Province } from "@/types/mvp";
 
@@ -64,7 +65,7 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
         setMessage(`โหลดข้อมูลตั้งต้นไม่สำเร็จ: ${errorMessage ?? "กรุณาตรวจสอบการเชื่อมต่อ Supabase"}`);
       }
 
-      setAgencies(agencyRes.data ?? []);
+      setAgencies((agencyRes.data ?? []).map(withAgencyDisplayLabel));
       setProvinces(provinceRes.data ?? []);
       setHealthIssueOptions((healthIssueRes.data as HealthIssueOption[] | null) ?? []);
 
@@ -192,7 +193,7 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
 
       <form className="intake-grid" onSubmit={(event) => event.preventDefault()}>
         <label>
-          หน่วยงาน (สคร.1-สคร.13)
+          หน่วยงาน (สคร.1-สคร.12 และ กทม)
           <select
             value={formData.agencyCode}
             disabled={loading || Boolean(accessScope?.agencyCode)}

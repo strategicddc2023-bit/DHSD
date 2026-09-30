@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/services/supabase-client";
 import type { AccessScope } from "@/services/access-control";
+import { withAgencyDisplayLabel } from "@/services/agency-display";
 import type { AgencyOption, AppRole, AppUserRow, AppUserStatus, District, Province } from "@/types/mvp";
 
 type SuperadminUsersPanelProps = {
@@ -61,7 +62,7 @@ export default function SuperadminUsersPanel({ accessScope }: SuperadminUsersPan
       ]);
 
       setUsers((usersRes.data as AppUserRow[] | null) ?? []);
-      setAgencies(agencyRes.data ?? []);
+      setAgencies((agencyRes.data ?? []).map(withAgencyDisplayLabel));
       setProvinces(provinceRes.data ?? []);
       setDistricts((districtRes.data as District[] | null) ?? []);
       setLoading(false);

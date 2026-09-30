@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { resolveVisibleAgencyCodes, resolveVisibleProvinceCodes } from "@/services/access-control";
+import { withAgencyDisplayLabel } from "@/services/agency-display";
 import { supabase } from "@/services/supabase-client";
 import { loadDistrictHealthIssueSummary } from "@/services/health-issue-service";
 import type { AgencyCoverageRow, AgencyProvinceMapRow, AgencyOption, District, HealthIssueOption, IntakeEvaluationStatus, IntakeRecordRow, KpiSummaryRow, Province, ProvinceCoverageRow } from "@/types/mvp";
@@ -186,7 +187,7 @@ export function useDashboardBase(props: DashboardSectionProps) {
           .order("name_th", { ascending: true }),
       ]);
 
-      setAgencies(agencyRes.data ?? []);
+      setAgencies((agencyRes.data ?? []).map(withAgencyDisplayLabel));
       setProvinces(provinceRes.data ?? []);
       setDistricts(districtRes.data ?? []);
       setAgencyProvinceMap((mappingRes.data as AgencyProvinceMapRow[]) ?? []);

@@ -6,6 +6,7 @@ import AppNavigation from "@/components/AppNavigation";
 import DashboardSection from "@/components/DashboardSection";
 import HeroSection from "@/components/HeroSection";
 import { buildAccessScope, loadCurrentAppUser } from "@/services/auth-session";
+import { withAgencyDisplayLabel } from "@/services/agency-display";
 import { supabase } from "@/services/supabase-client";
 import type { AgencyOption, AppUserRow, IntakeFormData } from "@/types/mvp";
 
@@ -32,7 +33,7 @@ export default function HomePage() {
         .from("master_agencies")
         .select("code,label_th")
         .order("code", { ascending: true });
-      setAgencies(data ?? []);
+      setAgencies((data ?? []).map(withAgencyDisplayLabel));
     };
 
     void loadAgencies();
