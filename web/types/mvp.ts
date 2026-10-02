@@ -31,6 +31,21 @@ export type HealthIssueGroup =
   | "occupational_environmental_disease"
   | "systemic_prevention_mechanism";
 
+export const HEALTH_ISSUE_GROUPS: Array<{ value: HealthIssueGroup; label: string }> = [
+  { value: "royal_initiative", label: "โครงการพระราชดำริ โครงการเฉลิมพระเกียรติฯ" },
+  { value: "communicable_disease", label: "กลุ่มโรคติดต่อ" },
+  { value: "noncommunicable_disease", label: "กลุ่มโรคไม่ติดต่อ" },
+  { value: "health_risk_factor", label: "กลุ่มปัจจัยเสี่ยงด้านสุขภาพ" },
+  { value: "occupational_environmental_disease", label: "กลุ่มโรคจากการประกอบอาชีพและสิ่งแวดล้อม" },
+  { value: "systemic_prevention_mechanism", label: "กลุ่มการพัฒนากลไกป้องกันควบคุมโรคเชิงระบบ" },
+  { value: "disease_health_risk", label: "โรคและภัยสุขภาพ" },
+  { value: "context_driver", label: "ประเด็นการขับเคลื่อนตามบริบท" },
+];
+
+export const getHealthIssueGroupLabel = (group: HealthIssueGroup | string | null | undefined): string => {
+  return HEALTH_ISSUE_GROUPS.find((option) => option.value === group)?.label ?? "ไม่ระบุกลุ่ม";
+};
+
 export type HealthIssueOption = {
   id: string;
   name_th: string;

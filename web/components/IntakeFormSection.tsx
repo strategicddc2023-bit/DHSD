@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { normalizeAgencyCode, type AccessScope } from "@/services/access-control";
 import { withAgencyDisplayLabel } from "@/services/agency-display";
 import { supabase } from "@/services/supabase-client";
-import type { AgencyOption, District, HealthIssueOption, IntakeFormData, IntakeEvaluationStatus, Province } from "@/types/mvp";
+import type { AgencyOption, District, HealthIssueGroup, HealthIssueOption, IntakeFormData, IntakeEvaluationStatus, Province } from "@/types/mvp";
+import { HEALTH_ISSUE_GROUPS, getHealthIssueGroupLabel } from "@/types/mvp";
 
 type IntakeFormSectionProps = {
   formData: IntakeFormData;
@@ -29,6 +30,7 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
   const [healthIssueOptions, setHealthIssueOptions] = useState<HealthIssueOption[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<HealthIssueGroup | "all">("all");
   const [otherHealthIssue, setOtherHealthIssue] = useState("");
   const [agencyProvinceMap, setAgencyProvinceMap] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
@@ -138,6 +140,13 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
 
     void loadDistricts();
   }, [formData.provinceCode]);
+
+  const filteredHealthIssueOptions = useMemo(() => {
+    if (selectedGroup === "all") {
+      return healthIssueOptions;
+    }
+    return healthIssueOptions.filter((option) => option.issue_group === selectedGroup);
+  }, [healthIssueOptions, selectedGroup]);
 
   const resolvedHealthIssue = formData.healthIssue === OTHER_HEALTH_ISSUE_LABEL
     ? otherHealthIssue.trim()
@@ -264,16 +273,44 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
           </select>
         </label>
 
-        <label className="full-width">
+        <label>
+          กลุ่มโรค/ภัยสุขภาพ
+          <select
+            value={selectedGroup}
+            onChange={(event) => setSelectedGroup(event.target.value as HealthIssueGroup | "all")}
+          >
+            <option value="all">ทั้งหมด (ทุกกลุ่มโรค)</option>
+            {HEALTH_ISSUE_GROUPS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label>
           ประเด็นโรค/ภัยสุขภาพ
           <input
             list="health-issue-options"
             value={formData.healthIssue}
-            onChange={(event) => onChange({ ...formData, healthIssue: event.target.value })}
-            placeholder="ค้นหาและเลือกประเด็นโรค/ภัยสุขภาพ"
+            onChange={(event) => {
+              const val = event.target.value;
+              onChange({ ...formData, healthIssue: val });
+              if (val && val !== OTHER_HEALTH_ISSUE_LABEL) {
+                const match = healthIssueOptions.find((opt) => opt.name_th === val);
+                if (match && selectedGroup === "all") {
+                  setSelectedGroup(match.issue_group);
+                }
+              }
+            }}
+            placeholder={
+              selectedGroup === "all"
+                ? "ค้นหาและเลือกประเด็นโรค/ภัยสุขภาพ"
+                : `ค้นหาหรือเลือกโรคใน${getHealthIssueGroupLabel(selectedGroup)}`
+            }
           />
           <datalist id="health-issue-options">
-            {healthIssueOptions.map((option) => (
+            {filteredHealthIssueOptions.map((option) => (
               <option key={option.id} value={option.name_th} />
             ))}
             <option value={OTHER_HEALTH_ISSUE_LABEL} />

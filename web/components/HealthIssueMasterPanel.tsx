@@ -3,24 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/services/supabase-client";
 import type { HealthIssueGroup, HealthIssueOption } from "@/types/mvp";
+import { HEALTH_ISSUE_GROUPS, getHealthIssueGroupLabel } from "@/types/mvp";
 
 const PAGE_SIZE = 10;
 const normalizeIssueName = (value: string) => value.trim().replace(/\s+/g, " ");
-
-const healthIssueGroupOptions: Array<{ value: HealthIssueGroup; label: string }> = [
-  { value: "royal_initiative", label: "โครงการพระราชดำริ โครงการเฉลิมพระเกียรติฯ" },
-  { value: "communicable_disease", label: "กลุ่มโรคติดต่อ" },
-  { value: "noncommunicable_disease", label: "กลุ่มโรคไม่ติดต่อ" },
-  { value: "health_risk_factor", label: "กลุ่มปัจจัยเสี่ยงด้านสุขภาพ" },
-  { value: "occupational_environmental_disease", label: "กลุ่มโรคจากการประกอบอาชีพและสิ่งแวดล้อม" },
-  { value: "systemic_prevention_mechanism", label: "กลุ่มการพัฒนากลไกป้องกันควบคุมโรคเชิงระบบ" },
-  { value: "disease_health_risk", label: "โรคและภัยสุขภาพ" },
-  { value: "context_driver", label: "ประเด็นการขับเคลื่อนตามบริบท" },
-];
-
-const healthIssueGroupLabel = (group: HealthIssueGroup | string | null | undefined) => {
-  return healthIssueGroupOptions.find((option) => option.value === group)?.label ?? "ไม่ระบุกลุ่ม";
-};
+const healthIssueGroupOptions = HEALTH_ISSUE_GROUPS;
+const healthIssueGroupLabel = getHealthIssueGroupLabel;
 
 export default function HealthIssueMasterPanel() {
   const [issues, setIssues] = useState<HealthIssueOption[]>([]);
@@ -88,13 +76,25 @@ export default function HealthIssueMasterPanel() {
       return;
     }
 
+    const duplicate = issues.find(
+      (item) => item.issue_group === newIssueGroup && normalizeIssueName(item.name_th).toLowerCase() === name.toLowerCase()
+    );
+    if (duplicate) {
+      setMessage(`ไม่สามารถเพิ่มชื่อ "${name}" ซ้ำในกลุ่ม "${healthIssueGroupLabel(newIssueGroup)}" ได้`);
+      return;
+    }
+
     setSaving(true);
     setMessage("");
     const { error } = await supabase.from("master_health_issues").insert({ name_th: name, issue_group: newIssueGroup });
     setSaving(false);
 
     if (error) {
-      setMessage(`เพิ่มรายการไม่สำเร็จ: ${error.message}`);
+      if (error.code === "23505" || error.message.includes("unique")) {
+        setMessage(`ไม่สามารถเพิ่มได้ เนื่องจากชื่อประเด็น "${name}" ซ้ำในกลุ่ม "${healthIssueGroupLabel(newIssueGroup)}"`);
+      } else {
+        setMessage(`เพิ่มรายการไม่สำเร็จ: ${error.message}`);
+      }
       return;
     }
 
@@ -124,13 +124,25 @@ export default function HealthIssueMasterPanel() {
       return;
     }
 
+    const duplicate = issues.find(
+      (item) => item.id !== issue.id && item.issue_group === editingGroup && normalizeIssueName(item.name_th).toLowerCase() === name.toLowerCase()
+    );
+    if (duplicate) {
+      setMessage(`ไม่สามารถบันทึกชื่อ "${name}" ซ้ำในกลุ่ม "${healthIssueGroupLabel(editingGroup)}" ได้`);
+      return;
+    }
+
     setSaving(true);
     setMessage("");
     const { error } = await supabase.from("master_health_issues").update({ name_th: name, issue_group: editingGroup }).eq("id", issue.id);
     setSaving(false);
 
     if (error) {
-      setMessage(`แก้ไขรายการไม่สำเร็จ: ${error.message}`);
+      if (error.code === "23505" || error.message.includes("unique")) {
+        setMessage(`ไม่สามารถบันทึกได้ เนื่องจากชื่อประเด็น "${name}" มีอยู่แล้วในระบบ`);
+      } else {
+        setMessage(`แก้ไขรายการไม่สำเร็จ: ${error.message}`);
+      }
       return;
     }
 
