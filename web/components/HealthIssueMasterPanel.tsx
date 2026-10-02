@@ -27,6 +27,7 @@ export default function HealthIssueMasterPanel() {
   const [newIssueName, setNewIssueName] = useState("");
   const [newIssueGroup, setNewIssueGroup] = useState<HealthIssueGroup>("royal_initiative");
   const [filterGroup, setFilterGroup] = useState<HealthIssueGroup | "all">("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
@@ -37,9 +38,13 @@ export default function HealthIssueMasterPanel() {
 
   const activeCount = useMemo(() => issues.filter((issue) => issue.is_active).length, [issues]);
   const filteredIssues = useMemo(() => {
-    if (filterGroup === "all") return issues;
-    return issues.filter((issue) => issue.issue_group === filterGroup);
-  }, [filterGroup, issues]);
+    const q = searchQuery.trim().toLowerCase();
+    return issues.filter((issue) => {
+      const matchGroup = filterGroup === "all" || issue.issue_group === filterGroup;
+      const matchSearch = !q || (issue.name_th || "").toLowerCase().includes(q);
+      return matchGroup && matchSearch;
+    });
+  }, [filterGroup, searchQuery, issues]);
   const pageCount = Math.max(1, Math.ceil(filteredIssues.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
   const startIdx = filteredIssues.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
@@ -48,7 +53,7 @@ export default function HealthIssueMasterPanel() {
 
   useEffect(() => {
     setPage(1);
-  }, [filterGroup]);
+  }, [filterGroup, searchQuery]);
 
   const loadIssues = async () => {
     setLoading(true);
@@ -198,6 +203,25 @@ export default function HealthIssueMasterPanel() {
             ))}
           </select>
         </label>
+        <label>
+          ค้นหาชื่อประเด็นโรค/ภัยสุขภาพ
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="พิมพ์คำค้นหาเพื่อค้นหาหรือแก้ไข..."
+          />
+        </label>
+        {searchQuery && (
+          <button
+            type="button"
+            className="cta cta--ghost health-issue-master-clear-btn"
+            onClick={() => setSearchQuery("")}
+            title="ล้างคำค้นหา"
+          >
+            ล้างคำค้นหา
+          </button>
+        )}
       </div>
 
       <div className="table-wrap">
@@ -207,7 +231,13 @@ export default function HealthIssueMasterPanel() {
           </thead>
           <tbody>
             {filteredIssues.length === 0 ? (
-              <tr><td colSpan={5}>ยังไม่มีรายการประเด็นโรค/ภัยสุขภาพในกลุ่มนี้</td></tr>
+              <tr>
+                <td colSpan={5}>
+                  {searchQuery.trim()
+                    ? `ไม่พบรายการประเด็นโรค/ภัยสุขภาพที่ตรงกับคำค้นหา "${searchQuery}"`
+                    : "ยังไม่มีรายการประเด็นโรค/ภัยสุขภาพในกลุ่มนี้"}
+                </td>
+              </tr>
             ) : (
               pagedIssues.map((issue, index) => {
                 const isEditing = editingId === issue.id;

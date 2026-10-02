@@ -2476,26 +2476,42 @@ input {
 
 .health-issue-master-table-tools {
   display: flex;
-  justify-content: flex-start;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
   margin: 12px 0 0;
 }
 
 .health-issue-master-table-tools label {
   display: grid;
   gap: 6px;
-  min-width: min(320px, 100%);
+  min-width: min(280px, 100%);
   color: #173a52;
   font-size: 0.88rem;
   font-weight: 800;
 }
 
-.health-issue-master-table-tools select {
+.health-issue-master-table-tools select,
+.health-issue-master-table-tools input {
   height: 38px;
   border: 1px solid var(--stroke);
   border-radius: 9px;
   background: #ffffff;
   padding: 0 10px;
   font: inherit;
+  color: #0f172a;
+}
+
+.health-issue-master-table-tools select:focus,
+.health-issue-master-table-tools input:focus {
+  outline: 2px solid #0284c7;
+  outline-offset: -1px;
+}
+
+.health-issue-master-clear-btn {
+  height: 38px;
+  padding: 0 14px;
+  align-self: flex-end;
 }
 
 .health-issue-master-table {
