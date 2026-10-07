@@ -14,7 +14,7 @@ type ProvinceIssueRow = {
 export default function OverviewIssueDrilldown({ model }: { model: DashboardModel }) {
   const {
     provinces,
-    selectedOverviewMapIssue,
+    activeOverviewMapIssue,
     selectedOverviewMapProvinceCode,
     setSelectedOverviewMapProvinceCode,
     selectedOverviewMapDistrictCode,
@@ -47,7 +47,7 @@ export default function OverviewIssueDrilldown({ model }: { model: DashboardMode
       .sort((a, b) => b.districtCount - a.districtCount || b.recordCount - a.recordCount || a.name.localeCompare(b.name, "th"));
   }, [overviewMapActiveRecords, provinces]);
 
-  if (!selectedOverviewMapIssue) return null;
+  if (!activeOverviewMapIssue) return null;
 
   const selectedDistrict = selectedOverviewMapDistrictRows.find((row) => row.code === selectedOverviewMapDistrictCode);
   const selectProvince = (provinceCode: string) => {
@@ -57,7 +57,7 @@ export default function OverviewIssueDrilldown({ model }: { model: DashboardMode
   };
 
   return (
-    <section className={styles.menu} aria-label={`พื้นที่ที่พบ ${selectedOverviewMapIssue}`} aria-live="polite">
+    <section className={styles.menu} aria-label={`พื้นที่ที่พบ ${activeOverviewMapIssue}`} aria-live="polite">
       <div className={styles.menuHeader}>
         <div><span>ขั้นที่ 1</span><strong>จังหวัดที่พบข้อมูล</strong></div>
         <b>{provinceRows.length.toLocaleString("th-TH")} จังหวัด</b>
@@ -99,8 +99,8 @@ export default function OverviewIssueDrilldown({ model }: { model: DashboardMode
                           onClick={() => setSelectedOverviewMapDistrictCode((current) => current === district.code ? "" : district.code)}
                           aria-pressed={selectedOverviewMapDistrictCode === district.code}
                         >
-                          <span><b>{district.name}</b><small>{selectedOverviewMapIssue}</small></span>
-                          <strong>{district.record_count.toLocaleString("th-TH")} รายการ</strong>
+                          <span><b>{district.name}</b><small>{activeOverviewMapIssue}</small></span>
+                          <strong>{district.record_count.toLocaleString("th-TH")} ประเด็น</strong>
                         </button>
                       ))}
                     </div>
@@ -116,7 +116,7 @@ export default function OverviewIssueDrilldown({ model }: { model: DashboardMode
         <div className={styles.selectedSummary} style={{ borderColor: activeOverviewMapIssueColor }}>
           <span>ข้อมูลประเด็นโรคของอำเภอที่เลือก</span>
           <strong>อำเภอ{selectedOverviewMapDistrictName} จังหวัด{selectedOverviewMapProvinceName}</strong>
-          <p><i style={{ background: activeOverviewMapIssueColor }} />{selectedOverviewMapIssue} · {selectedDistrict.record_count.toLocaleString("th-TH")} รายการ</p>
+          <p><i style={{ background: activeOverviewMapIssueColor }} />{activeOverviewMapIssue} · {selectedDistrict.record_count.toLocaleString("th-TH")} ประเด็น</p>
         </div>
       ) : null}
     </section>

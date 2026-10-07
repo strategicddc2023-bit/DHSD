@@ -197,7 +197,7 @@ export default function HealthIssueDistributionMapClient({
     const summary = provinceSummaries.get(provinceCode);
     const count = summary?.count ?? 0;
     const title = selectedIssue || "ทุกประเด็น";
-    layer.bindTooltip(`<strong>${feature.properties.province_name}</strong><br/>${title}<br/>${count.toLocaleString("th-TH")} รายการ<br/>${topIssuesLabel(summary)}`, { sticky: true });
+    layer.bindTooltip(`<strong>${feature.properties.province_name}</strong><br/>${title}<br/>${count.toLocaleString("th-TH")} ประเด็น<br/>${topIssuesLabel(summary)}`, { sticky: true });
     layer.on("click", () => {
       if (count <= 0) return;
       onSelectProvince?.(provinceCode);
@@ -209,7 +209,7 @@ export default function HealthIssueDistributionMapClient({
     const summary = districtSummaries.get(districtCode);
     const count = summary?.count ?? 0;
     const title = selectedIssue || "ทุกประเด็น";
-    layer.bindTooltip(`<strong>${feature.properties.district_name}</strong><br/>${title}<br/>${count.toLocaleString("th-TH")} รายการ<br/>${topIssuesLabel(summary)}`, { sticky: true });
+    layer.bindTooltip(`<strong>${feature.properties.district_name}</strong><br/>${title}<br/>${count.toLocaleString("th-TH")} ประเด็น<br/>${topIssuesLabel(summary)}`, { sticky: true });
     layer.on("click", () => {
       if (count <= 0) return;
       onSelectDistrict?.(districtCode);

@@ -12,7 +12,7 @@ import type { DashboardModel } from "./DashboardSectionImpl";
 import OverviewIssueDrilldown from "./OverviewIssueDrilldown";
 type DashboardSectionViewProps = { model: DashboardModel };
 export default function DashboardSectionView({ model }: DashboardSectionViewProps) {
-  const { formData, accessScope, hideSavedRecords, onSelectDistrictForIntake, mapRef, rows, totalCount, agencies, provinces, agencyProvinceMap, agencyCoverage, provinceCoverage, kpiSummaryRows, previousKpiSummaryRows, selectedFiscalYear, setSelectedFiscalYear, filterAgency, setFilterAgency, filterProvince, setFilterProvince, selectedDistrictCode, setSelectedDistrictCode, selectedSubdistrictCode, selectedDistrictName, districtHealthIssueData, districtHealthIssueTotal, districtHealthIssueLoading, dashboardInsightTab, selectedHealthIssue, setSelectedHealthIssue, selectedOverviewIssue, setSelectedOverviewIssue, selectedOverviewMapIssue, setSelectedOverviewMapIssue, selectedOverviewMapProvinceCode, setSelectedOverviewMapProvinceCode, selectedOverviewMapDistrictCode, setSelectedOverviewMapDistrictCode, issueDetailScope, setIssueDetailScope, overviewFilter, setOverviewFilter, activeAgencyFilter, activeProvinceFilter, visibleAgencies, visibleProvinces, visibleAgencyCoverage, visibleProvinceCoverage, showAdvancedPanels, dashboardMenuAgencies, provinceSubmissionGroups, selectedIssueProvinceCode, selectedAgencyAreaTotals, coverageChartRows, selectedIssueProvinceName, isDistrictMode, healthIssueDonutScopeLabel, healthIssueDonutData, healthIssueDonutTotal, overviewIssueDonutRows, healthIssueGroupRows, healthIssueGroupTotal, healthIssueEvaluationRows, healthIssueEvaluationChartHeight, selectedOverviewIssueRecords, selectedOverviewIssueAgencyRows, selectedOverviewIssueProvinceRows, selectedOverviewIssueDistrictRows, issueDetailScopeOptions, activeIssueDetailScope, overviewIssueColorMap, selectedOverviewIssueColor, activeOverviewMapIssueColor, overviewMapRecords, overviewMetricTotals, selectedOverviewMapProvinceName, selectedOverviewMapDistrictRows, selectedOverviewMapDistrictName, selectedOverviewIssueChartHeight, selectedHealthIssueCount, selectedHealthIssueRecords, overviewFilterOptions, overviewChartRows, isOverviewMode, coverageChartTitle, selectedProvinceIssueRecords, handleOverviewChartBarClick, clearMapFilters, clearTableFilters, selectDashboardOverview, selectDashboardAgency, selectDashboardInsight, exportKpiSummaryCsv, kpiStatusRows, kpiAlerts, kpiStatusCounts, overallRiskLevel, readinessChecks } = model;
+  const { formData, accessScope, hideSavedRecords, onSelectDistrictForIntake, mapRef, rows, totalCount, agencies, provinces, agencyProvinceMap, agencyCoverage, provinceCoverage, kpiSummaryRows, previousKpiSummaryRows, selectedFiscalYear, setSelectedFiscalYear, filterAgency, setFilterAgency, filterProvince, setFilterProvince, selectedDistrictCode, setSelectedDistrictCode, selectedSubdistrictCode, selectedDistrictName, districtHealthIssueData, districtHealthIssueTotal, districtHealthIssueLoading, dashboardInsightTab, selectedHealthIssue, setSelectedHealthIssue, selectedOverviewIssue, setSelectedOverviewIssue, selectedOverviewMapIssue, setSelectedOverviewMapIssue, selectedOverviewMapProvinceCode, setSelectedOverviewMapProvinceCode, selectedOverviewMapDistrictCode, setSelectedOverviewMapDistrictCode, issueDetailScope, setIssueDetailScope, overviewFilter, setOverviewFilter, activeAgencyFilter, activeProvinceFilter, visibleAgencies, visibleProvinces, visibleAgencyCoverage, visibleProvinceCoverage, showAdvancedPanels, dashboardMenuAgencies, provinceSubmissionGroups, selectedIssueProvinceCode, selectedAgencyAreaTotals, coverageChartRows, selectedIssueProvinceName, isDistrictMode, healthIssueDonutScopeLabel, healthIssueDonutData, healthIssueDonutTotal, overviewIssueDonutRows, healthIssueGroupRows, healthIssueGroupTotal, healthIssueEvaluationRows, healthIssueEvaluationChartHeight, selectedOverviewIssueRecords, selectedOverviewIssueAgencyRows, selectedOverviewIssueProvinceRows, selectedOverviewIssueDistrictRows, issueDetailScopeOptions, activeIssueDetailScope, overviewIssueColorMap, selectedOverviewIssueColor, activeOverviewMapIssueColor, overviewMapRecords, overviewMetricTotals, selectedOverviewMapProvinceName, selectedOverviewMapDistrictRows, selectedOverviewMapDistrictName, selectedOverviewIssueChartHeight, selectedHealthIssueCount, overviewFilterOptions, overviewChartRows, isOverviewMode, coverageChartTitle, selectedProvinceIssueRecords, handleOverviewChartBarClick, clearMapFilters, clearTableFilters, selectDashboardOverview, selectDashboardAgency, selectDashboardInsight, exportKpiSummaryCsv, kpiStatusRows, kpiAlerts, kpiStatusCounts, overallRiskLevel, readinessChecks } = model;
   const savedRecordsPanel = <DashboardSavedRecordsPanel model={model} />;
   return (
     <section className="section" id="dashboard-section">
@@ -58,7 +58,7 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                           <h3>แผนที่การกระจาย {selectedOverviewIssue}</h3>
                           <p>สีบนแผนที่ใช้สีของประเด็นที่เลือก และแสดงเฉพาะพื้นที่ที่มีข้อมูลประเด็นนี้</p>
                         </div>
-                        <span style={{ background: selectedOverviewIssueColor, color: "#ffffff" }}>{selectedOverviewIssueRecords.length.toLocaleString("th-TH")} รายการ</span>
+                        <span style={{ background: selectedOverviewIssueColor, color: "#ffffff" }}>{selectedOverviewIssueRecords.length.toLocaleString("th-TH")} ประเด็น</span>
                       </div>
                       <HealthIssueDistributionMap
                         selectedIssue={selectedOverviewIssue}
@@ -111,7 +111,7 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                               onClick={() => setSelectedOverviewMapDistrictCode(row.code)}
                             >
                               <span>{row.name}</span>
-                              <strong>{row.record_count.toLocaleString("th-TH")} รายการ</strong>
+                              <strong>{row.record_count.toLocaleString("th-TH")} ประเด็น</strong>
                             </button>
                           ))}
                         </div>
@@ -176,7 +176,7 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                         <div className="dashboard-overview__section-head">
                           <div>
                             <h3>{selectedOverviewMapIssue ? `แผนที่การกระจาย ${selectedOverviewMapIssue}` : "ประเด็นการขับเคลื่อนงาน พชอ."}</h3>
-                            <p>แสดงพื้นที่ที่พบรายการประเด็นโรคและภัยสุขภาพตามสีของรายการ</p>
+                            <p>แสดงพื้นที่ที่พบประเด็นโรคและภัยสุขภาพตามสีของประเด็น</p>
                           </div>
                           <span style={{ background: selectedOverviewMapIssue ? activeOverviewMapIssueColor : "#0f3349", color: "#ffffff" }}>
                             {selectedOverviewMapIssue ? selectedOverviewMapIssue : "ทุกประเด็น"}
@@ -257,7 +257,7 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                         <div className="dashboard-overview__section-head overview-issue-control-panel__head">
                           <div>
                             <h3>สรุปภาพรวมประเด็นขับเคลื่อนงาน พชอ. ด้านป้องกันควบคุมโรคและภัยสุขภาพ{selectedOverviewMapDistrictName ? ` อำเภอ${selectedOverviewMapDistrictName}` : selectedOverviewMapProvinceName ? ` จังหวัด${selectedOverviewMapProvinceName}` : ""}</h3>
-                            <p>กดรายการเพื่อกรองสีบนแผนที่ด้านซ้าย</p>
+                            <p>กดประเด็นเพื่อกรองสีบนแผนที่ด้านซ้าย</p>
                           </div>
                           <button
                             type="button"
@@ -344,7 +344,7 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                     <div className="dashboard-overview__section-head">
                       <div>
                         <h3>ผลการคัดเกณฑ์ประเด็นโรคและภัยสุขภาพ</h3>
-                        <p>แยกจำนวนรายการที่ผ่านและไม่ผ่านตามประเด็นที่รายงานเข้ามา</p>
+                        <p>แยกจำนวนประเด็นที่ผ่านและไม่ผ่านตามประเด็นที่รายงานเข้ามา</p>
                       </div>
                     </div>
                     {healthIssueEvaluationRows.length === 0 ? (
@@ -383,8 +383,8 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                   <article className="dashboard-overview__table panel health-issue-group-panel">
                     <div className="dashboard-overview__section-head">
                       <div>
-                        <h3>ดูตามกลุ่มรายการ</h3>
-                        <p>สรุปจำนวนรายการตามกลุ่มประเด็นโรคและภัยสุขภาพที่ตั้งไว้หลังบ้าน</p>
+                        <h3>ดูตามกลุ่มประเด็น</h3>
+                        <p>สรุปจำนวนประเด็นตามกลุ่มประเด็นโรคและภัยสุขภาพที่ตั้งไว้หลังบ้าน</p>
                       </div>
                     </div>
                     {healthIssueGroupRows.length === 0 ? (
@@ -398,7 +398,7 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                               <div className="health-issue-group-card__head">
                                 <span style={{ background: row.color }} />
                                 <strong>{row.label}</strong>
-                                <b>{row.recordCount.toLocaleString("th-TH")} รายการ</b>
+                                <b>{row.recordCount.toLocaleString("th-TH")} ประเด็น</b>
                               </div>
                               <div
                                 className="health-issue-group-bar"
@@ -477,7 +477,7 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                 <h4>ประเด็นโรค/ภัยสุขภาพ</h4>
                 <p>{healthIssueDonutScopeLabel}</p>
               </div>
-              <span>{healthIssueDonutTotal.toLocaleString("th-TH")} ข้อมูล</span>
+              <span>{healthIssueDonutTotal.toLocaleString("th-TH")} ประเด็น</span>
             </div>
 
             {healthIssueDonutData.length === 0 ? (
@@ -513,14 +513,14 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(value, name) => [`${Number(value ?? 0).toLocaleString("th-TH")} ข้อมูล`, name]}
+                        formatter={(value, name) => [`${Number(value ?? 0).toLocaleString("th-TH")} ประเด็น`, name]}
                         contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 10px 30px rgba(16,36,62,0.1)" }}
                       />
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="health-issue-donut__center" aria-hidden="true">
                     <strong>{healthIssueDonutTotal.toLocaleString("th-TH")}</strong>
-                    <span>รายการ</span>
+                    <span>ประเด็น</span>
                   </div>
                 </div>
 
@@ -539,21 +539,6 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                   ))}
                 </div>
 
-                {selectedHealthIssue ? (
-                  <div className="health-issue-donut-detail">
-                    <strong>{selectedHealthIssue}</strong>
-                    <span>{selectedHealthIssueCount.toLocaleString("th-TH")} ข้อมูล</span>
-                    {selectedHealthIssueRecords.length > 0 ? (
-                      <div className="health-issue-donut-detail__list">
-                        {selectedHealthIssueRecords.map((record, index) => (
-                          <p key={`${record.provinceCode}-${record.districtCode}-${index}`}>
-                            {provinces.find((province) => province.code === record.provinceCode)?.name_th ?? record.provinceCode} / {record.districtName}
-                          </p>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
               </>
             )}
           </div>
@@ -600,7 +585,18 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
             </div>
           </div>
 
-          {selectedDistrictCode ? (
+          {selectedHealthIssue ? (
+            <div className="province-issue-panel" aria-label={`รายละเอียดประเด็นโรค ${selectedHealthIssue}`}>
+              <div className="province-issue-panel__header">
+                <div>
+                  <h4>{selectedHealthIssue}</h4>
+                  <p>เลือกจังหวัด แล้วเลือกอำเภอเพื่อดูรายละเอียดประเด็นโรค</p>
+                </div>
+                <span>{selectedHealthIssueCount.toLocaleString("th-TH")} ประเด็น</span>
+              </div>
+              <OverviewIssueDrilldown model={model} />
+            </div>
+          ) : selectedDistrictCode ? (
             // District mode: show ONLY district health issues
             <div className="province-issue-panel" aria-label="ประเด็นโรคภัยสุขภาพของอำเภอที่เลือก">
               <div className="province-issue-panel__header">
@@ -610,7 +606,7 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                     {districtHealthIssueLoading
                       ? "กำลังโหลดข้อมูล..."
                       : districtHealthIssueTotal > 0
-                        ? `อำเภอ${selectedDistrictName} — ${districtHealthIssueTotal.toLocaleString("th-TH")} รายการ`
+                        ? `อำเภอ${selectedDistrictName} — ${districtHealthIssueTotal.toLocaleString("th-TH")} ประเด็น`
                         : `อำเภอ${selectedDistrictName} — ยังไม่มีข้อมูล`}
                   </p>
                 </div>
@@ -721,7 +717,7 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
               </div>
             </>
           ) : null}
-          {!selectedDistrictCode && !isDistrictMode ? (
+          {!selectedHealthIssue && !selectedDistrictCode && !isDistrictMode ? (
             <div className="province-progress-panel" aria-label="ความคืบหน้าการส่งงานรายจังหวัดตาม สคร.">
               <div className="province-progress-panel__header">
                 <div>
@@ -785,7 +781,7 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
               </div>
             </div>
           ) : null}
-          {!selectedDistrictCode && !isDistrictMode ? (
+          {!selectedHealthIssue && !selectedDistrictCode && !isDistrictMode ? (
             <div className="province-issue-panel" aria-label="ประเด็นโรคภัยสุขภาพของจังหวัดที่เลือก">
               <div className="province-issue-panel__header">
                 <div>
@@ -794,7 +790,7 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                     {selectedIssueProvinceName
                       ? `จังหวัด${selectedIssueProvinceName}`
                       : activeAgencyFilter
-                        ? "เลือกแท่งจังหวัดจากกราฟเพื่อดูรายการ"
+                        ? "เลือกแท่งจังหวัดจากกราฟเพื่อดูประเด็น"
                         : "เลือก สคร. จากแผนที่ก่อน แล้วคลิกแท่งจังหวัด"}
                   </p>
                 </div>

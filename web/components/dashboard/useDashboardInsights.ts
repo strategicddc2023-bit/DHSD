@@ -278,7 +278,7 @@ export function useDashboardInsights(model: ReturnType<typeof import("./useDashb
   }, [provinces, selectedOverviewIssueRecords]);
   const issueDetailScopeOptions = [
     { key: "agency" as const, label: "สคร.", title: "พบใน สคร. ใดบ้าง", detail: "เรียงตามจำนวนข้อมูลของประเด็นนี้", color: "#1d9bf0", rows: selectedOverviewIssueAgencyRows, axisWidth: 62 },
-    { key: "province" as const, label: "จังหวัด", title: "พบในจังหวัดใดบ้าง", detail: "จังหวัดที่มีรายการของประเด็นนี้", color: "#00c4b4", rows: selectedOverviewIssueProvinceRows, axisWidth: 96 },
+    { key: "province" as const, label: "จังหวัด", title: "พบในจังหวัดใดบ้าง", detail: "จังหวัดที่พบประเด็นนี้", color: "#00c4b4", rows: selectedOverviewIssueProvinceRows, axisWidth: 96 },
     { key: "district" as const, label: "อำเภอ", title: "พบในอำเภอใดบ้าง", detail: "แสดง 20 อำเภอแรกที่มีจำนวนข้อมูลสูงสุด", color: "#f59e0b", rows: selectedOverviewIssueDistrictRows.slice(0, 20), axisWidth: 160 },
   ];
   const activeIssueDetailScope = issueDetailScopeOptions.find((option) => option.key === issueDetailScope) ?? issueDetailScopeOptions[0];
@@ -286,7 +286,7 @@ export function useDashboardInsights(model: ReturnType<typeof import("./useDashb
     () => Object.fromEntries(overviewIssueDonutRows.map((item) => [item.issue, item.color])),
     [overviewIssueDonutRows]
   );
-  const activeOverviewMapIssue = selectedOverviewIssue || selectedOverviewMapIssue;
+  const activeOverviewMapIssue = selectedOverviewIssue || selectedOverviewMapIssue || selectedHealthIssue;
   const selectedOverviewIssueColor = overviewIssueColorMap[selectedOverviewIssue] ?? "#1d9bf0";
   const activeOverviewMapIssueColor = activeOverviewMapIssue ? overviewIssueColorMap[activeOverviewMapIssue] ?? "#1d9bf0" : "#1d9bf0";
   const overviewMapRecords = useMemo(
@@ -379,21 +379,6 @@ export function useDashboardInsights(model: ReturnType<typeof import("./useDashb
     : "";
   const selectedOverviewIssueChartHeight = (rows: CoverageChartRow[]) => Math.max(260, rows.length * 34 + 58);
   const selectedHealthIssueCount = healthIssueDonutData.find((item) => item.issue === selectedHealthIssue)?.count ?? 0;
-  const selectedHealthIssueRecords = useMemo(() => {
-    if (!selectedHealthIssue || selectedDistrictCode) {
-      return [] as ProvinceHealthIssueRecord[];
-    }
-
-    return healthIssueScopeRecords
-      .filter((record) => record.healthIssue === selectedHealthIssue)
-      .sort((a, b) => {
-        const provinceCompare = a.provinceCode.localeCompare(b.provinceCode, "th");
-        if (provinceCompare !== 0) return provinceCompare;
-        return a.districtName.localeCompare(b.districtName, "th");
-      })
-      .slice(0, 6);
-  }, [healthIssueScopeRecords, selectedDistrictCode, selectedHealthIssue]);
-
   useEffect(() => {
     if (selectedHealthIssue && !healthIssueDonutData.some((item) => item.issue === selectedHealthIssue)) {
       setSelectedHealthIssue("");
@@ -403,7 +388,7 @@ export function useDashboardInsights(model: ReturnType<typeof import("./useDashb
   useEffect(() => {
     setSelectedOverviewMapProvinceCode("");
     setSelectedOverviewMapDistrictCode("");
-  }, [selectedOverviewIssue, selectedOverviewMapIssue]);
+  }, [selectedHealthIssue, selectedOverviewIssue, selectedOverviewMapIssue]);
 
   const overviewFilterOptions = [
     { key: "agency-order" as const, label: "ภาพรวม สคร." },
@@ -511,5 +496,5 @@ export function useDashboardInsights(model: ReturnType<typeof import("./useDashb
   }, [provinceHealthIssueRecords, selectedIssueProvinceCode]);
 
 
-  return { coverageChartRows, selectedIssueProvinceName, isDistrictMode, healthIssueDonutScopeLabel, healthIssueDonutData, healthIssueDonutTotal, overviewIssueTableRows, overviewIssueChartRows, overviewIssueDonutRows, healthIssueGroupRows, healthIssueGroupTotal, healthIssueEvaluationRows, healthIssueEvaluationChartHeight, selectedOverviewIssueRecords, selectedOverviewIssueAgencyRows, selectedOverviewIssueProvinceRows, selectedOverviewIssueDistrictRows, issueDetailScopeOptions, activeIssueDetailScope, overviewIssueColorMap, activeOverviewMapIssue, selectedOverviewIssueColor, activeOverviewMapIssueColor, overviewMapRecords, overviewMapActiveRecords, overviewMetricTotals, selectedOverviewMapProvinceName, selectedOverviewMapDistrictRows, selectedOverviewMapDistrictName, selectedOverviewIssueChartHeight, selectedHealthIssueCount, selectedHealthIssueRecords, overviewFilterOptions, overviewChartRows, overviewChartTitle, isOverviewMode, coverageChartTitle, dashboardContextLabel, selectedProvinceIssueRecords };
+  return { coverageChartRows, selectedIssueProvinceName, isDistrictMode, healthIssueDonutScopeLabel, healthIssueDonutData, healthIssueDonutTotal, overviewIssueTableRows, overviewIssueChartRows, overviewIssueDonutRows, healthIssueGroupRows, healthIssueGroupTotal, healthIssueEvaluationRows, healthIssueEvaluationChartHeight, selectedOverviewIssueRecords, selectedOverviewIssueAgencyRows, selectedOverviewIssueProvinceRows, selectedOverviewIssueDistrictRows, issueDetailScopeOptions, activeIssueDetailScope, overviewIssueColorMap, activeOverviewMapIssue, selectedOverviewIssueColor, activeOverviewMapIssueColor, overviewMapRecords, overviewMapActiveRecords, overviewMetricTotals, selectedOverviewMapProvinceName, selectedOverviewMapDistrictRows, selectedOverviewMapDistrictName, selectedOverviewIssueChartHeight, selectedHealthIssueCount, overviewFilterOptions, overviewChartRows, overviewChartTitle, isOverviewMode, coverageChartTitle, dashboardContextLabel, selectedProvinceIssueRecords };
 }
