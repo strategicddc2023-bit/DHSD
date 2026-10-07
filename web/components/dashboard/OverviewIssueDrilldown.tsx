@@ -59,7 +59,7 @@ export default function OverviewIssueDrilldown({ model }: { model: DashboardMode
   return (
     <section className={styles.menu} aria-label={`พื้นที่ที่พบ ${activeOverviewMapIssue}`} aria-live="polite">
       <div className={styles.menuHeader}>
-        <div><span>ขั้นที่ 1</span><strong>จังหวัดที่พบข้อมูล</strong></div>
+        <div><strong>จังหวัดที่พบข้อมูล</strong></div>
         <b>{provinceRows.length.toLocaleString("th-TH")} จังหวัด</b>
       </div>
 
@@ -84,7 +84,7 @@ export default function OverviewIssueDrilldown({ model }: { model: DashboardMode
               {isExpanded ? (
                 <div className={styles.districtPanel} aria-label={`อำเภอในจังหวัด${province.name}`}>
                   <div className={styles.districtHeader}>
-                    <span>ขั้นที่ 2 · อำเภอในจังหวัด{selectedOverviewMapProvinceName}</span>
+                    <span>อำเภอในจังหวัด{selectedOverviewMapProvinceName}</span>
                     <strong>{selectedOverviewMapDistrictRows.length.toLocaleString("th-TH")} อำเภอ</strong>
                   </div>
                   {selectedOverviewMapDistrictRows.length === 0 ? (
