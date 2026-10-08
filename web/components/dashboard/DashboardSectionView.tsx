@@ -604,10 +604,10 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                   <h4>ประเด็นโรค/ภัยสุขภาพ</h4>
                   <p>
                     {districtHealthIssueLoading
-                      ? "กำลังโหลดข้อมูล..."
+                      ? "กำลังโหลดประเด็น..."
                       : districtHealthIssueTotal > 0
                         ? `อำเภอ${selectedDistrictName} — ${districtHealthIssueTotal.toLocaleString("th-TH")} ประเด็น`
-                        : `อำเภอ${selectedDistrictName} — ยังไม่มีข้อมูล`}
+                        : `อำเภอ${selectedDistrictName} — ยังไม่มีประเด็น`}
                   </p>
                 </div>
                 <button type="button" className="cta cta--ghost" onClick={() => setSelectedDistrictCode("")}>
@@ -624,7 +624,7 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                   {districtHealthIssueData.map((item) => (
                     <div key={item.issue} className="province-issue-item">
                       <strong>{item.issue}</strong>
-                      <span>{item.count.toLocaleString("th-TH")} ข้อมูล</span>
+                      <span>{item.count.toLocaleString("th-TH")} ประเด็น</span>
                     </div>
                   ))}
                 </div>
@@ -637,7 +637,7 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                 <div className="province-progress-panel__header">
                   <div>
                     <h4>ประเด็นโรค/ภัยสุขภาพ</h4>
-                    <p>จังหวัด{selectedIssueProvinceName}{selectedProvinceIssueRecords.length > 0 ? ` — ${selectedProvinceIssueRecords.length.toLocaleString("th-TH")} ข้อมูล` : ""}</p>
+                    <p>จังหวัด{selectedIssueProvinceName}{selectedProvinceIssueRecords.length > 0 ? ` — ${selectedProvinceIssueRecords.length.toLocaleString("th-TH")} ประเด็น` : ""}</p>
                   </div>
                 </div>
 
@@ -694,7 +694,7 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                           <div className="province-progress-row__meta">
                             <strong>{district.name}</strong>
                             <span>
-                              {submitted ? `ส่งแล้ว ${district.record_count} ข้อมูล` : "ยังไม่มีข้อมูล"}
+                              {submitted ? `ส่งแล้ว ${district.record_count} ประเด็น` : "ยังไม่มีประเด็น"}
                             </span>
                           </div>
                           <div
@@ -703,10 +703,10 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                             aria-label={`อำเภอ${district.name} ${submitted ? `ส่งแล้ว 100%` : "ยังไม่ส่ง"}`}
                           >
                             <div className="province-progress-bar__sent" style={{ width: `${percent}%` }}>
-                              {submitted ? "มีข้อมูล" : ""}
+                              {submitted ? "มีประเด็น" : ""}
                             </div>
                             <div className="province-progress-bar__pending" style={{ width: `${100 - percent}%` }}>
-                              {submitted ? "" : "ไม่มีข้อมูล"}
+                              {submitted ? "" : "ไม่มีประเด็น"}
                             </div>
                           </div>
                         </div>
@@ -794,7 +794,7 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                         : "เลือก สคร. จากแผนที่ก่อน แล้วคลิกแท่งจังหวัด"}
                   </p>
                 </div>
-                {selectedIssueProvinceName ? <span>{selectedProvinceIssueRecords.length.toLocaleString("th-TH")} ข้อมูล</span> : null}
+                {selectedIssueProvinceName ? <span>{selectedProvinceIssueRecords.length.toLocaleString("th-TH")} ประเด็น</span> : null}
               </div>
 
               {!activeAgencyFilter ? (

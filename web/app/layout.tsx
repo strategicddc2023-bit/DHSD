@@ -1,6 +1,7 @@
 ﻿import "./globals.css";
 import "leaflet/dist/leaflet.css";
 import type { Metadata } from "next";
+import AppVersionRefresh from "@/components/AppVersionRefresh";
 
 export const metadata: Metadata = {
   title: "district_health_system_ddc",
@@ -13,7 +14,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="th">
-      <body>{children}</body>
+      <body>
+        <AppVersionRefresh />
+        {children}
+      </body>
     </html>
   );
 }
