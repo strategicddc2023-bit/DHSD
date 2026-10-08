@@ -427,7 +427,7 @@ main {
 
 .work-summary__hero {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: flex-end;
   gap: 16px;
   flex-wrap: wrap;
@@ -919,13 +919,26 @@ input {
 .dashboard-overview__hero {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 18px;
   border: 1px solid #d6e7f0;
   border-top: 7px solid #f9007a;
   border-radius: 14px;
   background: linear-gradient(90deg, #ffffff 0%, #f7fbff 100%);
   padding: 5px 18px;
+}
+
+.dashboard-fiscal-year-filter {
+  min-width: 142px;
+  color: #173a52;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.dashboard-fiscal-year-filter select {
+  min-height: 38px;
+  background: #ffffff;
+  color: #0f3349;
 }
 
 .dashboard-overview__hero span {

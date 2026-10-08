@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/services/supabase-client";
 import { getAgencyDisplayLabel, withAgencyDisplayLabel } from "@/services/agency-display";
+import { FISCAL_YEARS, isSupportedFiscalYear } from "@/services/fiscal-year";
 import type {
   AgencyOption,
   District,
@@ -13,6 +14,7 @@ import type {
 import type { AccessScope } from "@/services/access-control";
 
 type SavedRecordDraft = {
+  fiscalYear: number;
   agencyCode: string;
   provinceCode: string;
   districtCode: string;
@@ -99,7 +101,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
       let query = supabase
         .from("intake_records")
         .select(
-          "id,created_at,health_issue_text,evaluation_status,agency_code,province_code,district_code,master_agencies(label_th),master_provinces(name_th),master_districts(name_th)"
+          "id,created_at,fiscal_year,health_issue_text,evaluation_status,agency_code,province_code,district_code,master_agencies(label_th),master_provinces(name_th),master_districts(name_th)"
         )
         .order("created_at", { ascending: false })
         .range(from, to);
@@ -154,6 +156,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
     setRecordActionMessage("");
     setEditingRecordId(row.id);
     setEditDraft({
+      fiscalYear: row.fiscal_year,
       agencyCode: row.agency_code,
       provinceCode: row.province_code,
       districtCode: row.district_code,
@@ -169,7 +172,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
 
   const saveEdit = async () => {
     if (!editingRecordId || !editDraft) return;
-    if (!editDraft.agencyCode || !editDraft.provinceCode || !editDraft.districtCode || editDraft.healthIssue.trim().length < 3 || !editDraft.evaluationStatus) {
+    if (!isSupportedFiscalYear(editDraft.fiscalYear) || !editDraft.agencyCode || !editDraft.provinceCode || !editDraft.districtCode || editDraft.healthIssue.trim().length < 3 || !editDraft.evaluationStatus) {
       setRecordActionMessage("กรอกข้อมูลให้ครบก่อนบันทึกการแก้ไข");
       return;
     }
@@ -180,6 +183,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
     const { error } = await supabase
       .from("intake_records")
       .update({
+        fiscal_year: editDraft.fiscalYear,
         agency_code: editDraft.agencyCode,
         province_code: editDraft.provinceCode,
         district_code: editDraft.districtCode,
@@ -223,9 +227,10 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
 
   const exportCsv = () => {
     if (rows.length === 0) return;
-    const headers = ["เวลา", "หน่วยงาน", "จังหวัด", "อำเภอ", "ประเด็นโรค/ภัยสุขภาพ", "ผลการคัดเกณฑ์"];
+    const headers = ["เวลา", "ปีงบประมาณ", "หน่วยงาน", "จังหวัด", "อำเภอ", "ประเด็นโรค/ภัยสุขภาพ", "ผลการคัดเกณฑ์"];
     const body = rows.map((row) => [
       new Date(row.created_at).toLocaleString("th-TH"),
+      row.fiscal_year,
       getAgencyDisplayLabel(row.agency_code, getRelatedLabel(row.master_agencies, (a) => a.label_th)),
       getRelatedLabel(row.master_provinces, (p) => p.name_th) ?? row.province_code ?? "-",
       getRelatedLabel(row.master_districts, (d) => d.name_th) ?? row.district_code ?? "-",
@@ -298,11 +303,11 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
       <div className="table-wrap">
         <table>
           <thead>
-            <tr><th>เวลา</th><th>หน่วยงาน</th><th>จังหวัด</th><th>อำเภอ</th><th>ประเด็นโรค/ภัยสุขภาพ</th><th>ผลการคัดเกณฑ์</th><th>จัดการ</th></tr>
+            <tr><th>เวลา</th><th>ปีงบประมาณ</th><th>หน่วยงาน</th><th>จังหวัด</th><th>อำเภอ</th><th>ประเด็นโรค/ภัยสุขภาพ</th><th>ผลการคัดเกณฑ์</th><th>จัดการ</th></tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={7}>ยังไม่มีข้อมูล</td></tr>
+              <tr><td colSpan={8}>ยังไม่มีข้อมูล</td></tr>
             ) : (
               rows.map((row) => {
                 const isEditing = editingRecordId === row.id && editDraft;
@@ -311,6 +316,17 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
                     <td>{new Date(row.created_at).toLocaleString("th-TH")}</td>
                     {isEditing ? (
                       <>
+                        <td>
+                          <select
+                            className="table-input"
+                            value={editDraft.fiscalYear}
+                            onChange={(e) => setEditDraft({ ...editDraft, fiscalYear: Number(e.target.value) })}
+                          >
+                            {FISCAL_YEARS.map((fiscalYear) => (
+                              <option key={fiscalYear} value={fiscalYear}>{fiscalYear}</option>
+                            ))}
+                          </select>
+                        </td>
                         <td>
                           {accessScope?.agencyCode ? (
                             <input className="table-input" value={agencies.find((a) => a.code === accessScope.agencyCode)?.label_th ?? accessScope.agencyCode} disabled />
@@ -380,6 +396,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
                       </>
                     ) : (
                       <>
+                        <td>{row.fiscal_year}</td>
                         <td>{getAgencyDisplayLabel(row.agency_code, getRelatedLabel(row.master_agencies, (a) => a.label_th))}</td>
                         <td>{getRelatedLabel(row.master_provinces, (p) => p.name_th) ?? row.province_code ?? "-"}</td>
                         <td>{getRelatedLabel(row.master_districts, (d) => d.name_th) ?? row.district_code ?? "-"}</td>

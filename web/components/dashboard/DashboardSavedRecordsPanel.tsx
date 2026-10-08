@@ -2,6 +2,7 @@
 
 import { getRelatedLabel } from "./dashboard-shared";
 import { getAgencyDisplayLabel } from "@/services/agency-display";
+import { FISCAL_YEARS } from "@/services/fiscal-year";
 import type { DashboardModel } from "./DashboardSectionImpl";
 
 type DashboardSavedRecordsPanelProps = { model: DashboardModel };
@@ -72,11 +73,11 @@ export default function DashboardSavedRecordsPanel({ model }: DashboardSavedReco
       <div className="table-wrap">
         <table>
           <thead>
-            <tr><th>เวลา</th><th>หน่วยงาน</th><th>จังหวัด</th><th>อำเภอ</th><th>ประเด็นโรค/ภัยสุขภาพ</th><th>จัดการ</th></tr>
+            <tr><th>เวลา</th><th>ปีงบประมาณ</th><th>หน่วยงาน</th><th>จังหวัด</th><th>อำเภอ</th><th>ประเด็นโรค/ภัยสุขภาพ</th><th>จัดการ</th></tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={6}>ยังไม่มีข้อมูล</td></tr>
+              <tr><td colSpan={7}>ยังไม่มีข้อมูล</td></tr>
             ) : (
               rows.map((row) => {
                 const isEditing = editingRecordId === row.id && editDraft;
@@ -85,6 +86,17 @@ export default function DashboardSavedRecordsPanel({ model }: DashboardSavedReco
                     <td>{new Date(row.created_at).toLocaleString("th-TH")}</td>
                     {isEditing ? (
                       <>
+                        <td>
+                          <select
+                            className="table-input"
+                            value={editDraft.fiscalYear}
+                            onChange={(event) => updateEditDraft({ fiscalYear: Number(event.target.value) })}
+                          >
+                            {FISCAL_YEARS.map((fiscalYear) => (
+                              <option key={fiscalYear} value={fiscalYear}>{fiscalYear}</option>
+                            ))}
+                          </select>
+                        </td>
                         <td>
                           {accessScope?.agencyCode ? (
                             <input className="table-input" value={agencies.find((agency) => agency.code === accessScope.agencyCode)?.label_th ?? accessScope.agencyCode} disabled />
@@ -166,6 +178,7 @@ export default function DashboardSavedRecordsPanel({ model }: DashboardSavedReco
                       </>
                     ) : (
                       <>
+                        <td>{row.fiscal_year}</td>
                         <td>{getAgencyDisplayLabel(row.agency_code, getRelatedLabel(row.master_agencies, (agency) => agency.label_th))}</td>
                         <td>{getRelatedLabel(row.master_provinces, (province) => province.name_th) ?? row.province_code ?? "-"}</td>
                         <td>{getRelatedLabel(row.master_districts, (district) => district.name_th) ?? row.district_code ?? "-"}</td>

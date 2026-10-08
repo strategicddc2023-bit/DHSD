@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { supabase } from "@/services/supabase-client";
+import { isSupportedFiscalYear } from "@/services/fiscal-year";
 import { forecastLabel, forecastPercent, overallRiskFromCounts, kpiStatusFromPercent, kpiStatusLabel, kpiStatusTone, trendDirectionFromDelta, trendLabel } from "@/services/dashboard-analytics";
 import type { ReadinessCheck } from "@/services/qa-readiness";
 import type { IntakeRecordRow } from "@/types/mvp";
@@ -12,7 +13,7 @@ import type { CoverageChartRow, DashboardInsightTab, SavedRecordDraft } from "./
 type DashboardActionInput = ReturnType<typeof import("./useDashboardBase").useDashboardBase> & ReturnType<typeof import("./useDashboardInsights").useDashboardInsights>;
 
 export function useDashboardActions(model: DashboardActionInput) {
-  const { accessScope, mapRef, rows, agencies, provinces, districts, agencyProvinceMap, provinceCoverage, kpiSummaryRows, previousKpiSummaryRows, selectedFiscalYear, setFilterAgency, setFilterProvince, setSelectedDistrictCode, setSelectedSubdistrictCode, setDashboardInsightTab, setSelectedHealthIssue, setSelectedOverviewIssue, setSelectedOverviewMapIssue, overviewFilter, setRecordsRefreshKey, editingRecordId, setEditingRecordId, editDraft, setEditDraft, setRecordActionMessage, setSavingRecordId, setDeletingRecordId, activeAgencyFilter, activeProvinceFilter } = model;
+  const { accessScope, mapRef, rows, agencies, provinces, districts, agencyProvinceMap, provinceCoverage, kpiSummaryRows, previousKpiSummaryRows, selectedKpiFiscalYear, setFilterAgency, setFilterProvince, setSelectedDistrictCode, setSelectedSubdistrictCode, setDashboardInsightTab, setSelectedHealthIssue, setSelectedOverviewIssue, setSelectedOverviewMapIssue, overviewFilter, setRecordsRefreshKey, editingRecordId, setEditingRecordId, editDraft, setEditDraft, setRecordActionMessage, setSavingRecordId, setDeletingRecordId, activeAgencyFilter, activeProvinceFilter } = model;
   const handleOverviewChartBarClick = (entry: { payload?: CoverageChartRow }) => {
     const code = entry.payload?.code;
     if (!code) {
@@ -165,6 +166,7 @@ export function useDashboardActions(model: DashboardActionInput) {
     setRecordActionMessage("");
     setEditingRecordId(row.id);
     setEditDraft({
+      fiscalYear: row.fiscal_year,
       agencyCode: row.agency_code,
       provinceCode: row.province_code,
       districtCode: row.district_code,
@@ -183,7 +185,7 @@ export function useDashboardActions(model: DashboardActionInput) {
 
   const saveEditedRecord = async () => {
     if (!editingRecordId || !editDraft) return;
-    if (!editDraft.agencyCode || !editDraft.provinceCode || !editDraft.districtCode || editDraft.healthIssue.trim().length < 3) {
+    if (!isSupportedFiscalYear(editDraft.fiscalYear) || !editDraft.agencyCode || !editDraft.provinceCode || !editDraft.districtCode || editDraft.healthIssue.trim().length < 3) {
       setRecordActionMessage("กรอกข้อมูลให้ครบก่อนบันทึกการแก้ไข");
       return;
     }
@@ -194,6 +196,7 @@ export function useDashboardActions(model: DashboardActionInput) {
     const { error } = await supabase
       .from("intake_records")
       .update({
+        fiscal_year: editDraft.fiscalYear,
         agency_code: editDraft.agencyCode,
         province_code: editDraft.provinceCode,
         district_code: editDraft.districtCode,
@@ -238,9 +241,10 @@ export function useDashboardActions(model: DashboardActionInput) {
 
   const exportLatestRowsCsv = () => {
     if (rows.length === 0) return;
-    const headers = ["เวลา", "หน่วยงาน", "จังหวัด", "อำเภอ", "ประเด็นโรค/ภัยสุขภาพ"];
+    const headers = ["เวลา", "ปีงบประมาณ", "หน่วยงาน", "จังหวัด", "อำเภอ", "ประเด็นโรค/ภัยสุขภาพ"];
     const body = rows.map((row) => [
       new Date(row.created_at).toLocaleString("th-TH"),
+      row.fiscal_year,
       getAgencyDisplayLabel(row.agency_code, getRelatedLabel(row.master_agencies, (agency) => agency.label_th)),
       getRelatedLabel(row.master_provinces, (province) => province.name_th) ?? row.province_code ?? "-",
       getRelatedLabel(row.master_districts, (district) => district.name_th) ?? row.district_code ?? "-",
@@ -263,7 +267,7 @@ export function useDashboardActions(model: DashboardActionInput) {
   const exportKpiSummaryCsv = () => {
     const headers = ["ปีงบประมาณ", "KPI", "ค่าเฉลี่ยร้อยละ", "ค่าเฉลี่ยคะแนน", "จำนวน สคร. ที่มีข้อมูล"];
     const body = kpiSummary.map((item) => [
-      selectedFiscalYear,
+      selectedKpiFiscalYear,
       item.kpi_name_th,
       item.avg_percent.toFixed(2),
       item.avg_score.toFixed(2),
@@ -276,7 +280,7 @@ export function useDashboardActions(model: DashboardActionInput) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `dhsd-kpi-summary-${selectedFiscalYear}.csv`;
+    a.download = `dhsd-kpi-summary-${selectedKpiFiscalYear}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -288,7 +292,7 @@ export function useDashboardActions(model: DashboardActionInput) {
     return ordered.map((kpiCode) => {
       return (
         kpiSummaryRows.find((item) => item.kpi_code === kpiCode) ?? {
-          fiscal_year: selectedFiscalYear,
+          fiscal_year: selectedKpiFiscalYear,
           kpi_code: kpiCode,
           kpi_name_th: kpiCode,
           avg_percent: 0,
@@ -297,7 +301,7 @@ export function useDashboardActions(model: DashboardActionInput) {
         }
       );
     });
-  }, [kpiSummaryRows, selectedFiscalYear]);
+  }, [kpiSummaryRows, selectedKpiFiscalYear]);
 
   const previousKpiSummaryMap = useMemo(() => {
     return new Map(previousKpiSummaryRows.map((item) => [item.kpi_code, item]));

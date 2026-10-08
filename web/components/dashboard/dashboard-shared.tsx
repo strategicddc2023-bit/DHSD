@@ -1,4 +1,5 @@
 import type { AccessScope } from "@/services/access-control";
+import { FISCAL_YEARS } from "@/services/fiscal-year";
 import type {
   AgencyCoverageRow,
   AgencyOption,
@@ -20,6 +21,7 @@ export type DashboardSectionProps = {
 };
 
 export type SavedRecordDraft = {
+  fiscalYear: number;
   agencyCode: string;
   provinceCode: string;
   districtCode: string;
@@ -85,7 +87,7 @@ export type HealthIssueEvaluationRow = {
   failPercent: number;
 };
 
-export const fiscalYears = [2566, 2567, 2568, 2569, 2570];
+export const fiscalYears = [...FISCAL_YEARS];
 export const latestRecordsPageSize = 10;
 export const healthIssueDonutColors = ["#e11d48", "#2563eb", "#f59e0b", "#16a34a", "#7c3aed", "#0891b2", "#ea580c", "#475569", "#db2777", "#65a30d"];
 export const healthIssueGroupLabels: Record<string, string> = {

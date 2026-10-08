@@ -59,6 +59,7 @@ export type HealthIssueOption = {
 export type IntakeEvaluationStatus = "pass" | "fail";
 
 export type IntakeFormData = {
+  fiscalYear: number;
   agencyCode: string;
   provinceCode: string;
   districtCode: string;
@@ -69,6 +70,7 @@ export type IntakeFormData = {
 export type IntakeRecordRow = {
   id: string;
   created_at: string;
+  fiscal_year: number;
   health_issue_text: string;
   evaluation_status: IntakeEvaluationStatus | null;
   agency_code: string;

@@ -5,6 +5,7 @@ import HealthIssueDistributionMap from "@/components/HealthIssueDistributionMap"
 import InteractiveHealthMap from "@/components/InteractiveHealthMap";
 import SuperadminUsersPanel from "@/components/SuperadminUsersPanel";
 import { overallRiskLabel, overallRiskTone } from "@/services/dashboard-analytics";
+import { FISCAL_YEARS } from "@/services/fiscal-year";
 import { readinessLabel, readinessTone } from "@/services/qa-readiness";
 import { donutPercentLabelFormatter, evaluationStatusTooltipFormatter, recordCountLabelFormatter, recordCountTooltipFormatter } from "./dashboard-shared";
 import DashboardSavedRecordsPanel from "./DashboardSavedRecordsPanel";
@@ -12,7 +13,7 @@ import type { DashboardModel } from "./DashboardSectionImpl";
 import OverviewIssueDrilldown from "./OverviewIssueDrilldown";
 type DashboardSectionViewProps = { model: DashboardModel };
 export default function DashboardSectionView({ model }: DashboardSectionViewProps) {
-  const { formData, accessScope, hideSavedRecords, onSelectDistrictForIntake, mapRef, rows, totalCount, agencies, provinces, agencyProvinceMap, agencyCoverage, provinceCoverage, kpiSummaryRows, previousKpiSummaryRows, selectedFiscalYear, setSelectedFiscalYear, filterAgency, setFilterAgency, filterProvince, setFilterProvince, selectedDistrictCode, setSelectedDistrictCode, selectedSubdistrictCode, selectedDistrictName, districtHealthIssueData, districtHealthIssueTotal, districtHealthIssueLoading, dashboardInsightTab, selectedHealthIssue, setSelectedHealthIssue, selectedOverviewIssue, setSelectedOverviewIssue, selectedOverviewMapIssue, setSelectedOverviewMapIssue, selectedOverviewMapProvinceCode, setSelectedOverviewMapProvinceCode, selectedOverviewMapDistrictCode, setSelectedOverviewMapDistrictCode, issueDetailScope, setIssueDetailScope, overviewFilter, setOverviewFilter, activeAgencyFilter, activeProvinceFilter, visibleAgencies, visibleProvinces, visibleAgencyCoverage, visibleProvinceCoverage, showAdvancedPanels, dashboardMenuAgencies, provinceSubmissionGroups, selectedIssueProvinceCode, selectedAgencyAreaTotals, coverageChartRows, selectedIssueProvinceName, isDistrictMode, healthIssueDonutScopeLabel, healthIssueDonutData, healthIssueDonutTotal, overviewIssueDonutRows, healthIssueGroupRows, healthIssueGroupTotal, healthIssueEvaluationRows, healthIssueEvaluationChartHeight, selectedOverviewIssueRecords, selectedOverviewIssueAgencyRows, selectedOverviewIssueProvinceRows, selectedOverviewIssueDistrictRows, issueDetailScopeOptions, activeIssueDetailScope, overviewIssueColorMap, selectedOverviewIssueColor, activeOverviewMapIssueColor, overviewMapRecords, overviewMetricTotals, selectedOverviewMapProvinceName, selectedOverviewMapDistrictRows, selectedOverviewMapDistrictName, selectedOverviewIssueChartHeight, selectedHealthIssueCount, overviewFilterOptions, overviewChartRows, isOverviewMode, coverageChartTitle, selectedProvinceIssueRecords, handleOverviewChartBarClick, clearMapFilters, clearTableFilters, selectDashboardOverview, selectDashboardAgency, selectDashboardInsight, exportKpiSummaryCsv, kpiStatusRows, kpiAlerts, kpiStatusCounts, overallRiskLevel, readinessChecks } = model;
+  const { formData, accessScope, hideSavedRecords, onSelectDistrictForIntake, mapRef, rows, totalCount, agencies, provinces, agencyProvinceMap, agencyCoverage, provinceCoverage, kpiSummaryRows, previousKpiSummaryRows, selectedFiscalYear, setSelectedFiscalYear, selectedKpiFiscalYear, setSelectedKpiFiscalYear, filterAgency, setFilterAgency, filterProvince, setFilterProvince, selectedDistrictCode, setSelectedDistrictCode, selectedSubdistrictCode, selectedDistrictName, districtHealthIssueData, districtHealthIssueTotal, districtHealthIssueLoading, dashboardInsightTab, selectedHealthIssue, setSelectedHealthIssue, selectedOverviewIssue, setSelectedOverviewIssue, selectedOverviewMapIssue, setSelectedOverviewMapIssue, selectedOverviewMapProvinceCode, setSelectedOverviewMapProvinceCode, selectedOverviewMapDistrictCode, setSelectedOverviewMapDistrictCode, issueDetailScope, setIssueDetailScope, overviewFilter, setOverviewFilter, activeAgencyFilter, activeProvinceFilter, visibleAgencies, visibleProvinces, visibleAgencyCoverage, visibleProvinceCoverage, showAdvancedPanels, dashboardMenuAgencies, provinceSubmissionGroups, selectedIssueProvinceCode, selectedAgencyAreaTotals, coverageChartRows, selectedIssueProvinceName, isDistrictMode, healthIssueDonutScopeLabel, healthIssueDonutData, healthIssueDonutTotal, overviewIssueDonutRows, healthIssueGroupRows, healthIssueGroupTotal, healthIssueEvaluationRows, healthIssueEvaluationChartHeight, selectedOverviewIssueRecords, selectedOverviewIssueAgencyRows, selectedOverviewIssueProvinceRows, selectedOverviewIssueDistrictRows, issueDetailScopeOptions, activeIssueDetailScope, overviewIssueColorMap, selectedOverviewIssueColor, activeOverviewMapIssueColor, overviewMapRecords, overviewMetricTotals, selectedOverviewMapProvinceName, selectedOverviewMapDistrictRows, selectedOverviewMapDistrictName, selectedOverviewIssueChartHeight, selectedHealthIssueCount, overviewFilterOptions, overviewChartRows, isOverviewMode, coverageChartTitle, selectedProvinceIssueRecords, handleOverviewChartBarClick, clearMapFilters, clearTableFilters, selectDashboardOverview, selectDashboardAgency, selectDashboardInsight, exportKpiSummaryCsv, kpiStatusRows, kpiAlerts, kpiStatusCounts, overallRiskLevel, readinessChecks } = model;
   const savedRecordsPanel = <DashboardSavedRecordsPanel model={model} />;
   return (
     <section className="section" id="dashboard-section">
@@ -146,6 +147,18 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                 <div>
                   <h2>ภาพรวมประเด็นการขับเคลื่อนงาน พชอ/พชข ด้านการป้องกันควบคุมโรคและภัยสุขภาพ</h2>
                 </div>
+                <label className="dashboard-fiscal-year-filter">
+                  ปีงบประมาณ
+                  <select
+                    value={selectedFiscalYear}
+                    onChange={(event) => setSelectedFiscalYear(event.target.value === "all" ? "all" : Number(event.target.value))}
+                  >
+                    <option value="all">ภาพรวมทั้งหมด</option>
+                    {FISCAL_YEARS.map((fiscalYear) => (
+                      <option key={fiscalYear} value={fiscalYear}>{fiscalYear}</option>
+                    ))}
+                  </select>
+                </label>
               </div>
 
               <div className="dashboard-overview__metrics" aria-label="ตัวชี้วัดภาพรวม">
@@ -841,7 +854,7 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
             <p className="section-row__subtitle">สีของสถานะอิงจากค่าเฉลี่ย KPI และเทียบกับปีก่อนอัตโนมัติ</p>
           </div>
           <div className="section-row__actions">
-            <span className="filter-chip">ปีนี้ {selectedFiscalYear}</span>
+            <span className="filter-chip">ปีนี้ {selectedKpiFiscalYear}</span>
             <span className="filter-chip">ปีก่อน {previousKpiSummaryRows[0]?.fiscal_year ?? "-"}</span>
             <span className={`status-badge ${overallRiskTone(overallRiskLevel)}`}>{overallRiskLabel(overallRiskLevel)}</span>
           </div>
@@ -913,8 +926,8 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
           <div className="section-row__actions">
             <label>
               ปีงบประมาณ
-              <select value={selectedFiscalYear} onChange={(e) => setSelectedFiscalYear(Number(e.target.value))}>
-                {fiscalYears.map((y) => <option key={y} value={y}>{y}</option>)}
+              <select value={selectedKpiFiscalYear} onChange={(e) => setSelectedKpiFiscalYear(Number(e.target.value))}>
+                {FISCAL_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
               </select>
             </label>
             <button type="button" className="cta cta--ghost" onClick={clearTableFilters} disabled={!filterAgency && !filterProvince}>
@@ -949,7 +962,7 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                 </tr>
               ))}
               {kpiSummaryRows.length === 0 ? (
-                <tr><td colSpan={6}>ยังไม่มีข้อมูล KPI จริงสำหรับปี {selectedFiscalYear}</td></tr>
+                <tr><td colSpan={6}>ยังไม่มีข้อมูล KPI จริงสำหรับปี {selectedKpiFiscalYear}</td></tr>
               ) : null}
             </tbody>
           </table>

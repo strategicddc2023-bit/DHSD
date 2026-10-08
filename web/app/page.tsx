@@ -7,10 +7,12 @@ import DashboardSection from "@/components/DashboardSection";
 import HeroSection from "@/components/HeroSection";
 import { buildAccessScope, loadCurrentAppUser } from "@/services/auth-session";
 import { withAgencyDisplayLabel } from "@/services/agency-display";
+import { getDefaultFiscalYear } from "@/services/fiscal-year";
 import { supabase } from "@/services/supabase-client";
 import type { AgencyOption, AppUserRow, IntakeFormData } from "@/types/mvp";
 
 const initialFormData: IntakeFormData = {
+  fiscalYear: getDefaultFiscalYear(),
   agencyCode: "",
   provinceCode: "",
   districtCode: "",

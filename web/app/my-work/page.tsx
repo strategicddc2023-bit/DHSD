@@ -7,9 +7,11 @@ import AccessRibbon from "@/components/AccessRibbon";
 import IntakeFormSection from "@/components/IntakeFormSection";
 import WorkSummary from "@/components/WorkSummary";
 import { buildAccessScope, loadCurrentAppUser } from "@/services/auth-session";
+import { getDefaultFiscalYear } from "@/services/fiscal-year";
 import type { AppUserRow, IntakeFormData } from "@/types/mvp";
 
 const initialFormData: IntakeFormData = {
+  fiscalYear: getDefaultFiscalYear(),
   agencyCode: "",
   provinceCode: "",
   districtCode: "",

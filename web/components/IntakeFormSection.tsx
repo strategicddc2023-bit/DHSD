@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { normalizeAgencyCode, type AccessScope } from "@/services/access-control";
 import { withAgencyDisplayLabel } from "@/services/agency-display";
+import { FISCAL_YEARS, isSupportedFiscalYear } from "@/services/fiscal-year";
 import { supabase } from "@/services/supabase-client";
 import type { AgencyOption, District, HealthIssueGroup, HealthIssueOption, IntakeFormData, IntakeEvaluationStatus, Province } from "@/types/mvp";
 import { HEALTH_ISSUE_GROUPS, getHealthIssueGroupLabel } from "@/types/mvp";
@@ -153,7 +154,7 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
     : formData.healthIssue.trim();
 
   const canSubmit = useMemo(() => {
-    return Boolean(formData.agencyCode && formData.provinceCode && formData.districtCode && resolvedHealthIssue.length >= 3);
+    return Boolean(isSupportedFiscalYear(formData.fiscalYear) && formData.agencyCode && formData.provinceCode && formData.districtCode && resolvedHealthIssue.length >= 3);
   }, [formData, resolvedHealthIssue]);
 
   const handleSubmit = async () => {
@@ -166,6 +167,7 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
     setMessage("");
 
     const { error } = await supabase.from("intake_records").insert({
+      fiscal_year: formData.fiscalYear,
       agency_code: formData.agencyCode,
       province_code: formData.provinceCode,
       district_code: formData.districtCode,
@@ -201,6 +203,20 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
       {!hasMapping ? <p className="warning-message">หน่วยงานนี้ยังไม่มีจังหวัดที่ผูกไว้ในตาราง agency_provinces</p> : null}
 
       <form className="intake-grid" onSubmit={(event) => event.preventDefault()}>
+        <label>
+          ปีงบประมาณ
+          <select
+            value={formData.fiscalYear}
+            onChange={(event) => onChange({ ...formData, fiscalYear: Number(event.target.value) })}
+          >
+            {FISCAL_YEARS.map((fiscalYear) => (
+              <option key={fiscalYear} value={fiscalYear}>
+                {fiscalYear}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <label>
           หน่วยงาน (สคร.1-สคร.12 และ กทม)
           <select

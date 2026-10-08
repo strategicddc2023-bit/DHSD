@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { resolveVisibleAgencyCodes, resolveVisibleProvinceCodes } from "@/services/access-control";
 import { withAgencyDisplayLabel } from "@/services/agency-display";
+import { getDefaultFiscalYear, type FiscalYearFilter } from "@/services/fiscal-year";
 import { supabase } from "@/services/supabase-client";
 import { loadDistrictHealthIssueSummary } from "@/services/health-issue-service";
 import type { AgencyCoverageRow, AgencyProvinceMapRow, AgencyOption, District, HealthIssueOption, IntakeEvaluationStatus, IntakeRecordRow, KpiSummaryRow, Province, ProvinceCoverageRow } from "@/types/mvp";
@@ -30,7 +31,8 @@ export function useDashboardBase(props: DashboardSectionProps) {
   // Removed: subdistrictRecordCount - master_subdistricts table doesn't exist
   const [kpiSummaryRows, setKpiSummaryRows] = useState<KpiSummaryRow[]>([]);
   const [previousKpiSummaryRows, setPreviousKpiSummaryRows] = useState<KpiSummaryRow[]>([]);
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState<number>(2569);
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState<FiscalYearFilter>(() => getDefaultFiscalYear());
+  const [selectedKpiFiscalYear, setSelectedKpiFiscalYear] = useState<number>(() => getDefaultFiscalYear());
   const [filterAgency, setFilterAgency] = useState("");
   const [filterProvince, setFilterProvince] = useState("");
   const [selectedDistrictCode, setSelectedDistrictCode] = useState("");
@@ -199,7 +201,7 @@ export function useDashboardBase(props: DashboardSectionProps) {
 
   useEffect(() => {
     setLatestRecordsPage(1);
-  }, [refreshKey, activeAgencyFilter, activeProvinceFilter]);
+  }, [refreshKey, activeAgencyFilter, activeProvinceFilter, selectedFiscalYear]);
 
   useEffect(() => {
     if (latestRecordsPage > latestRecordsPageCount) {
@@ -210,19 +212,22 @@ export function useDashboardBase(props: DashboardSectionProps) {
   useEffect(() => {
     const loadRows = async () => {
       setLoading(true);
-      const previousFiscalYear = selectedFiscalYear > fiscalYears[0] ? selectedFiscalYear - 1 : null;
+      const previousFiscalYear = selectedKpiFiscalYear > fiscalYears[0] ? selectedKpiFiscalYear - 1 : null;
       const latestRecordsFrom = (latestRecordsPage - 1) * latestRecordsPageSize;
       const latestRecordsTo = latestRecordsFrom + latestRecordsPageSize - 1;
 
       let query = supabase
         .from("intake_records")
         .select(
-          "id,created_at,health_issue_text,evaluation_status,agency_code,province_code,district_code,master_agencies(label_th),master_provinces(name_th),master_districts(name_th)"
+          "id,created_at,fiscal_year,health_issue_text,evaluation_status,agency_code,province_code,district_code,master_agencies(label_th),master_provinces(name_th),master_districts(name_th)"
         )
         .order("created_at", { ascending: false })
         .range(latestRecordsFrom, latestRecordsTo);
 
       let countQuery = supabase.from("intake_records").select("*", { count: "exact", head: true });
+
+      if (selectedFiscalYear !== "all") query = query.eq("fiscal_year", selectedFiscalYear);
+      if (selectedFiscalYear !== "all") countQuery = countQuery.eq("fiscal_year", selectedFiscalYear);
 
       if (activeAgencyFilter) query = query.eq("agency_code", activeAgencyFilter);
       if (activeProvinceFilter) query = query.eq("province_code", activeProvinceFilter);
@@ -241,6 +246,7 @@ export function useDashboardBase(props: DashboardSectionProps) {
             .select("agency_code,province_code,district_code,health_issue_text,evaluation_status,master_agencies(label_th),master_provinces(name_th),master_districts(name_th)")
             .limit(5000);
 
+          if (selectedFiscalYear !== "all") summaryQuery = summaryQuery.eq("fiscal_year", selectedFiscalYear);
           if (activeAgencyFilter) summaryQuery = summaryQuery.eq("agency_code", activeAgencyFilter);
           if (activeProvinceFilter) summaryQuery = summaryQuery.eq("province_code", activeProvinceFilter);
 
@@ -249,7 +255,7 @@ export function useDashboardBase(props: DashboardSectionProps) {
         supabase
           .from("v_kpi_summary_dashboard")
           .select("fiscal_year,kpi_code,kpi_name_th,avg_percent,avg_score,agency_count")
-          .eq("fiscal_year", selectedFiscalYear),
+          .eq("fiscal_year", selectedKpiFiscalYear),
         previousFiscalYear
           ? supabase
               .from("v_kpi_summary_dashboard")
@@ -374,6 +380,7 @@ export function useDashboardBase(props: DashboardSectionProps) {
     provinces,
     agencyProvinceMap,
     selectedFiscalYear,
+    selectedKpiFiscalYear,
     latestRecordsPage,
     canViewSavedRecords,
   ]);
@@ -553,7 +560,7 @@ export function useDashboardBase(props: DashboardSectionProps) {
 
     const load = async () => {
       try {
-        const summary = await loadDistrictHealthIssueSummary(selectedDistrictCode);
+        const summary = await loadDistrictHealthIssueSummary(selectedDistrictCode, selectedFiscalYear);
         if (!mounted) return;
         setDistrictHealthIssueData(summary.issues);
         setDistrictHealthIssueTotal(summary.totalCount);
@@ -568,8 +575,8 @@ export function useDashboardBase(props: DashboardSectionProps) {
 
     void load();
     return () => { mounted = false; };
-  }, [selectedDistrictCode]);
+  }, [selectedDistrictCode, selectedFiscalYear]);
 
 
-  return { formData, refreshKey, accessScope, viewMode, hideSavedRecords, onSelectDistrictForIntake, mapRef, rows, setRows, loading, setLoading, totalCount, setTotalCount, agencyActiveCount, setAgencyActiveCount, provinceActiveCount, setProvinceActiveCount, topAgency, setTopAgency, topProvince, setTopProvince, agencies, setAgencies, provinces, setProvinces, districts, setDistricts, agencyProvinceMap, setAgencyProvinceMap, agencyCoverage, setAgencyCoverage, provinceCoverage, setProvinceCoverage, submittedDistrictCodesByProvince, setSubmittedDistrictCodesByProvince, districtRecordCount, setDistrictRecordCount, kpiSummaryRows, setKpiSummaryRows, previousKpiSummaryRows, setPreviousKpiSummaryRows, selectedFiscalYear, setSelectedFiscalYear, filterAgency, setFilterAgency, filterProvince, setFilterProvince, selectedDistrictCode, setSelectedDistrictCode, selectedSubdistrictCode, setSelectedSubdistrictCode, selectedDistrictName, districtHealthIssueData, setDistrictHealthIssueData, districtHealthIssueTotal, setDistrictHealthIssueTotal, districtHealthIssueLoading, setDistrictHealthIssueLoading, provinceHealthIssueRecords, setProvinceHealthIssueRecords, healthIssueScopeRecords, setHealthIssueScopeRecords, masterHealthIssues, setMasterHealthIssues, dashboardInsightTab, setDashboardInsightTab, selectedHealthIssue, setSelectedHealthIssue, selectedOverviewIssue, setSelectedOverviewIssue, selectedOverviewMapIssue, setSelectedOverviewMapIssue, selectedOverviewMapProvinceCode, setSelectedOverviewMapProvinceCode, selectedOverviewMapDistrictCode, setSelectedOverviewMapDistrictCode, issueDetailScope, setIssueDetailScope, overviewFilter, setOverviewFilter, latestRecordsPage, setLatestRecordsPage, recordsRefreshKey, setRecordsRefreshKey, editingRecordId, setEditingRecordId, editDraft, setEditDraft, recordActionMessage, setRecordActionMessage, savingRecordId, setSavingRecordId, deletingRecordId, setDeletingRecordId, activeAgencyFilter, activeProvinceFilter, canViewSavedRecords, visibleAgencyCodes, visibleProvinceCodes, visibleAgencies, visibleProvinces, dashboardProvinceOptions, dashboardDistrictOptions, editProvinceOptions, editDistrictOptions, visibleAgencyCoverage, visibleProvinceCoverage, showAdvancedPanels, latestRecordsPageCount, latestRecordsStart, latestRecordsEnd, dashboardMenuAgencies, overviewAreaTotals, selectedAgencyLabel, selectedProvinceLabel, selectedMapAgencyLabel, activeFilterChips, districtCountByProvince, provinceSubmissionGroups, selectedIssueProvinceCode, selectedAgencyAreaTotals };
+  return { formData, refreshKey, accessScope, viewMode, hideSavedRecords, onSelectDistrictForIntake, mapRef, rows, setRows, loading, setLoading, totalCount, setTotalCount, agencyActiveCount, setAgencyActiveCount, provinceActiveCount, setProvinceActiveCount, topAgency, setTopAgency, topProvince, setTopProvince, agencies, setAgencies, provinces, setProvinces, districts, setDistricts, agencyProvinceMap, setAgencyProvinceMap, agencyCoverage, setAgencyCoverage, provinceCoverage, setProvinceCoverage, submittedDistrictCodesByProvince, setSubmittedDistrictCodesByProvince, districtRecordCount, setDistrictRecordCount, kpiSummaryRows, setKpiSummaryRows, previousKpiSummaryRows, setPreviousKpiSummaryRows, selectedFiscalYear, setSelectedFiscalYear, selectedKpiFiscalYear, setSelectedKpiFiscalYear, filterAgency, setFilterAgency, filterProvince, setFilterProvince, selectedDistrictCode, setSelectedDistrictCode, selectedSubdistrictCode, setSelectedSubdistrictCode, selectedDistrictName, districtHealthIssueData, setDistrictHealthIssueData, districtHealthIssueTotal, setDistrictHealthIssueTotal, districtHealthIssueLoading, setDistrictHealthIssueLoading, provinceHealthIssueRecords, setProvinceHealthIssueRecords, healthIssueScopeRecords, setHealthIssueScopeRecords, masterHealthIssues, setMasterHealthIssues, dashboardInsightTab, setDashboardInsightTab, selectedHealthIssue, setSelectedHealthIssue, selectedOverviewIssue, setSelectedOverviewIssue, selectedOverviewMapIssue, setSelectedOverviewMapIssue, selectedOverviewMapProvinceCode, setSelectedOverviewMapProvinceCode, selectedOverviewMapDistrictCode, setSelectedOverviewMapDistrictCode, issueDetailScope, setIssueDetailScope, overviewFilter, setOverviewFilter, latestRecordsPage, setLatestRecordsPage, recordsRefreshKey, setRecordsRefreshKey, editingRecordId, setEditingRecordId, editDraft, setEditDraft, recordActionMessage, setRecordActionMessage, savingRecordId, setSavingRecordId, deletingRecordId, setDeletingRecordId, activeAgencyFilter, activeProvinceFilter, canViewSavedRecords, visibleAgencyCodes, visibleProvinceCodes, visibleAgencies, visibleProvinces, dashboardProvinceOptions, dashboardDistrictOptions, editProvinceOptions, editDistrictOptions, visibleAgencyCoverage, visibleProvinceCoverage, showAdvancedPanels, latestRecordsPageCount, latestRecordsStart, latestRecordsEnd, dashboardMenuAgencies, overviewAreaTotals, selectedAgencyLabel, selectedProvinceLabel, selectedMapAgencyLabel, activeFilterChips, districtCountByProvince, provinceSubmissionGroups, selectedIssueProvinceCode, selectedAgencyAreaTotals };
 }

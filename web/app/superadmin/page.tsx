@@ -9,9 +9,11 @@ import HealthIssueMasterPanel from "@/components/HealthIssueMasterPanel";
 import IntakeFormSection from "@/components/IntakeFormSection";
 import SavedRecordsPanel from "@/components/SavedRecordsPanel";
 import { buildAccessScope, loadCurrentAppUser } from "@/services/auth-session";
+import { getDefaultFiscalYear } from "@/services/fiscal-year";
 import type { AppUserRow, IntakeFormData } from "@/types/mvp";
 
 const initialFormData: IntakeFormData = {
+  fiscalYear: getDefaultFiscalYear(),
   agencyCode: "",
   provinceCode: "",
   districtCode: "",

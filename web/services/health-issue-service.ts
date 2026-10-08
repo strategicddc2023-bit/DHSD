@@ -1,8 +1,10 @@
 import { supabase } from "@/services/supabase-client";
+import type { FiscalYearFilter } from "@/services/fiscal-year";
 
 export type DistrictHealthIssueRecord = {
   id: string;
   created_at: string;
+  fiscal_year: number;
   health_issue_text: string;
   agency_code: string;
   province_code: string;
@@ -17,15 +19,26 @@ export type DistrictHealthIssueSummary = {
   latestRecords: DistrictHealthIssueRecord[];
 };
 
-export async function loadDistrictHealthIssueSummary(districtCode: string): Promise<DistrictHealthIssueSummary> {
+export async function loadDistrictHealthIssueSummary(districtCode: string, fiscalYear: FiscalYearFilter): Promise<DistrictHealthIssueSummary> {
+  let countQuery = supabase
+    .from("intake_records")
+    .select("*", { count: "exact", head: true })
+    .eq("district_code", districtCode);
+  let recordsQuery = supabase
+    .from("intake_records")
+    .select("id,created_at,fiscal_year,health_issue_text,agency_code,province_code,district_code,master_agencies(label_th)")
+    .eq("district_code", districtCode)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  if (fiscalYear !== "all") {
+    countQuery = countQuery.eq("fiscal_year", fiscalYear);
+    recordsQuery = recordsQuery.eq("fiscal_year", fiscalYear);
+  }
+
   const [{ count }, { data }] = await Promise.all([
-    supabase.from("intake_records").select("*", { count: "exact", head: true }).eq("district_code", districtCode),
-    supabase
-      .from("intake_records")
-      .select("id,created_at,health_issue_text,agency_code,province_code,district_code,master_agencies(label_th)")
-      .eq("district_code", districtCode)
-      .order("created_at", { ascending: false })
-      .limit(20),
+    countQuery,
+    recordsQuery,
   ]);
 
   const latestRecords = (data as DistrictHealthIssueRecord[] | null) ?? [];
@@ -45,15 +58,26 @@ export async function loadDistrictHealthIssueSummary(districtCode: string): Prom
   };
 }
 
-export async function loadSubdistrictHealthIssueSummary(subdistrictCode: string): Promise<DistrictHealthIssueSummary> {
+export async function loadSubdistrictHealthIssueSummary(subdistrictCode: string, fiscalYear: FiscalYearFilter): Promise<DistrictHealthIssueSummary> {
+  let countQuery = supabase
+    .from("intake_records")
+    .select("*", { count: "exact", head: true })
+    .eq("subdistrict_code", subdistrictCode);
+  let recordsQuery = supabase
+    .from("intake_records")
+    .select("id,created_at,fiscal_year,health_issue_text,agency_code,province_code,district_code,master_agencies(label_th)")
+    .eq("subdistrict_code", subdistrictCode)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  if (fiscalYear !== "all") {
+    countQuery = countQuery.eq("fiscal_year", fiscalYear);
+    recordsQuery = recordsQuery.eq("fiscal_year", fiscalYear);
+  }
+
   const [{ count }, { data }] = await Promise.all([
-    supabase.from("intake_records").select("*", { count: "exact", head: true }).eq("subdistrict_code", subdistrictCode),
-    supabase
-      .from("intake_records")
-      .select("id,created_at,health_issue_text,agency_code,province_code,district_code,master_agencies(label_th)")
-      .eq("subdistrict_code", subdistrictCode)
-      .order("created_at", { ascending: false })
-      .limit(20),
+    countQuery,
+    recordsQuery,
   ]);
 
   const latestRecords = (data as DistrictHealthIssueRecord[] | null) ?? [];
@@ -72,5 +96,3 @@ export async function loadSubdistrictHealthIssueSummary(subdistrictCode: string)
     latestRecords,
   };
 }
-
-
