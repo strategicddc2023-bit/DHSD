@@ -55,6 +55,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
 
   const [filterAgency, setFilterAgency] = useState("");
   const [filterProvince, setFilterProvince] = useState("");
+  const [filterFiscalYear, setFilterFiscalYear] = useState("");
 
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<SavedRecordDraft | null>(null);
@@ -89,7 +90,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
   // Reset page on filter change
   useEffect(() => {
     setPage(1);
-  }, [refreshKey, localRefresh, activeAgencyFilter, activeProvinceFilter]);
+  }, [refreshKey, localRefresh, activeAgencyFilter, activeProvinceFilter, filterFiscalYear]);
 
   // Load records
   useEffect(() => {
@@ -116,6 +117,10 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
         query = query.eq("province_code", activeProvinceFilter);
         countQuery = countQuery.eq("province_code", activeProvinceFilter);
       }
+      if (filterFiscalYear) {
+        query = query.eq("fiscal_year", Number(filterFiscalYear));
+        countQuery = countQuery.eq("fiscal_year", Number(filterFiscalYear));
+      }
 
       const [{ data }, { count }] = await Promise.all([query, countQuery]);
       setRows((data as IntakeRecordRow[]) ?? []);
@@ -123,7 +128,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
       setLoading(false);
     };
     void loadRows();
-  }, [page, refreshKey, localRefresh, activeAgencyFilter, activeProvinceFilter]);
+  }, [page, refreshKey, localRefresh, activeAgencyFilter, activeProvinceFilter, filterFiscalYear]);
 
   // Visible filter options
   const visibleProvinces = useMemo(() => {
@@ -148,8 +153,9 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
     const chips: string[] = [];
     if (activeAgencyFilter) chips.push(agencies.find((a) => a.code === activeAgencyFilter)?.label_th ?? activeAgencyFilter);
     if (activeProvinceFilter) chips.push(provinces.find((p) => p.code === activeProvinceFilter)?.name_th ?? activeProvinceFilter);
+    if (filterFiscalYear) chips.push(`ปีงบประมาณ: ${filterFiscalYear}`);
     return chips;
-  }, [activeAgencyFilter, activeProvinceFilter, agencies, provinces]);
+  }, [activeAgencyFilter, activeProvinceFilter, agencies, provinces, filterFiscalYear]);
 
   // Editing
   const beginEdit = (row: IntakeRecordRow) => {
@@ -172,7 +178,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
 
   const saveEdit = async () => {
     if (!editingRecordId || !editDraft) return;
-    if (!isSupportedFiscalYear(editDraft.fiscalYear) || !editDraft.agencyCode || !editDraft.provinceCode || !editDraft.districtCode || editDraft.healthIssue.trim().length < 3 || !editDraft.evaluationStatus) {
+    if (!isSupportedFiscalYear(editDraft.fiscalYear) || !editDraft.agencyCode || !editDraft.provinceCode || !editDraft.districtCode || editDraft.healthIssue.trim().length < 3) {
       setRecordActionMessage("กรอกข้อมูลให้ครบก่อนบันทึกการแก้ไข");
       return;
     }
@@ -188,7 +194,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
         province_code: editDraft.provinceCode,
         district_code: editDraft.districtCode,
         health_issue_text: editDraft.healthIssue.trim(),
-        evaluation_status: editDraft.evaluationStatus,
+        evaluation_status: editDraft.evaluationStatus || null,
       })
       .eq("id", editingRecordId);
 
@@ -270,6 +276,15 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
         </button>
       </div>
       <div className="filter-row">
+        <label>
+          กรองปีงบประมาณ
+          <select value={filterFiscalYear} onChange={(e) => setFilterFiscalYear(e.target.value)}>
+            <option value="">ทั้งหมด</option>
+            {FISCAL_YEARS.map((fiscalYear) => (
+              <option key={fiscalYear} value={fiscalYear}>{fiscalYear}</option>
+            ))}
+          </select>
+        </label>
         <label>
           กรองหน่วยงาน
           {accessScope?.agencyCode ? (
