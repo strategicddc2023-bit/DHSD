@@ -31,7 +31,7 @@ export function useDashboardBase(props: DashboardSectionProps) {
   // Removed: subdistrictRecordCount - master_subdistricts table doesn't exist
   const [kpiSummaryRows, setKpiSummaryRows] = useState<KpiSummaryRow[]>([]);
   const [previousKpiSummaryRows, setPreviousKpiSummaryRows] = useState<KpiSummaryRow[]>([]);
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState<FiscalYearFilter>(() => getDefaultFiscalYear());
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState<FiscalYearFilter>("all");
   const [selectedKpiFiscalYear, setSelectedKpiFiscalYear] = useState<number>(() => getDefaultFiscalYear());
   const [filterAgency, setFilterAgency] = useState("");
   const [filterProvince, setFilterProvince] = useState("");
