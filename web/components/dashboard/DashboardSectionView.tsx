@@ -700,10 +700,10 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                           <div
                             className="province-progress-bar"
                             role="img"
-                            aria-label={`อำเภอ${district.name} ${submitted ? `ส่งแล้ว 100%` : "ยังไม่ส่ง"}`}
+                            aria-label={`อำเภอ${district.name} ${submitted ? `ส่งแล้ว ${district.record_count.toLocaleString("th-TH")} ประเด็น` : "ยังไม่ส่ง"}`}
                           >
                             <div className="province-progress-bar__sent" style={{ width: `${percent}%` }}>
-                              {submitted ? "มีประเด็น" : ""}
+                              {submitted ? `${district.record_count.toLocaleString("th-TH")} ประเด็น` : ""}
                             </div>
                             <div className="province-progress-bar__pending" style={{ width: `${100 - percent}%` }}>
                               {submitted ? "" : "ไม่มีประเด็น"}
