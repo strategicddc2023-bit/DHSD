@@ -291,9 +291,10 @@ main {
 }
 
 .content-wrap {
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 112px 24px 52px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 112px clamp(12px, 1.25vw, 24px) 52px;
 }
 
 .login-page {
