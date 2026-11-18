@@ -101,34 +101,27 @@ export const percentLabelFormatter = (value: unknown) => {
   if (percent <= 0) return "";
   return `${percent.toLocaleString("th-TH", { maximumFractionDigits: 2 })}%`;
 };
-export const splitDonutLabel = (text: string, maxLineLength = 16) => {
-  const value = text.trim();
-  if (value.length <= maxLineLength) return [value];
-  const breakAt = value.lastIndexOf(" ", maxLineLength);
-  const firstLineEnd = breakAt > 6 ? breakAt : maxLineLength;
-  const first = value.slice(0, firstLineEnd).trim();
-  const second = value.slice(firstLineEnd).trim();
-  return [first, second.length > maxLineLength ? `${second.slice(0, maxLineLength - 1).trim()}...` : second];
-};
-
 export const donutPercentLabelFormatter = (props: any) => {
-  const rawPercent = Number(props.payload?.percent ?? props.percent ?? 0);
+  const rawPercent = Number(props.percent ?? 0);
   const value = rawPercent > 1 ? rawPercent : rawPercent * 100;
-  if (value < 5) return null;
+  if (value <= 0) return null;
 
-  const issue = props.payload?.issue ?? props.issue ?? "";
-  const percent = `${value.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
-  const lines = splitDonutLabel(issue);
-  const x = Number(props.x ?? 0);
-  const y = Number(props.y ?? 0);
   const cx = Number(props.cx ?? 0);
-  const fill = props.fill ?? "#0f3349";
-  const textAnchor = x >= cx ? "start" : "end";
+  const cy = Number(props.cy ?? 0);
+  const midAngle = Number(props.midAngle ?? 0);
+  const innerRadius = Number(props.innerRadius ?? 0);
+  const outerRadius = Number(props.outerRadius ?? 0);
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.52;
+  const radians = -midAngle * (Math.PI / 180);
+  const x = cx + radius * Math.cos(radians);
+  const y = cy + radius * Math.sin(radians);
+  const percent = value < 1
+    ? "<1%"
+    : `${value.toLocaleString("th-TH", { maximumFractionDigits: value < 10 ? 1 : 0 })}%`;
 
   return (
-    <text x={x} y={y} fill={fill} textAnchor={textAnchor} dominantBaseline="central" className="overview-issue-donut-label">
-      <tspan x={x} dy={lines.length > 1 ? "-0.55em" : "0"}>{lines[0]}</tspan>
-      <tspan x={x} dy="1.15em">{lines.length > 1 ? `${lines[1]} ${percent}` : percent}</tspan>
+    <text x={x} y={y} fill="#ffffff" textAnchor="middle" dominantBaseline="central" className="overview-issue-donut-label">
+      {percent}
     </text>
   );
 };

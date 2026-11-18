@@ -7,10 +7,11 @@ import SuperadminUsersPanel from "@/components/SuperadminUsersPanel";
 import { overallRiskLabel, overallRiskTone } from "@/services/dashboard-analytics";
 import { FISCAL_YEARS } from "@/services/fiscal-year";
 import { readinessLabel, readinessTone } from "@/services/qa-readiness";
-import { donutPercentLabelFormatter, evaluationStatusTooltipFormatter, recordCountLabelFormatter, recordCountTooltipFormatter } from "./dashboard-shared";
+import { evaluationStatusTooltipFormatter, recordCountLabelFormatter, recordCountTooltipFormatter } from "./dashboard-shared";
 import DashboardSavedRecordsPanel from "./DashboardSavedRecordsPanel";
 import type { DashboardModel } from "./DashboardSectionImpl";
 import OverviewIssueDrilldown from "./OverviewIssueDrilldown";
+import OverviewIssueDonutPanel from "./OverviewIssueDonutPanel";
 type DashboardSectionViewProps = { model: DashboardModel };
 export default function DashboardSectionView({ model }: DashboardSectionViewProps) {
   const { formData, accessScope, hideSavedRecords, onSelectDistrictForIntake, mapRef, rows, totalCount, agencies, provinces, agencyProvinceMap, agencyCoverage, provinceCoverage, kpiSummaryRows, previousKpiSummaryRows, selectedFiscalYear, setSelectedFiscalYear, selectedKpiFiscalYear, setSelectedKpiFiscalYear, filterAgency, setFilterAgency, filterProvince, setFilterProvince, selectedDistrictCode, setSelectedDistrictCode, selectedSubdistrictCode, selectedDistrictName, districtHealthIssueData, districtHealthIssueTotal, districtHealthIssueLoading, dashboardInsightTab, selectedHealthIssue, setSelectedHealthIssue, selectedOverviewIssue, setSelectedOverviewIssue, selectedOverviewMapIssue, setSelectedOverviewMapIssue, selectedOverviewMapProvinceCode, setSelectedOverviewMapProvinceCode, selectedOverviewMapDistrictCode, setSelectedOverviewMapDistrictCode, issueDetailScope, setIssueDetailScope, overviewFilter, setOverviewFilter, activeAgencyFilter, activeProvinceFilter, visibleAgencies, visibleProvinces, visibleAgencyCoverage, visibleProvinceCoverage, showAdvancedPanels, dashboardMenuAgencies, provinceSubmissionGroups, selectedIssueProvinceCode, selectedAgencyAreaTotals, coverageChartRows, selectedIssueProvinceName, isDistrictMode, healthIssueDonutScopeLabel, healthIssueDonutData, healthIssueDonutTotal, overviewIssueDonutRows, healthIssueGroupRows, healthIssueGroupTotal, healthIssueEvaluationRows, healthIssueEvaluationChartHeight, selectedOverviewIssueRecords, selectedOverviewIssueAgencyRows, selectedOverviewIssueProvinceRows, selectedOverviewIssueDistrictRows, issueDetailScopeOptions, activeIssueDetailScope, overviewIssueColorMap, selectedOverviewIssueColor, activeOverviewMapIssueColor, overviewMapRecords, overviewMetricTotals, selectedOverviewMapProvinceName, selectedOverviewMapDistrictRows, selectedOverviewMapDistrictName, selectedOverviewIssueChartHeight, selectedHealthIssueCount, overviewFilterOptions, overviewChartRows, isOverviewMode, coverageChartTitle, selectedProvinceIssueRecords, handleOverviewChartBarClick, clearMapFilters, clearTableFilters, selectDashboardOverview, selectDashboardAgency, selectDashboardInsight, exportKpiSummaryCsv, kpiStatusRows, kpiAlerts, kpiStatusCounts, overallRiskLevel, readinessChecks } = model;
@@ -266,89 +267,7 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                         </section>
                       </article>
 
-                      <aside className="panel overview-issue-control-panel">
-                        <div className="dashboard-overview__section-head overview-issue-control-panel__head">
-                          <div>
-                            <h3>สรุปภาพรวมประเด็นขับเคลื่อนงาน พชอ. ด้านป้องกันควบคุมโรคและภัยสุขภาพ{selectedOverviewMapDistrictName ? ` อำเภอ${selectedOverviewMapDistrictName}` : selectedOverviewMapProvinceName ? ` จังหวัด${selectedOverviewMapProvinceName}` : ""}</h3>
-                            <p>กดประเด็นเพื่อกรองสีบนแผนที่ด้านซ้าย</p>
-                          </div>
-                          <button
-                            type="button"
-                            className="overview-issue-clear-button"
-                            onClick={() => {
-                              setSelectedOverviewMapIssue("");
-                              setSelectedOverviewMapProvinceCode("");
-                              setSelectedOverviewMapDistrictCode("");
-                            }}
-                            disabled={!selectedOverviewMapIssue && !selectedOverviewMapProvinceCode && !selectedOverviewMapDistrictCode}
-                          >
-                            ล้างข้อมูล
-                          </button>
-                        </div>
-                        {overviewIssueDonutRows.length === 0 ? (
-                          <p className="province-issue-empty">ยังไม่มีข้อมูลประเด็นโรค/ภัยสุขภาพ</p>
-                        ) : (
-                          <div className="overview-issue-control-panel__body">
-                            <div className="overview-issue-donut-chart">
-                              <ResponsiveContainer width="100%" height={400}>
-                                <PieChart margin={{ top: 12, right: 56, bottom: 18, left: 56 }}>
-                                  <Pie
-                                    data={overviewIssueDonutRows}
-                                    dataKey="districtCount"
-                                    nameKey="issue"
-                                    innerRadius={90}
-                                    outerRadius={138}
-                                    paddingAngle={2}
-                                    stroke="#ffffff"
-                                    strokeWidth={3}
-                                    label={donutPercentLabelFormatter}
-                                    labelLine={false}
-                                    onClick={(item: any) => {
-                                      setSelectedOverviewMapIssue((current) => (current === item.issue ? "" : item.issue));
-                                    }}
-                                  >
-                                    {overviewIssueDonutRows.map((entry) => (
-                                      <Cell key={entry.issue} fill={entry.color} />
-                                    ))}
-                                  </Pie>
-                                  <Tooltip
-                                    content={(props: any) => {
-                                      const item = props.payload?.[0]?.payload;
-                                      if (!props.active || !item) return null;
-                                      return (
-                                        <div className="overview-issue-donut-tooltip">
-                                          <strong>{item.issue}</strong>
-                                          <span>{item.percent.toLocaleString("th-TH", { maximumFractionDigits: 2 })}%</span>
-                                        </div>
-                                      );
-                                    }}
-                                  />
-                                </PieChart>
-                              </ResponsiveContainer>
-                            </div>
-                            <div className="overview-issue-donut-detail">
-                              {overviewIssueDonutRows.map((item) => {
-                                const isExpanded = selectedOverviewMapIssue === item.issue;
-                                return (
-                                  <div key={item.issue} className="overview-issue-donut-detail__group">
-                                    <button
-                                      type="button"
-                                      className={`overview-issue-donut-detail__item${isExpanded ? " is-active" : ""}`}
-                                      onClick={() => setSelectedOverviewMapIssue((current) => (current === item.issue ? "" : item.issue))}
-                                      aria-expanded={isExpanded}
-                                    >
-                                      <span className="overview-issue-donut-detail__swatch" style={{ background: item.color }} />
-                                      <span className="overview-issue-donut-detail__name">{item.issue}</span>
-                                      <strong>{item.districtCount.toLocaleString("th-TH")} อำเภอ</strong>
-                                    </button>
-                                    {isExpanded ? <OverviewIssueDrilldown model={model} /> : null}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-                      </aside>
+                      <OverviewIssueDonutPanel model={model} />
                     </div>
                   </div>
                 ) : null}

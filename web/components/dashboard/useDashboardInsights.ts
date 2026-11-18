@@ -388,7 +388,7 @@ export function useDashboardInsights(model: ReturnType<typeof import("./useDashb
   useEffect(() => {
     setSelectedOverviewMapProvinceCode("");
     setSelectedOverviewMapDistrictCode("");
-  }, [selectedHealthIssue, selectedOverviewIssue, selectedOverviewMapIssue]);
+  }, [selectedHealthIssue, selectedOverviewIssue]);
 
   const overviewFilterOptions = [
     { key: "agency-order" as const, label: "ภาพรวม สคร." },

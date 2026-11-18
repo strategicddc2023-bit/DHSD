@@ -1402,6 +1402,7 @@ input {
   width: 100%;
   max-width: 560px;
   justify-self: center;
+  position: relative;
 }
 
 .overview-issue-control-panel .overview-issue-donut-detail {
@@ -1411,9 +1412,58 @@ input {
 }
 
 .overview-issue-donut-label {
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 800;
   pointer-events: none;
+  paint-order: stroke;
+  stroke: rgba(15, 51, 73, 0.32);
+  stroke-width: 2px;
+}
+
+.overview-issue-donut-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  width: 164px;
+  height: 164px;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-content: center;
+  gap: 2px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #0f3349;
+  text-align: center;
+  cursor: pointer;
+}
+
+.overview-issue-donut-center:hover,
+.overview-issue-donut-center:focus-visible {
+  background: rgba(232, 245, 243, 0.72);
+  outline: 2px solid #16a394;
+  outline-offset: -4px;
+}
+
+.overview-issue-donut-center strong {
+  font-size: clamp(1.7rem, 4vw, 2.35rem);
+  line-height: 1;
+}
+
+.overview-issue-donut-center span {
+  color: #4b6b7f;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.overview-issue-donut-center small {
+  max-width: 130px;
+  margin-top: 3px;
+  color: #7890a0;
+  font-size: 0.67rem;
+  font-weight: 700;
+  line-height: 1.25;
 }
 
 
