@@ -15,6 +15,7 @@ export default function HealthIssueMasterPanel() {
   const [newIssueName, setNewIssueName] = useState("");
   const [newIssueGroup, setNewIssueGroup] = useState<HealthIssueGroup>("royal_initiative");
   const [filterGroup, setFilterGroup] = useState<HealthIssueGroup | "all">("all");
+  const [catalogFilter, setCatalogFilter] = useState<"all" | "approved" | "unapproved">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -29,10 +30,12 @@ export default function HealthIssueMasterPanel() {
     const q = searchQuery.trim().toLowerCase();
     return issues.filter((issue) => {
       const matchGroup = filterGroup === "all" || issue.issue_group === filterGroup;
+      const matchCatalog = catalogFilter === "all"
+        || (catalogFilter === "approved" ? issue.is_ddc_approved : !issue.is_ddc_approved);
       const matchSearch = !q || (issue.name_th || "").toLowerCase().includes(q);
-      return matchGroup && matchSearch;
+      return matchGroup && matchCatalog && matchSearch;
     });
-  }, [filterGroup, searchQuery, issues]);
+  }, [catalogFilter, filterGroup, searchQuery, issues]);
   const pageCount = Math.max(1, Math.ceil(filteredIssues.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
   const startIdx = filteredIssues.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
@@ -41,7 +44,7 @@ export default function HealthIssueMasterPanel() {
 
   useEffect(() => {
     setPage(1);
-  }, [filterGroup, searchQuery]);
+  }, [catalogFilter, filterGroup, searchQuery]);
 
   const loadIssues = async () => {
     setLoading(true);
@@ -157,13 +160,8 @@ export default function HealthIssueMasterPanel() {
   };
 
   const toggleActive = async (issue: HealthIssueOption) => {
-    if (issue.is_ddc_approved) {
-      setMessage("รายการมาตรฐานกรมควบคุมโรคต้องเปิดแสดงตามบัญชีอ้างอิง");
-      return;
-    }
-
-    if (!issue.is_ddc_approved && !issue.is_active) {
-      setMessage("ไม่สามารถเปิดแสดงรายการนอกบัญชีกรมควบคุมโรคได้");
+    if (!issue.is_ddc_approved) {
+      setMessage("ไม่สามารถเปลี่ยนสถานะรายการนอกบัญชีกรมควบคุมโรคได้");
       return;
     }
 
@@ -228,6 +226,14 @@ export default function HealthIssueMasterPanel() {
             {healthIssueGroupOptions.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
+          </select>
+        </label>
+        <label>
+          ดูตามสถานะบัญชี
+          <select value={catalogFilter} onChange={(event) => setCatalogFilter(event.target.value as "all" | "approved" | "unapproved")}>
+            <option value="all">ทั้งหมด</option>
+            <option value="approved">บัญชีกรมควบคุมโรค</option>
+            <option value="unapproved">นอกบัญชีกรมฯ</option>
           </select>
         </label>
         <label>
@@ -306,7 +312,7 @@ export default function HealthIssueMasterPanel() {
                             <button type="button" className="cta cta--ghost" onClick={() => beginEdit(issue)} disabled={saving || issue.is_ddc_approved}>
                               แก้ไข
                             </button>
-                            <button type="button" className="cta cta--ghost" onClick={() => void toggleActive(issue)} disabled={saving || issue.is_ddc_approved || !issue.is_active}>
+                            <button type="button" className="cta cta--ghost" onClick={() => void toggleActive(issue)} disabled={saving || !issue.is_ddc_approved}>
                               {issue.is_active ? "ปิดใช้งาน" : "เปิดใช้งาน"}
                             </button>
                           </>

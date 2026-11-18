@@ -7,15 +7,32 @@ begin;
 alter table public.master_health_issues
   add column if not exists is_ddc_approved boolean not null default false;
 
-create temporary table approved_ddc_health_issues (
-  name_th text not null,
-  issue_group text not null,
-  sort_order integer not null,
-  primary key (name_th, issue_group)
-) on commit drop;
+alter table public.master_health_issues
+  drop constraint if exists master_health_issues_name_th_unique;
 
-insert into approved_ddc_health_issues (name_th, issue_group, sort_order)
-values
+alter table public.master_health_issues
+  drop constraint if exists master_health_issues_name_group_unique;
+
+delete from public.master_health_issues duplicate
+using public.master_health_issues retained
+where duplicate.name_th = retained.name_th
+  and duplicate.issue_group = retained.issue_group
+  and duplicate.id > retained.id;
+
+alter table public.master_health_issues
+  add constraint master_health_issues_name_group_unique unique (name_th, issue_group);
+
+-- Deactivate the existing catalog first. Approved rows are reactivated by the upsert below.
+update public.master_health_issues
+set is_active = false,
+    is_ddc_approved = false;
+
+-- Keep the approved catalog inline so the migration does not depend on a temporary
+-- table surviving across statements in SQL runners that change sessions/transactions.
+insert into public.master_health_issues (name_th, issue_group, sort_order, is_active, is_ddc_approved)
+select approved.name_th, approved.issue_group, approved.sort_order, true, true
+from (
+  values
   ('การขับเคลื่อนงานโครงการเฝ้าระวัง คัดกรอง ป้องกันควบคุมโรคที่สำคัญตามโครงการพระราชดำริและภายใต้แผนปฏิบัติการโครงการราชทัณฑ์ปันสุข ทำความดี เพื่อชาติ ศาสน์ กษัตริย์', 'royal_initiative', 101),
   ('โรคหนอนพยาธิ', 'royal_initiative', 102),
   ('โรคพิษสุนัขบ้า', 'royal_initiative', 103),
@@ -64,39 +81,11 @@ values
   ('อุบัติภัยสารเคมี', 'occupational_environmental_disease', 506),
 
   ('การสร้างความรอบรู้ด้านสุขภาพในการป้องกันโรคและภัยสุขภาพ เพื่อการท่องเที่ยวปลอดภัย (เห็ดพิษ/ แมงกะพรุน ฯลฯ)', 'systemic_prevention_mechanism', 601),
-  ('การป้องกันโรคในแรงงานข้ามชาติ', 'systemic_prevention_mechanism', 602);
-
-alter table public.master_health_issues
-  drop constraint if exists master_health_issues_name_th_unique;
-
-alter table public.master_health_issues
-  drop constraint if exists master_health_issues_name_group_unique;
-
-delete from public.master_health_issues duplicate
-using public.master_health_issues retained
-where duplicate.name_th = retained.name_th
-  and duplicate.issue_group = retained.issue_group
-  and duplicate.id > retained.id;
-
-alter table public.master_health_issues
-  add constraint master_health_issues_name_group_unique unique (name_th, issue_group);
-
-insert into public.master_health_issues (name_th, issue_group, sort_order, is_active, is_ddc_approved)
-select name_th, issue_group, sort_order, true, true
-from approved_ddc_health_issues
+  ('การป้องกันโรคในแรงงานข้ามชาติ', 'systemic_prevention_mechanism', 602)
+) as approved(name_th, issue_group, sort_order)
 on conflict (name_th, issue_group) do update
 set sort_order = excluded.sort_order,
     is_active = true,
     is_ddc_approved = true;
-
-update public.master_health_issues existing
-set is_active = false,
-    is_ddc_approved = false
-where not exists (
-  select 1
-  from approved_ddc_health_issues approved
-  where approved.name_th = existing.name_th
-    and approved.issue_group = existing.issue_group
-);
 
 commit;
