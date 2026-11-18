@@ -9,6 +9,8 @@ phase-map/
 tmp_docx_extract/
 tmp_xlsx_extract/
 graphify-out/
+Mmd2/
+.agents/
 
 # Local planning and reference files
 /implementation-plan.md
