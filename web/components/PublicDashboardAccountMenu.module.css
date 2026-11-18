@@ -1,0 +1,105 @@
+.accountMenu {
+  position: fixed;
+  left: clamp(28px, 1.8vw, 38px);
+  bottom: 20px;
+  z-index: 45;
+  width: 140px;
+  padding: 8px;
+  border: 1px solid #cfe2ec;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 12px 30px rgba(15, 51, 73, 0.16);
+  backdrop-filter: blur(12px);
+  display: grid;
+  gap: 7px;
+}
+
+.menuLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #49667b;
+  font-size: 0.72rem;
+}
+
+.menuLabel span {
+  color: #00a99d;
+  font-size: 0.9rem;
+}
+
+.actions {
+  display: grid;
+  gap: 6px;
+}
+
+.primaryAction,
+.secondaryAction {
+  width: 100%;
+  min-height: 36px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+  text-decoration: none;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.primaryAction {
+  border: 1px solid #008f86;
+  background: #00a99d;
+  color: #fff;
+}
+
+.primaryAction:hover {
+  background: #008f86;
+}
+
+.secondaryAction {
+  border: 1px solid #d6e7f0;
+  background: #f8fcff;
+  color: #1d425a;
+}
+
+.secondaryAction:hover:not(:disabled) {
+  border-color: #b8d7e5;
+  background: #eef8fc;
+}
+
+.secondaryAction:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.loading {
+  color: #6b8197;
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+@media (max-width: 1200px) {
+  .accountMenu {
+    left: 14px;
+    bottom: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .accountMenu {
+    right: 8px;
+    bottom: 8px;
+    left: 8px;
+    width: auto;
+    padding: 7px;
+    grid-template-columns: auto minmax(120px, 1fr);
+    align-items: center;
+  }
+
+  .actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -18,16 +18,8 @@ export default function LoginPage() {
     const loadUser = async () => {
       const user = await loadCurrentAppUser();
       setCurrentUser(user);
-      if (user?.role === "superadmin") {
-        router.replace("/superadmin");
-        return;
-      }
-      if (user?.role === "admin") {
-        router.replace("/admin");
-        return;
-      }
-      if (user?.role === "user") {
-        router.replace("/my-work");
+      if (user?.role === "superadmin" || user?.role === "admin" || user?.role === "user") {
+        router.replace("/");
       }
     };
 
@@ -54,16 +46,8 @@ export default function LoginPage() {
     setCurrentUser(user);
     setSaving(false);
 
-    if (user?.role === "superadmin") {
-      router.replace("/superadmin");
-      return;
-    }
-    if (user?.role === "admin") {
-      router.replace("/admin");
-      return;
-    }
-    if (user?.role === "user") {
-      router.replace("/my-work");
+    if (user?.role === "superadmin" || user?.role === "admin" || user?.role === "user") {
+      router.replace("/");
       return;
     }
 

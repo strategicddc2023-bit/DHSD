@@ -1,0 +1,22 @@
+.dashboardPage {
+  width: 100%;
+  min-height: 100vh;
+  padding: clamp(8px, 1vw, 18px) clamp(8px, 1vw, 18px) 118px;
+  background: #eef8fc;
+}
+
+.dashboardPage :global(#dashboard-section) {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .dashboardPage {
+    padding: 6px 6px 92px;
+  }
+
+  .dashboardPage :global(#dashboard-section) {
+    padding: 8px;
+    border-radius: 12px;
+  }
+}

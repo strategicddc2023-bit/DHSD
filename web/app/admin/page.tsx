@@ -62,6 +62,14 @@ export default function AdminPage() {
   const accessScope = buildAccessScope(currentUser);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get("tab");
+    if (tabParam === "overview" || tabParam === "intake" || tabParam === "dashboard" || tabParam === "kpi") {
+      setActiveTab(tabParam);
+    }
+  }, []);
+
+  useEffect(() => {
     const loadAgencies = async () => {
       const { data } = await supabase
         .from("master_agencies")

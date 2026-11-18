@@ -3,6 +3,7 @@ import { FISCAL_YEARS } from "@/services/fiscal-year";
 import type {
   AgencyCoverageRow,
   AgencyOption,
+  AppUserRow,
   District,
   IntakeEvaluationStatus,
   IntakeFormData,
@@ -11,12 +12,27 @@ import type {
   ProvinceCoverageRow,
 } from "@/types/mvp";
 
+export type WorkspaceMenuView =
+  | "dashboard"
+  | "intake"
+  | "healthIssues"
+  | "users"
+  | "workOverview"
+  | "kpi";
+
 export type DashboardSectionProps = {
   formData: IntakeFormData;
   refreshKey: number;
   accessScope?: AccessScope;
   viewMode?: "public" | "backoffice";
   hideSavedRecords?: boolean;
+  currentUser?: AppUserRow | null;
+  isUserLoading?: boolean;
+  activeWorkspaceView?: WorkspaceMenuView;
+  onSelectWorkspaceView?: (view: WorkspaceMenuView) => void;
+  onFormDataChange?: (nextFormData: IntakeFormData) => void;
+  onDataSaved?: () => void;
+  onLoggedOut?: () => void;
   onSelectDistrictForIntake?: (selection: { agencyCode: string; provinceCode: string; districtCode: string }) => void;
 };
 
@@ -91,6 +107,12 @@ export const fiscalYears = [...FISCAL_YEARS];
 export const latestRecordsPageSize = 10;
 export const healthIssueDonutColors = ["#e11d48", "#2563eb", "#f59e0b", "#16a34a", "#7c3aed", "#0891b2", "#ea580c", "#475569", "#db2777", "#65a30d"];
 export const healthIssueGroupLabels: Record<string, string> = {
+  royal_initiative: "โครงการพระราชดำริ โครงการเฉลิมพระเกียรติฯ",
+  communicable_disease: "กลุ่มโรคติดต่อ",
+  noncommunicable_disease: "กลุ่มโรคไม่ติดต่อ",
+  health_risk_factor: "กลุ่มปัจจัยเสี่ยงด้านสุขภาพ",
+  occupational_environmental_disease: "กลุ่มโรคจากการประกอบอาชีพและสิ่งแวดล้อม",
+  systemic_prevention_mechanism: "กลุ่มการพัฒนากลไกป้องกันควบคุมโรคเชิงระบบ",
   disease_health_risk: "โรคและภัยสุขภาพ",
   context_driver: "ประเด็นการขับเคลื่อนตามบริบท",
   other: "อื่นๆ / ไม่อยู่ในรายการหลัก",

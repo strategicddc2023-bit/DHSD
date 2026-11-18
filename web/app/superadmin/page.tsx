@@ -54,6 +54,14 @@ export default function SuperadminPage() {
   const accessScope = buildAccessScope(currentUser);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get("tab");
+    if (tabParam === "users" || tabParam === "intake" || tabParam === "healthIssues") {
+      setActiveTab(tabParam);
+    }
+  }, []);
+
+  useEffect(() => {
     const loadUser = async () => {
       const user = await loadCurrentAppUser();
       setCurrentUser(user);

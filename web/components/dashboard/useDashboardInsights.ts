@@ -6,6 +6,10 @@ import { healthIssueDonutColors, healthIssueGroupLabels } from "./dashboard-shar
 
 export function useDashboardInsights(model: ReturnType<typeof import("./useDashboardBase").useDashboardBase>) {
   const { formData, rows, totalCount, agencies, provinces, districts, agencyProvinceMap, submittedDistrictCodesByProvince, districtRecordCount, selectedDistrictCode, selectedDistrictName, districtHealthIssueData, provinceHealthIssueRecords, healthIssueScopeRecords, masterHealthIssues, selectedHealthIssue, setSelectedHealthIssue, selectedOverviewIssue, selectedOverviewMapIssue, selectedOverviewMapProvinceCode, setSelectedOverviewMapProvinceCode, selectedOverviewMapDistrictCode, setSelectedOverviewMapDistrictCode, issueDetailScope, overviewFilter, activeAgencyFilter, activeProvinceFilter, visibleAgencyCoverage, visibleProvinceCoverage, overviewAreaTotals, districtCountByProvince, selectedIssueProvinceCode } = model;
+  const issueGroupByName = useMemo(
+    () => new Map(masterHealthIssues.map((issue) => [issue.name_th.trim().toLocaleLowerCase("th-TH"), issue.issue_group])),
+    [masterHealthIssues]
+  );
   const coverageChartRows = useMemo<CoverageChartRow[]>(() => {
     // Drill-down to districts: when agency AND province are selected
     if (activeAgencyFilter && selectedIssueProvinceCode) {
@@ -101,7 +105,7 @@ export function useDashboardInsights(model: ReturnType<typeof import("./useDashb
       if (!row) return;
       row.count += 1;
       row.provinceCodes.add(record.provinceCode);
-      row.districtCodes.add(record.districtCode);
+      row.districtCodes.add(`${record.provinceCode}::${record.districtCode}`);
     });
 
     return [...grouped.values()]
@@ -140,40 +144,38 @@ export function useDashboardInsights(model: ReturnType<typeof import("./useDashb
         const row = grouped.get(issue) ?? { issue, count: 0, provinceCodes: new Set<string>(), districtCodes: new Set<string>() };
         row.count += 1;
         row.provinceCodes.add(record.provinceCode);
-        row.districtCodes.add(record.districtCode);
+        row.districtCodes.add(`${record.provinceCode}::${record.districtCode}`);
         grouped.set(issue, row);
       });
 
-      const baseColorByIssue = new Map(
-        overviewIssueChartRows.map((row, index) => [row.issue, healthIssueDonutColors[index % healthIssueDonutColors.length]])
-      );
-
       return [...grouped.values()]
-        .map((row) => {
+        .sort((a, b) => b.districtCodes.size - a.districtCodes.size || b.count - a.count || a.issue.localeCompare(b.issue, "th"))
+        .map((row, index) => {
           const totalDistrictCount = selectedOverviewMapDistrictCode
             ? 1
             : selectedOverviewMapProvinceCode
               ? districtCountByProvince.get(selectedOverviewMapProvinceCode) ?? 0
               : [...row.provinceCodes].reduce((total, provinceCode) => total + (districtCountByProvince.get(provinceCode) ?? 0), 0);
           const districtCount = row.districtCodes.size;
+          const group = issueGroupByName.get(row.issue.toLocaleLowerCase("th-TH")) ?? "other";
           return {
             issue: row.issue,
             count: row.count,
+            group,
+            groupLabel: healthIssueGroupLabels[group] ?? group,
             provinceCount: row.provinceCodes.size,
             totalDistrictCount,
             districtCount,
             percent: totalDistrictCount > 0 ? Number(((districtCount / totalDistrictCount) * 100).toFixed(2)) : 0,
-            color: baseColorByIssue.get(row.issue) ?? healthIssueDonutColors[0],
+            color: healthIssueDonutColors[index % healthIssueDonutColors.length],
           };
-        })
-        .sort((a, b) => b.districtCount - a.districtCount || b.count - a.count || a.issue.localeCompare(b.issue, "th"))
-        .slice(0, 8);
+        });
     },
-    [districtCountByProvince, healthIssueScopeRecords, overviewIssueChartRows, selectedOverviewMapDistrictCode, selectedOverviewMapProvinceCode]
+    [districtCountByProvince, healthIssueScopeRecords, issueGroupByName, selectedOverviewMapDistrictCode, selectedOverviewMapProvinceCode]
   );
+  const overviewIssueTotal = overviewIssueDonutRows.reduce((total, row) => total + row.districtCount, 0);
 
   const healthIssueGroupRows = useMemo(() => {
-    const issueGroupByName = new Map(masterHealthIssues.map((issue) => [issue.name_th.trim().toLocaleLowerCase("th-TH"), issue.issue_group]));
     const grouped = new Map<string, { group: string; label: string; recordCount: number; issueNames: Set<string>; provinceCodes: Set<string>; districtKeys: Set<string> }>();
 
     healthIssueScopeRecords.forEach((record) => {
@@ -206,7 +208,7 @@ export function useDashboardInsights(model: ReturnType<typeof import("./useDashb
         districtCount: row.districtKeys.size,
         color: healthIssueDonutColors[index % healthIssueDonutColors.length],
       }));
-  }, [healthIssueScopeRecords, masterHealthIssues]);
+  }, [healthIssueScopeRecords, issueGroupByName]);
   const healthIssueGroupTotal = healthIssueGroupRows.reduce((total, row) => total + row.recordCount, 0);
 
   const healthIssueEvaluationRows = useMemo<HealthIssueEvaluationRow[]>(() => {
@@ -307,7 +309,7 @@ export function useDashboardInsights(model: ReturnType<typeof import("./useDashb
     if (!hasFocusedMapSelection) {
       return {
         ...overviewAreaTotals,
-        issueCount: healthIssueDonutTotal,
+        issueCount: overviewIssueTotal,
       };
     }
 
@@ -342,6 +344,9 @@ export function useDashboardInsights(model: ReturnType<typeof import("./useDashb
     const submittedDistrictCount = selectedOverviewMapDistrictCode
       ? Math.min(submittedDistrictKeys.size, 1)
       : Math.min(submittedDistrictKeys.size, districtCount);
+    const scopedIssueDistrictKeys = new Set(
+      scopedRecords.map((record) => `${record.provinceCode}::${record.districtCode}::${record.healthIssue.toLocaleLowerCase("th-TH")}`)
+    );
     const pendingDistrictCount = Math.max(0, districtCount - submittedDistrictCount);
     const submittedPercent = districtCount > 0 ? Number(((submittedDistrictCount / districtCount) * 100).toFixed(2)) : 0;
     const pendingPercent = districtCount > 0 ? Number((100 - submittedPercent).toFixed(2)) : 0;
@@ -354,9 +359,9 @@ export function useDashboardInsights(model: ReturnType<typeof import("./useDashb
       pendingDistrictCount,
       submittedPercent,
       pendingPercent,
-      issueCount: scopedRecords.length,
+      issueCount: scopedIssueDistrictKeys.size,
     };
-  }, [activeOverviewMapIssue, districts, healthIssueDonutTotal, overviewAreaTotals, overviewMapActiveRecords, selectedOverviewMapDistrictCode, selectedOverviewMapProvinceCode]);
+  }, [activeOverviewMapIssue, districts, overviewAreaTotals, overviewIssueTotal, overviewMapActiveRecords, selectedOverviewMapDistrictCode, selectedOverviewMapProvinceCode]);
   const selectedOverviewMapProvinceName = selectedOverviewMapProvinceCode
     ? provinces.find((province) => province.code === selectedOverviewMapProvinceCode)?.name_th ?? selectedOverviewMapProvinceCode
     : "";
@@ -496,5 +501,5 @@ export function useDashboardInsights(model: ReturnType<typeof import("./useDashb
   }, [provinceHealthIssueRecords, selectedIssueProvinceCode]);
 
 
-  return { coverageChartRows, selectedIssueProvinceName, isDistrictMode, healthIssueDonutScopeLabel, healthIssueDonutData, healthIssueDonutTotal, overviewIssueTableRows, overviewIssueChartRows, overviewIssueDonutRows, healthIssueGroupRows, healthIssueGroupTotal, healthIssueEvaluationRows, healthIssueEvaluationChartHeight, selectedOverviewIssueRecords, selectedOverviewIssueAgencyRows, selectedOverviewIssueProvinceRows, selectedOverviewIssueDistrictRows, issueDetailScopeOptions, activeIssueDetailScope, overviewIssueColorMap, activeOverviewMapIssue, selectedOverviewIssueColor, activeOverviewMapIssueColor, overviewMapRecords, overviewMapActiveRecords, overviewMetricTotals, selectedOverviewMapProvinceName, selectedOverviewMapDistrictRows, selectedOverviewMapDistrictName, selectedOverviewIssueChartHeight, selectedHealthIssueCount, overviewFilterOptions, overviewChartRows, overviewChartTitle, isOverviewMode, coverageChartTitle, dashboardContextLabel, selectedProvinceIssueRecords };
+  return { coverageChartRows, selectedIssueProvinceName, isDistrictMode, healthIssueDonutScopeLabel, healthIssueDonutData, healthIssueDonutTotal, overviewIssueTableRows, overviewIssueChartRows, overviewIssueDonutRows, overviewIssueTotal, healthIssueGroupRows, healthIssueGroupTotal, healthIssueEvaluationRows, healthIssueEvaluationChartHeight, selectedOverviewIssueRecords, selectedOverviewIssueAgencyRows, selectedOverviewIssueProvinceRows, selectedOverviewIssueDistrictRows, issueDetailScopeOptions, activeIssueDetailScope, overviewIssueColorMap, activeOverviewMapIssue, selectedOverviewIssueColor, activeOverviewMapIssueColor, overviewMapRecords, overviewMapActiveRecords, overviewMetricTotals, selectedOverviewMapProvinceName, selectedOverviewMapDistrictRows, selectedOverviewMapDistrictName, selectedOverviewIssueChartHeight, selectedHealthIssueCount, overviewFilterOptions, overviewChartRows, overviewChartTitle, isOverviewMode, coverageChartTitle, dashboardContextLabel, selectedProvinceIssueRecords };
 }

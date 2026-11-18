@@ -12,6 +12,7 @@ import DashboardSavedRecordsPanel from "./DashboardSavedRecordsPanel";
 import type { DashboardModel } from "./DashboardSectionImpl";
 import OverviewIssueDrilldown from "./OverviewIssueDrilldown";
 import OverviewIssueDonutPanel from "./OverviewIssueDonutPanel";
+import WorkspaceManagementView from "./WorkspaceManagementView";
 type DashboardSectionViewProps = { model: DashboardModel };
 export default function DashboardSectionView({ model }: DashboardSectionViewProps) {
   const { formData, accessScope, hideSavedRecords, onSelectDistrictForIntake, mapRef, rows, totalCount, agencies, provinces, agencyProvinceMap, agencyCoverage, provinceCoverage, kpiSummaryRows, previousKpiSummaryRows, selectedFiscalYear, setSelectedFiscalYear, selectedKpiFiscalYear, setSelectedKpiFiscalYear, filterAgency, setFilterAgency, filterProvince, setFilterProvince, selectedDistrictCode, setSelectedDistrictCode, selectedSubdistrictCode, selectedDistrictName, districtHealthIssueData, districtHealthIssueTotal, districtHealthIssueLoading, dashboardInsightTab, selectedHealthIssue, setSelectedHealthIssue, selectedOverviewIssue, setSelectedOverviewIssue, selectedOverviewMapIssue, setSelectedOverviewMapIssue, selectedOverviewMapProvinceCode, setSelectedOverviewMapProvinceCode, selectedOverviewMapDistrictCode, setSelectedOverviewMapDistrictCode, issueDetailScope, setIssueDetailScope, overviewFilter, setOverviewFilter, activeAgencyFilter, activeProvinceFilter, visibleAgencies, visibleProvinces, visibleAgencyCoverage, visibleProvinceCoverage, showAdvancedPanels, dashboardMenuAgencies, provinceSubmissionGroups, selectedIssueProvinceCode, selectedAgencyAreaTotals, coverageChartRows, selectedIssueProvinceName, isDistrictMode, healthIssueDonutScopeLabel, healthIssueDonutData, healthIssueDonutTotal, overviewIssueDonutRows, healthIssueGroupRows, healthIssueGroupTotal, healthIssueEvaluationRows, healthIssueEvaluationChartHeight, selectedOverviewIssueRecords, selectedOverviewIssueAgencyRows, selectedOverviewIssueProvinceRows, selectedOverviewIssueDistrictRows, issueDetailScopeOptions, activeIssueDetailScope, overviewIssueColorMap, selectedOverviewIssueColor, activeOverviewMapIssueColor, overviewMapRecords, overviewMetricTotals, selectedOverviewMapProvinceName, selectedOverviewMapDistrictRows, selectedOverviewMapDistrictName, selectedOverviewIssueChartHeight, selectedHealthIssueCount, overviewFilterOptions, overviewChartRows, isOverviewMode, coverageChartTitle, selectedProvinceIssueRecords, handleOverviewChartBarClick, clearMapFilters, clearTableFilters, selectDashboardOverview, selectDashboardAgency, selectDashboardInsight, exportKpiSummaryCsv, kpiStatusRows, kpiAlerts, kpiStatusCounts, overallRiskLevel, readinessChecks } = model;
@@ -27,13 +28,30 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
           isOverviewDisabled={Boolean(accessScope?.agencyCode)}
           lockedAgencyCode={accessScope?.agencyCode ?? null}
           activeInsightTab={isOverviewMode && dashboardInsightTab !== "assessment" ? dashboardInsightTab : null}
+          hasAccountMenu={model.viewMode === "public"}
+          currentUser={model.currentUser ?? null}
+          isUserLoading={model.isUserLoading}
+          activeWorkspaceView={model.activeWorkspaceView}
+          onSelectWorkspaceView={model.onSelectWorkspaceView}
+          onLoggedOut={model.onLoggedOut}
           onSelectInsight={selectDashboardInsight}
           onSelectOverview={selectDashboardOverview}
           onSelectAgency={selectDashboardAgency}
         />
         <div className="dashboard-workspace__main">
 
-          {isOverviewMode ? (
+          {model.activeWorkspaceView !== "dashboard" ? (
+            <WorkspaceManagementView
+              activeView={model.activeWorkspaceView}
+              currentUser={model.currentUser ?? null}
+              accessScope={accessScope}
+              agencies={agencies}
+              formData={formData}
+              refreshKey={model.refreshKey}
+              onFormDataChange={(nextFormData) => model.onFormDataChange?.(nextFormData)}
+              onDataSaved={() => model.onDataSaved?.()}
+            />
+          ) : isOverviewMode ? (
             <div className="dashboard-overview">
               {selectedOverviewIssue ? (
                 <div className="issue-detail-view">
