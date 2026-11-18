@@ -22,6 +22,7 @@ type RolePageLayoutProps = {
   menuItems: RoleMenuItem[];
   activeKey: string;
   onMenuChange: (key: string) => void;
+  showIdentityDetails?: boolean;
   children: React.ReactNode;
 };
 
@@ -34,6 +35,7 @@ export default function RolePageLayout({
   menuItems,
   activeKey,
   onMenuChange,
+  showIdentityDetails = true,
   children,
 }: RolePageLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -42,7 +44,7 @@ export default function RolePageLayout({
 
   return (
     <main>
-      <AppNavigation user={user} />
+      <AppNavigation user={user} showBrand={showIdentityDetails} />
       <div className="role-layout">
         {/* Sidebar Overlay (mobile) */}
         {sidebarOpen && (
@@ -92,10 +94,12 @@ export default function RolePageLayout({
             })}
           </nav>
 
-          <div className="role-sidebar__user-info">
-            <span className="filter-chip">{user?.role ?? "—"}</span>
-            <span className="filter-chip">{user?.thai_d_sub ?? user?.agency_code ?? "—"}</span>
-          </div>
+          {showIdentityDetails && (
+            <div className="role-sidebar__user-info">
+              <span className="filter-chip">{user?.role ?? "—"}</span>
+              <span className="filter-chip">{user?.thai_d_sub ?? user?.agency_code ?? "—"}</span>
+            </div>
+          )}
         </aside>
 
         {/* Main content area */}
@@ -118,7 +122,7 @@ export default function RolePageLayout({
           </div>
 
           {/* Access Ribbon */}
-          <AccessRibbon user={user} />
+          {showIdentityDetails && <AccessRibbon user={user} />}
 
           {/* Page content */}
           <div className="role-content__body">{children}</div>

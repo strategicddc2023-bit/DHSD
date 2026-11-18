@@ -20,6 +20,8 @@ type AgencyProvinceRow = {
   province_code: string;
 };
 
+type HealthIssueCatalogFilter = "approved" | "unapproved";
+
 const evaluationStatusOptions: Array<{ value: IntakeEvaluationStatus; label: string }> = [
   { value: "pass", label: "ผ่าน" },
   { value: "fail", label: "ไม่ผ่าน" },
@@ -29,6 +31,7 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
   const [healthIssueOptions, setHealthIssueOptions] = useState<HealthIssueOption[]>([]);
+  const [selectedCatalog, setSelectedCatalog] = useState<HealthIssueCatalogFilter>("approved");
   const [selectedGroup, setSelectedGroup] = useState<HealthIssueGroup | "all">("all");
   const [agencyProvinceMap, setAgencyProvinceMap] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
@@ -55,7 +58,6 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
           .from("master_health_issues")
           .select("id,name_th,issue_group,is_active,is_ddc_approved,sort_order,created_at,updated_at")
           .eq("is_active", true)
-          .eq("is_ddc_approved", true)
           .order("issue_group", { ascending: true })
           .order("sort_order", { ascending: true })
           .order("name_th", { ascending: true }),
@@ -141,18 +143,22 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
   }, [formData.provinceCode]);
 
   const filteredHealthIssueOptions = useMemo(() => {
+    const catalogOptions = healthIssueOptions.filter((option) => (
+      selectedCatalog === "approved" ? option.is_ddc_approved : !option.is_ddc_approved
+    ));
+
     if (selectedGroup === "all") {
-      return healthIssueOptions;
+      return catalogOptions;
     }
-    return healthIssueOptions.filter((option) => option.issue_group === selectedGroup);
-  }, [healthIssueOptions, selectedGroup]);
+    return catalogOptions.filter((option) => option.issue_group === selectedGroup);
+  }, [healthIssueOptions, selectedCatalog, selectedGroup]);
 
   const resolvedHealthIssue = formData.healthIssue.trim();
-  const isApprovedHealthIssue = healthIssueOptions.some((option) => option.name_th === resolvedHealthIssue);
+  const isSelectableHealthIssue = filteredHealthIssueOptions.some((option) => option.name_th === resolvedHealthIssue);
 
   const canSubmit = useMemo(() => {
-    return Boolean(isSupportedFiscalYear(formData.fiscalYear) && formData.agencyCode && formData.provinceCode && formData.districtCode && isApprovedHealthIssue);
-  }, [formData, isApprovedHealthIssue]);
+    return Boolean(isSupportedFiscalYear(formData.fiscalYear) && formData.agencyCode && formData.provinceCode && formData.districtCode && isSelectableHealthIssue);
+  }, [formData, isSelectableHealthIssue]);
 
   const handleSubmit = async () => {
     if (!canSubmit) {
@@ -286,10 +292,28 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
         </label>
 
         <label>
+          สถานะบัญชี
+          <select
+            value={selectedCatalog}
+            onChange={(event) => {
+              setSelectedCatalog(event.target.value as HealthIssueCatalogFilter);
+              setSelectedGroup("all");
+              onChange({ ...formData, healthIssue: "" });
+            }}
+          >
+            <option value="approved">บัญชีกรมควบคุมโรค</option>
+            <option value="unapproved">นอกบัญชีกรมฯ</option>
+          </select>
+        </label>
+
+        <label>
           กลุ่มโรค/ภัยสุขภาพ
           <select
             value={selectedGroup}
-            onChange={(event) => setSelectedGroup(event.target.value as HealthIssueGroup | "all")}
+            onChange={(event) => {
+              setSelectedGroup(event.target.value as HealthIssueGroup | "all");
+              onChange({ ...formData, healthIssue: "" });
+            }}
           >
             <option value="all">ทั้งหมด (ทุกกลุ่มโรค)</option>
             {HEALTH_ISSUE_GROUPS.map((option) => (
@@ -309,7 +333,7 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
               const val = event.target.value;
               onChange({ ...formData, healthIssue: val });
               if (val) {
-                const match = healthIssueOptions.find((opt) => opt.name_th === val);
+                const match = filteredHealthIssueOptions.find((opt) => opt.name_th === val);
                 if (match && selectedGroup === "all") {
                   setSelectedGroup(match.issue_group);
                 }

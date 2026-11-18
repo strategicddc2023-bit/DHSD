@@ -1,6 +1,7 @@
 -- Synchronize master_health_issues with the Department of Disease Control catalog.
 -- Source: Mmd2/ประเด็นใหม่/บัญชีประเด็นกรมควบคุมโรค.json
--- Historical intake_records are preserved. Non-catalog master rows are only deactivated.
+-- Historical intake_records rows are preserved; known aliases are normalized.
+-- Non-catalog master rows are only deactivated.
 
 begin;
 
@@ -21,6 +22,52 @@ where duplicate.name_th = retained.name_th
 
 alter table public.master_health_issues
   add constraint master_health_issues_name_group_unique unique (name_th, issue_group);
+
+-- Reconcile known source-document spellings with their canonical DDC names.
+-- Intake rows are retained; only their display text is normalized for reporting.
+update public.intake_records records
+set health_issue_text = aliases.canonical_name
+from (
+  values
+    ('โรคระบบทางเดินหายใจ (ไข้หวัดใหญ่ / Covid -19)', 'โรคระบบทางเดินหายใจ (ไข้หวัดใหญ่ / COVID-19)'),
+    ('การสร้างความรอบรู้ด้านสุขภาพในการป้องกันโรคและภัยสุขภาพ เพื่อการท่องเที่ยวปลอดภัย(เห็ดพิษ/ แมงกะพรุน ฯลฯ)', 'การสร้างความรอบรู้ด้านสุขภาพในการป้องกันโรคและภัยสุขภาพ เพื่อการท่องเที่ยวปลอดภัย (เห็ดพิษ/ แมงกะพรุน ฯลฯ)')
+) as aliases(legacy_name, canonical_name)
+where records.health_issue_text = aliases.legacy_name;
+
+-- Reuse a legacy master row when its canonical row has not been created yet.
+update public.master_health_issues legacy
+set name_th = aliases.canonical_name,
+    sort_order = aliases.sort_order
+from (
+  values
+    ('โรคระบบทางเดินหายใจ (ไข้หวัดใหญ่ / Covid -19)', 'โรคระบบทางเดินหายใจ (ไข้หวัดใหญ่ / COVID-19)', 'communicable_disease', 208),
+    ('การสร้างความรอบรู้ด้านสุขภาพในการป้องกันโรคและภัยสุขภาพ เพื่อการท่องเที่ยวปลอดภัย(เห็ดพิษ/ แมงกะพรุน ฯลฯ)', 'การสร้างความรอบรู้ด้านสุขภาพในการป้องกันโรคและภัยสุขภาพ เพื่อการท่องเที่ยวปลอดภัย (เห็ดพิษ/ แมงกะพรุน ฯลฯ)', 'systemic_prevention_mechanism', 601)
+) as aliases(legacy_name, canonical_name, issue_group, sort_order)
+where legacy.name_th = aliases.legacy_name
+  and legacy.issue_group = aliases.issue_group
+  and not exists (
+    select 1
+    from public.master_health_issues canonical
+    where canonical.name_th = aliases.canonical_name
+      and canonical.issue_group = aliases.issue_group
+  );
+
+-- If both spellings exist, remove only the redundant master alias.
+-- Historical intake rows remain in place and now use the canonical text above.
+delete from public.master_health_issues legacy
+using (
+  values
+    ('โรคระบบทางเดินหายใจ (ไข้หวัดใหญ่ / Covid -19)', 'โรคระบบทางเดินหายใจ (ไข้หวัดใหญ่ / COVID-19)', 'communicable_disease'),
+    ('การสร้างความรอบรู้ด้านสุขภาพในการป้องกันโรคและภัยสุขภาพ เพื่อการท่องเที่ยวปลอดภัย(เห็ดพิษ/ แมงกะพรุน ฯลฯ)', 'การสร้างความรอบรู้ด้านสุขภาพในการป้องกันโรคและภัยสุขภาพ เพื่อการท่องเที่ยวปลอดภัย (เห็ดพิษ/ แมงกะพรุน ฯลฯ)', 'systemic_prevention_mechanism')
+) as aliases(legacy_name, canonical_name, issue_group)
+where legacy.name_th = aliases.legacy_name
+  and legacy.issue_group = aliases.issue_group
+  and exists (
+    select 1
+    from public.master_health_issues canonical
+    where canonical.name_th = aliases.canonical_name
+      and canonical.issue_group = aliases.issue_group
+  );
 
 -- Deactivate the existing catalog first. Approved rows are reactivated by the upsert below.
 update public.master_health_issues

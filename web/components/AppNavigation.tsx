@@ -15,9 +15,10 @@ type NavItem = {
 
 type AppNavigationProps = {
   user: AppUserRow | null;
+  showBrand?: boolean;
 };
 
-export default function AppNavigation({ user }: AppNavigationProps) {
+export default function AppNavigation({ user, showBrand = true }: AppNavigationProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -63,14 +64,16 @@ export default function AppNavigation({ user }: AppNavigationProps) {
   return (
     <>
       <nav className={`app-nav ${isHomepage ? "app-nav--homepage" : ""}`} aria-label="เมนูหลัก">
-        <div className="app-nav__brand">
-          <span>DHSD</span>
-          {user && (
-            <span className={`app-nav__role-badge app-nav__role-badge--${user.role}`}>
-              {isSuperadmin ? "⚙️ Superadmin" : isAdmin ? "🏥 Admin" : "👤 User"}
-            </span>
-          )}
-        </div>
+        {showBrand && (
+          <div className="app-nav__brand">
+            <span>DHSD</span>
+            {user && (
+              <span className={`app-nav__role-badge app-nav__role-badge--${user.role}`}>
+                {isSuperadmin ? "⚙️ Superadmin" : isAdmin ? "🏥 Admin" : "👤 User"}
+              </span>
+            )}
+          </div>
+        )}
         <button
           type="button"
           className={`app-nav__hamburger ${menuOpen ? "app-nav__hamburger--open" : ""}`}

@@ -6,6 +6,7 @@ import type { HealthIssueGroup, HealthIssueOption } from "@/types/mvp";
 import { HEALTH_ISSUE_GROUPS, getHealthIssueGroupLabel } from "@/types/mvp";
 
 const PAGE_SIZE = 10;
+type HealthIssueCatalogStatus = "approved" | "unapproved";
 const normalizeIssueName = (value: string) => value.trim().replace(/\s+/g, " ");
 const healthIssueGroupOptions = HEALTH_ISSUE_GROUPS;
 const healthIssueGroupLabel = getHealthIssueGroupLabel;
@@ -13,6 +14,7 @@ const healthIssueGroupLabel = getHealthIssueGroupLabel;
 export default function HealthIssueMasterPanel() {
   const [issues, setIssues] = useState<HealthIssueOption[]>([]);
   const [newIssueName, setNewIssueName] = useState("");
+  const [newCatalogStatus, setNewCatalogStatus] = useState<HealthIssueCatalogStatus | "">("");
   const [newIssueGroup, setNewIssueGroup] = useState<HealthIssueGroup>("royal_initiative");
   const [filterGroup, setFilterGroup] = useState<HealthIssueGroup | "all">("all");
   const [catalogFilter, setCatalogFilter] = useState<"all" | "approved" | "unapproved">("all");
@@ -25,7 +27,7 @@ export default function HealthIssueMasterPanel() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  const activeCount = useMemo(() => issues.filter((issue) => issue.is_active && issue.is_ddc_approved).length, [issues]);
+  const activeCount = useMemo(() => issues.filter((issue) => issue.is_active).length, [issues]);
   const filteredIssues = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return issues.filter((issue) => {
@@ -79,6 +81,11 @@ export default function HealthIssueMasterPanel() {
       return;
     }
 
+    if (!newCatalogStatus) {
+      setMessage("เลือกสถานะบัญชีก่อนเพิ่มรายการ");
+      return;
+    }
+
     const duplicate = issues.find(
       (item) => item.issue_group === newIssueGroup && normalizeIssueName(item.name_th).toLowerCase() === name.toLowerCase()
     );
@@ -89,7 +96,13 @@ export default function HealthIssueMasterPanel() {
 
     setSaving(true);
     setMessage("");
-    const { error } = await supabase.from("master_health_issues").insert({ name_th: name, issue_group: newIssueGroup, is_active: false, is_ddc_approved: false });
+    const isDdcApproved = newCatalogStatus === "approved";
+    const { error } = await supabase.from("master_health_issues").insert({
+      name_th: name,
+      issue_group: newIssueGroup,
+      is_active: false,
+      is_ddc_approved: isDdcApproved,
+    });
     setSaving(false);
 
     if (error) {
@@ -102,8 +115,9 @@ export default function HealthIssueMasterPanel() {
     }
 
     setNewIssueName("");
+    setNewCatalogStatus("");
     setNewIssueGroup("royal_initiative");
-    setMessage("เพิ่มรายการแล้ว แต่จะยังไม่แสดงจนกว่าจะได้รับรองในบัญชีกรมควบคุมโรค");
+    setMessage(`เพิ่มรายการ${isDdcApproved ? "บัญชีกรมควบคุมโรค" : "นอกบัญชีกรมฯ"}แล้ว โดยตั้งเป็นปิดใช้งาน`);
     void loadIssues();
   };
 
@@ -160,11 +174,6 @@ export default function HealthIssueMasterPanel() {
   };
 
   const toggleActive = async (issue: HealthIssueOption) => {
-    if (!issue.is_ddc_approved) {
-      setMessage("ไม่สามารถเปลี่ยนสถานะรายการนอกบัญชีกรมควบคุมโรคได้");
-      return;
-    }
-
     setSaving(true);
     setMessage("");
     const { error } = await supabase
@@ -195,6 +204,14 @@ export default function HealthIssueMasterPanel() {
 
       <div className="filter-row health-issue-master-form">
         <label>
+          สถานะบัญชี
+          <select value={newCatalogStatus} onChange={(event) => setNewCatalogStatus(event.target.value as HealthIssueCatalogStatus | "")}>
+            <option value="">เลือกสถานะบัญชี</option>
+            <option value="approved">บัญชีกรมควบคุมโรค</option>
+            <option value="unapproved">นอกบัญชีกรมฯ</option>
+          </select>
+        </label>
+        <label>
           กลุ่มรายการ
           <select value={newIssueGroup} onChange={(event) => setNewIssueGroup(event.target.value as HealthIssueGroup)}>
             {healthIssueGroupOptions.map((option) => (
@@ -210,7 +227,7 @@ export default function HealthIssueMasterPanel() {
             placeholder="เช่น โรคไม่ติดต่อ (NCD)"
           />
         </label>
-        <button type="button" className="cta cta--solid" onClick={addIssue} disabled={saving || newIssueName.trim().length < 3}>
+        <button type="button" className="cta cta--solid" onClick={addIssue} disabled={saving || !newCatalogStatus || newIssueName.trim().length < 3}>
           เพิ่มรายการ
         </button>
       </div>
@@ -260,12 +277,12 @@ export default function HealthIssueMasterPanel() {
       <div className="table-wrap">
         <table className="health-issue-master-table">
           <thead>
-            <tr><th>ลำดับ</th><th>กลุ่ม</th><th>ประเด็นโรค/ภัยสุขภาพ</th><th>สถานะ</th><th>จัดการ</th></tr>
+            <tr><th>ลำดับ</th><th>กลุ่ม</th><th>ประเด็นโรค/ภัยสุขภาพ</th><th>สถานะบัญชี</th><th>สถานะใช้งาน</th><th>จัดการ</th></tr>
           </thead>
           <tbody>
             {filteredIssues.length === 0 ? (
               <tr>
-                <td colSpan={5}>
+                <td colSpan={6}>
                   {searchQuery.trim()
                     ? `ไม่พบรายการประเด็นโรค/ภัยสุขภาพที่ตรงกับคำค้นหา "${searchQuery}"`
                     : "ยังไม่มีรายการประเด็นโรค/ภัยสุขภาพในกลุ่มนี้"}
@@ -295,7 +312,8 @@ export default function HealthIssueMasterPanel() {
                         issue.name_th
                       )}
                     </td>
-                    <td>{issue.is_ddc_approved ? (issue.is_active ? "ใช้งาน" : "ปิดใช้งาน") : "นอกบัญชีกรมฯ"}</td>
+                    <td>{issue.is_ddc_approved ? "บัญชีกรมควบคุมโรค" : "นอกบัญชีกรมฯ"}</td>
+                    <td>{issue.is_active ? "ใช้งาน" : "ปิดใช้งาน"}</td>
                     <td>
                       <div className="record-actions">
                         {isEditing ? (
@@ -312,7 +330,7 @@ export default function HealthIssueMasterPanel() {
                             <button type="button" className="cta cta--ghost" onClick={() => beginEdit(issue)} disabled={saving || issue.is_ddc_approved}>
                               แก้ไข
                             </button>
-                            <button type="button" className="cta cta--ghost" onClick={() => void toggleActive(issue)} disabled={saving || !issue.is_ddc_approved}>
+                            <button type="button" className="cta cta--ghost" onClick={() => void toggleActive(issue)} disabled={saving}>
                               {issue.is_active ? "ปิดใช้งาน" : "เปิดใช้งาน"}
                             </button>
                           </>

@@ -98,6 +98,7 @@ export default function SuperadminPage() {
       menuItems={MENU_ITEMS}
       activeKey={activeTab}
       onMenuChange={(key) => setActiveTab(key as SuperadminTab)}
+      showIdentityDetails={false}
     >
       {/* จัดการผู้ใช้งาน */}
       {activeTab === "users" && (
