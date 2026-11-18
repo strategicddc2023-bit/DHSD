@@ -1,8 +1,9 @@
 .filters {
   display: grid;
-  grid-template-columns: minmax(240px, 1.35fr) minmax(220px, 0.65fr);
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
   gap: 10px;
   width: 100%;
+  box-sizing: border-box;
   border: 1px solid #d6e7f0;
   border-radius: 12px;
   background: #f8fcfe;
@@ -18,10 +19,14 @@
   font-weight: 900;
 }
 
-.control {
+.control,
+.searchInput,
+.groupSelect {
   width: 100%;
+  max-width: 100%;
   min-width: 0;
   min-height: 40px;
+  box-sizing: border-box;
   border: 1px solid #c7dbe8;
   border-radius: 9px;
   background: #ffffff;
@@ -31,13 +36,22 @@
   font-weight: 700;
 }
 
-.control:focus {
+.groupSelect {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.control:focus,
+.searchInput:focus,
+.groupSelect:focus {
   border-color: #00a99d;
   box-shadow: 0 0 0 3px rgba(0, 169, 157, 0.12);
   outline: none;
 }
 
-.hint {
+.hint,
+.limitNote {
   grid-column: 1 / -1;
   margin: 0;
   color: #5d7590;
