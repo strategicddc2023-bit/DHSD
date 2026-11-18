@@ -7,6 +7,7 @@ import { FISCAL_YEARS, isSupportedFiscalYear } from "@/services/fiscal-year";
 import type {
   AgencyOption,
   District,
+  HealthIssueOption,
   IntakeEvaluationStatus,
   IntakeRecordRow,
   Province,
@@ -52,6 +53,8 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
   const [agencyProvinceMap, setAgencyProvinceMap] = useState<{ agency_code: string; province_code: string }[]>([]);
+  const [healthIssueOptions, setHealthIssueOptions] = useState<HealthIssueOption[]>([]);
+  const [isHealthIssueCatalogLoaded, setIsHealthIssueCatalogLoaded] = useState(false);
 
   const [filterAgency, setFilterAgency] = useState("");
   const [filterProvince, setFilterProvince] = useState("");
@@ -69,20 +72,31 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
   const pageCount = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const startIdx = totalCount === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const endIdx = Math.min(totalCount, page * PAGE_SIZE);
+  const activeHealthIssueNames = useMemo(() => [...new Set(healthIssueOptions.map((issue) => issue.name_th))], [healthIssueOptions]);
 
   // Load filter options once
   useEffect(() => {
     const load = async () => {
-      const [agencyRes, provinceRes, districtRes, mappingRes] = await Promise.all([
+      const [agencyRes, provinceRes, districtRes, mappingRes, healthIssueRes] = await Promise.all([
         supabase.from("master_agencies").select("code,label_th").order("code", { ascending: true }),
         supabase.from("master_provinces").select("code,name_th").order("name_th", { ascending: true }),
         supabase.from("master_districts").select("code,name_th,province_code").order("name_th", { ascending: true }),
         supabase.from("agency_provinces").select("agency_code,province_code"),
+        supabase
+          .from("master_health_issues")
+          .select("id,name_th,issue_group,is_active,is_ddc_approved,sort_order,created_at,updated_at")
+          .eq("is_active", true)
+          .eq("is_ddc_approved", true)
+          .order("issue_group", { ascending: true })
+          .order("sort_order", { ascending: true })
+          .order("name_th", { ascending: true }),
       ]);
       setAgencies((agencyRes.data ?? []).map(withAgencyDisplayLabel));
       setProvinces(provinceRes.data ?? []);
       setDistricts(districtRes.data ?? []);
       setAgencyProvinceMap((mappingRes.data as { agency_code: string; province_code: string }[]) ?? []);
+      setHealthIssueOptions((healthIssueRes.data as HealthIssueOption[] | null) ?? []);
+      setIsHealthIssueCatalogLoaded(true);
     };
     void load();
   }, []);
@@ -95,7 +109,15 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
   // Load records
   useEffect(() => {
     const loadRows = async () => {
+      if (!isHealthIssueCatalogLoaded) return;
+
       setLoading(true);
+      if (activeHealthIssueNames.length === 0) {
+        setRows([]);
+        setTotalCount(0);
+        setLoading(false);
+        return;
+      }
       const from = (page - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
 
@@ -104,10 +126,14 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
         .select(
           "id,created_at,fiscal_year,health_issue_text,evaluation_status,agency_code,province_code,district_code,master_agencies(label_th),master_provinces(name_th),master_districts(name_th)"
         )
+        .in("health_issue_text", activeHealthIssueNames)
         .order("created_at", { ascending: false })
         .range(from, to);
 
-      let countQuery = supabase.from("intake_records").select("*", { count: "exact", head: true });
+      let countQuery = supabase
+        .from("intake_records")
+        .select("*", { count: "exact", head: true })
+        .in("health_issue_text", activeHealthIssueNames);
 
       if (activeAgencyFilter) {
         query = query.eq("agency_code", activeAgencyFilter);
@@ -128,7 +154,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
       setLoading(false);
     };
     void loadRows();
-  }, [page, refreshKey, localRefresh, activeAgencyFilter, activeProvinceFilter, filterFiscalYear]);
+  }, [page, refreshKey, localRefresh, activeAgencyFilter, activeProvinceFilter, filterFiscalYear, activeHealthIssueNames, isHealthIssueCatalogLoaded]);
 
   // Visible filter options
   const visibleProvinces = useMemo(() => {
@@ -178,7 +204,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
 
   const saveEdit = async () => {
     if (!editingRecordId || !editDraft) return;
-    if (!isSupportedFiscalYear(editDraft.fiscalYear) || !editDraft.agencyCode || !editDraft.provinceCode || !editDraft.districtCode || editDraft.healthIssue.trim().length < 3) {
+    if (!isSupportedFiscalYear(editDraft.fiscalYear) || !editDraft.agencyCode || !editDraft.provinceCode || !editDraft.districtCode || !activeHealthIssueNames.includes(editDraft.healthIssue)) {
       setRecordActionMessage("กรอกข้อมูลให้ครบก่อนบันทึกการแก้ไข");
       return;
     }
@@ -378,13 +404,16 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
                           </select>
                         </td>
                         <td>
-                          <textarea
-                            className="table-textarea"
+                          <select
+                            className="table-input"
                             value={editDraft.healthIssue}
                             onChange={(e) => setEditDraft({ ...editDraft, healthIssue: e.target.value })}
-                            rows={3}
-                            placeholder="ระบุประเด็นโรค/ภัยสุขภาพ"
-                          />
+                          >
+                            <option value="">เลือกประเด็นโรค/ภัยสุขภาพ</option>
+                            {healthIssueOptions.map((issue) => (
+                              <option key={`${issue.issue_group}:${issue.id}`} value={issue.name_th}>{issue.name_th}</option>
+                            ))}
+                          </select>
                         </td>
                         <td>
                           <select

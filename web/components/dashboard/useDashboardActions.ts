@@ -13,7 +13,7 @@ import type { CoverageChartRow, DashboardInsightTab, SavedRecordDraft } from "./
 type DashboardActionInput = ReturnType<typeof import("./useDashboardBase").useDashboardBase> & ReturnType<typeof import("./useDashboardInsights").useDashboardInsights>;
 
 export function useDashboardActions(model: DashboardActionInput) {
-  const { accessScope, mapRef, rows, agencies, provinces, districts, agencyProvinceMap, provinceCoverage, kpiSummaryRows, previousKpiSummaryRows, selectedKpiFiscalYear, setFilterAgency, setFilterProvince, setSelectedDistrictCode, setSelectedSubdistrictCode, setDashboardInsightTab, setSelectedHealthIssue, setSelectedOverviewIssue, setSelectedOverviewMapIssue, overviewFilter, setRecordsRefreshKey, editingRecordId, setEditingRecordId, editDraft, setEditDraft, setRecordActionMessage, setSavingRecordId, setDeletingRecordId, activeAgencyFilter, activeProvinceFilter } = model;
+  const { accessScope, mapRef, rows, agencies, provinces, districts, agencyProvinceMap, provinceCoverage, kpiSummaryRows, previousKpiSummaryRows, selectedKpiFiscalYear, masterHealthIssues, setFilterAgency, setFilterProvince, setSelectedDistrictCode, setSelectedSubdistrictCode, setDashboardInsightTab, setSelectedHealthIssue, setSelectedOverviewIssue, setSelectedOverviewMapIssue, overviewFilter, setRecordsRefreshKey, editingRecordId, setEditingRecordId, editDraft, setEditDraft, setRecordActionMessage, setSavingRecordId, setDeletingRecordId, activeAgencyFilter, activeProvinceFilter } = model;
   const handleOverviewChartBarClick = (entry: { payload?: CoverageChartRow }) => {
     const code = entry.payload?.code;
     if (!code) {
@@ -185,7 +185,10 @@ export function useDashboardActions(model: DashboardActionInput) {
 
   const saveEditedRecord = async () => {
     if (!editingRecordId || !editDraft) return;
-    if (!isSupportedFiscalYear(editDraft.fiscalYear) || !editDraft.agencyCode || !editDraft.provinceCode || !editDraft.districtCode || editDraft.healthIssue.trim().length < 3) {
+    const isApprovedHealthIssue = masterHealthIssues.some(
+      (issue) => issue.name_th === editDraft.healthIssue && issue.is_active && issue.is_ddc_approved
+    );
+    if (!isSupportedFiscalYear(editDraft.fiscalYear) || !editDraft.agencyCode || !editDraft.provinceCode || !editDraft.districtCode || !isApprovedHealthIssue) {
       setRecordActionMessage("กรอกข้อมูลให้ครบก่อนบันทึกการแก้ไข");
       return;
     }

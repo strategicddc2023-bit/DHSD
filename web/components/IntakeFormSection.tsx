@@ -24,15 +24,12 @@ const evaluationStatusOptions: Array<{ value: IntakeEvaluationStatus; label: str
   { value: "pass", label: "ผ่าน" },
   { value: "fail", label: "ไม่ผ่าน" },
 ];
-const OTHER_HEALTH_ISSUE_LABEL = "ประเด็นโรค/ภัยสุขภาพ อื่นๆ";
-
 export default function IntakeFormSection({ formData, onChange, onSaved, accessScope }: IntakeFormSectionProps) {
   const [agencies, setAgencies] = useState<AgencyOption[]>([]);
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
   const [healthIssueOptions, setHealthIssueOptions] = useState<HealthIssueOption[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<HealthIssueGroup | "all">("all");
-  const [otherHealthIssue, setOtherHealthIssue] = useState("");
   const [agencyProvinceMap, setAgencyProvinceMap] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -56,8 +53,9 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
         supabase.from("agency_provinces").select("agency_code,province_code"),
         supabase
           .from("master_health_issues")
-          .select("id,name_th,issue_group,is_active,sort_order,created_at,updated_at")
+          .select("id,name_th,issue_group,is_active,is_ddc_approved,sort_order,created_at,updated_at")
           .eq("is_active", true)
+          .eq("is_ddc_approved", true)
           .order("issue_group", { ascending: true })
           .order("sort_order", { ascending: true })
           .order("name_th", { ascending: true }),
@@ -149,13 +147,12 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
     return healthIssueOptions.filter((option) => option.issue_group === selectedGroup);
   }, [healthIssueOptions, selectedGroup]);
 
-  const resolvedHealthIssue = formData.healthIssue === OTHER_HEALTH_ISSUE_LABEL
-    ? otherHealthIssue.trim()
-    : formData.healthIssue.trim();
+  const resolvedHealthIssue = formData.healthIssue.trim();
+  const isApprovedHealthIssue = healthIssueOptions.some((option) => option.name_th === resolvedHealthIssue);
 
   const canSubmit = useMemo(() => {
-    return Boolean(isSupportedFiscalYear(formData.fiscalYear) && formData.agencyCode && formData.provinceCode && formData.districtCode && resolvedHealthIssue.length >= 3);
-  }, [formData, resolvedHealthIssue]);
+    return Boolean(isSupportedFiscalYear(formData.fiscalYear) && formData.agencyCode && formData.provinceCode && formData.districtCode && isApprovedHealthIssue);
+  }, [formData, isApprovedHealthIssue]);
 
   const handleSubmit = async () => {
     if (!canSubmit) {
@@ -183,7 +180,6 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
     }
 
     setMessage("บันทึกข้อมูลสำเร็จแล้ว");
-    setOtherHealthIssue("");
     onChange({ ...formData, healthIssue: "", evaluationStatus: "" });
     onSaved?.();
   };
@@ -312,7 +308,7 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
             onChange={(event) => {
               const val = event.target.value;
               onChange({ ...formData, healthIssue: val });
-              if (val && val !== OTHER_HEALTH_ISSUE_LABEL) {
+              if (val) {
                 const match = healthIssueOptions.find((opt) => opt.name_th === val);
                 if (match && selectedGroup === "all") {
                   setSelectedGroup(match.issue_group);
@@ -329,21 +325,8 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
             {filteredHealthIssueOptions.map((option) => (
               <option key={option.id} value={option.name_th} />
             ))}
-            <option value={OTHER_HEALTH_ISSUE_LABEL} />
           </datalist>
         </label>
-
-        {formData.healthIssue === OTHER_HEALTH_ISSUE_LABEL ? (
-          <label className="full-width">
-            ระบุประเด็นโรค/ภัยสุขภาพอื่นๆ
-            <textarea
-              value={otherHealthIssue}
-              onChange={(event) => setOtherHealthIssue(event.target.value)}
-              rows={3}
-              placeholder="ระบุชื่อประเด็นโรค/ภัยสุขภาพ"
-            />
-          </label>
-        ) : null}
       </form>
 
       <div className="actions-row">

@@ -51,6 +51,7 @@ export type HealthIssueOption = {
   name_th: string;
   issue_group: HealthIssueGroup;
   is_active: boolean;
+  is_ddc_approved: boolean;
   sort_order: number;
   created_at?: string;
   updated_at?: string;

@@ -8,7 +8,7 @@ import type { DashboardModel } from "./DashboardSectionImpl";
 type DashboardSavedRecordsPanelProps = { model: DashboardModel };
 
 export default function DashboardSavedRecordsPanel({ model }: DashboardSavedRecordsPanelProps) {
-  const { accessScope, rows, loading, totalCount, agencies, filterAgency, setFilterAgency, setFilterProvince, setSelectedDistrictCode, setSelectedSubdistrictCode, latestRecordsPage, setLatestRecordsPage, editingRecordId, editDraft, setEditDraft, recordActionMessage, savingRecordId, deletingRecordId, activeProvinceFilter, canViewSavedRecords, visibleAgencies, visibleProvinces, editProvinceOptions, editDistrictOptions, latestRecordsPageCount, latestRecordsStart, latestRecordsEnd, activeFilterChips, beginEditRecord, cancelEditRecord, updateEditDraft, saveEditedRecord, deleteRecord, exportLatestRowsCsv } = model;
+  const { accessScope, rows, loading, totalCount, agencies, masterHealthIssues, filterAgency, setFilterAgency, setFilterProvince, setSelectedDistrictCode, setSelectedSubdistrictCode, latestRecordsPage, setLatestRecordsPage, editingRecordId, editDraft, setEditDraft, recordActionMessage, savingRecordId, deletingRecordId, activeProvinceFilter, canViewSavedRecords, visibleAgencies, visibleProvinces, editProvinceOptions, editDistrictOptions, latestRecordsPageCount, latestRecordsStart, latestRecordsEnd, activeFilterChips, beginEditRecord, cancelEditRecord, updateEditDraft, saveEditedRecord, deleteRecord, exportLatestRowsCsv } = model;
   return canViewSavedRecords ? (
     <article className="panel table-panel">
       <div className="section-row">
@@ -157,13 +157,16 @@ export default function DashboardSavedRecordsPanel({ model }: DashboardSavedReco
                           </select>
                         </td>
                         <td>
-                          <textarea
-                            className="table-textarea"
+                          <select
+                            className="table-input"
                             value={editDraft.healthIssue}
                             onChange={(event) => updateEditDraft({ healthIssue: event.target.value })}
-                            rows={3}
-                            placeholder="ระบุประเด็นโรค/ภัยสุขภาพ"
-                          />
+                          >
+                            <option value="">เลือกประเด็นโรค/ภัยสุขภาพ</option>
+                            {masterHealthIssues.map((issue) => (
+                              <option key={`${issue.issue_group}:${issue.id}`} value={issue.name_th}>{issue.name_th}</option>
+                            ))}
+                          </select>
                         </td>
                         <td>
                           <div className="record-actions">

@@ -19,15 +19,25 @@ export type DistrictHealthIssueSummary = {
   latestRecords: DistrictHealthIssueRecord[];
 };
 
-export async function loadDistrictHealthIssueSummary(districtCode: string, fiscalYear: FiscalYearFilter): Promise<DistrictHealthIssueSummary> {
+export async function loadDistrictHealthIssueSummary(
+  districtCode: string,
+  fiscalYear: FiscalYearFilter,
+  activeHealthIssueNames: string[]
+): Promise<DistrictHealthIssueSummary> {
+  if (activeHealthIssueNames.length === 0) {
+    return { districtCode, totalCount: 0, issues: [], latestRecords: [] };
+  }
+
   let countQuery = supabase
     .from("intake_records")
     .select("*", { count: "exact", head: true })
-    .eq("district_code", districtCode);
+    .eq("district_code", districtCode)
+    .in("health_issue_text", activeHealthIssueNames);
   let recordsQuery = supabase
     .from("intake_records")
     .select("id,created_at,fiscal_year,health_issue_text,agency_code,province_code,district_code,master_agencies(label_th)")
     .eq("district_code", districtCode)
+    .in("health_issue_text", activeHealthIssueNames)
     .order("created_at", { ascending: false })
     .limit(20);
 
@@ -58,15 +68,25 @@ export async function loadDistrictHealthIssueSummary(districtCode: string, fisca
   };
 }
 
-export async function loadSubdistrictHealthIssueSummary(subdistrictCode: string, fiscalYear: FiscalYearFilter): Promise<DistrictHealthIssueSummary> {
+export async function loadSubdistrictHealthIssueSummary(
+  subdistrictCode: string,
+  fiscalYear: FiscalYearFilter,
+  activeHealthIssueNames: string[]
+): Promise<DistrictHealthIssueSummary> {
+  if (activeHealthIssueNames.length === 0) {
+    return { districtCode: subdistrictCode, totalCount: 0, issues: [], latestRecords: [] };
+  }
+
   let countQuery = supabase
     .from("intake_records")
     .select("*", { count: "exact", head: true })
-    .eq("subdistrict_code", subdistrictCode);
+    .eq("subdistrict_code", subdistrictCode)
+    .in("health_issue_text", activeHealthIssueNames);
   let recordsQuery = supabase
     .from("intake_records")
     .select("id,created_at,fiscal_year,health_issue_text,agency_code,province_code,district_code,master_agencies(label_th)")
     .eq("subdistrict_code", subdistrictCode)
+    .in("health_issue_text", activeHealthIssueNames)
     .order("created_at", { ascending: false })
     .limit(20);
 

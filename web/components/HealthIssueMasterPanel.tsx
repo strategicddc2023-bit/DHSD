@@ -24,7 +24,7 @@ export default function HealthIssueMasterPanel() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  const activeCount = useMemo(() => issues.filter((issue) => issue.is_active).length, [issues]);
+  const activeCount = useMemo(() => issues.filter((issue) => issue.is_active && issue.is_ddc_approved).length, [issues]);
   const filteredIssues = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return issues.filter((issue) => {
@@ -48,7 +48,7 @@ export default function HealthIssueMasterPanel() {
     setMessage("");
     const { data, error } = await supabase
       .from("master_health_issues")
-      .select("id,name_th,issue_group,is_active,sort_order,created_at,updated_at")
+      .select("id,name_th,issue_group,is_active,is_ddc_approved,sort_order,created_at,updated_at")
       .order("is_active", { ascending: false })
       .order("issue_group", { ascending: true })
       .order("sort_order", { ascending: true })
@@ -86,7 +86,7 @@ export default function HealthIssueMasterPanel() {
 
     setSaving(true);
     setMessage("");
-    const { error } = await supabase.from("master_health_issues").insert({ name_th: name, issue_group: newIssueGroup });
+    const { error } = await supabase.from("master_health_issues").insert({ name_th: name, issue_group: newIssueGroup, is_active: false, is_ddc_approved: false });
     setSaving(false);
 
     if (error) {
@@ -100,11 +100,16 @@ export default function HealthIssueMasterPanel() {
 
     setNewIssueName("");
     setNewIssueGroup("royal_initiative");
-    setMessage("เพิ่มรายการประเด็นโรค/ภัยสุขภาพแล้ว");
+    setMessage("เพิ่มรายการแล้ว แต่จะยังไม่แสดงจนกว่าจะได้รับรองในบัญชีกรมควบคุมโรค");
     void loadIssues();
   };
 
   const beginEdit = (issue: HealthIssueOption) => {
+    if (issue.is_ddc_approved) {
+      setMessage("รายการมาตรฐานกรมควบคุมโรคแก้ไขชื่อหรือกลุ่มจากหน้านี้ไม่ได้");
+      return;
+    }
+
     setEditingId(issue.id);
     setEditingName(issue.name_th);
     setEditingGroup(issue.issue_group);
@@ -152,6 +157,16 @@ export default function HealthIssueMasterPanel() {
   };
 
   const toggleActive = async (issue: HealthIssueOption) => {
+    if (issue.is_ddc_approved) {
+      setMessage("รายการมาตรฐานกรมควบคุมโรคต้องเปิดแสดงตามบัญชีอ้างอิง");
+      return;
+    }
+
+    if (!issue.is_ddc_approved && !issue.is_active) {
+      setMessage("ไม่สามารถเปิดแสดงรายการนอกบัญชีกรมควบคุมโรคได้");
+      return;
+    }
+
     setSaving(true);
     setMessage("");
     const { error } = await supabase
@@ -274,7 +289,7 @@ export default function HealthIssueMasterPanel() {
                         issue.name_th
                       )}
                     </td>
-                    <td>{issue.is_active ? "ใช้งาน" : "ปิดใช้งาน"}</td>
+                    <td>{issue.is_ddc_approved ? (issue.is_active ? "ใช้งาน" : "ปิดใช้งาน") : "นอกบัญชีกรมฯ"}</td>
                     <td>
                       <div className="record-actions">
                         {isEditing ? (
@@ -288,10 +303,10 @@ export default function HealthIssueMasterPanel() {
                           </>
                         ) : (
                           <>
-                            <button type="button" className="cta cta--ghost" onClick={() => beginEdit(issue)} disabled={saving}>
+                            <button type="button" className="cta cta--ghost" onClick={() => beginEdit(issue)} disabled={saving || issue.is_ddc_approved}>
                               แก้ไข
                             </button>
-                            <button type="button" className="cta cta--ghost" onClick={() => void toggleActive(issue)} disabled={saving}>
+                            <button type="button" className="cta cta--ghost" onClick={() => void toggleActive(issue)} disabled={saving || issue.is_ddc_approved || !issue.is_active}>
                               {issue.is_active ? "ปิดใช้งาน" : "เปิดใช้งาน"}
                             </button>
                           </>
