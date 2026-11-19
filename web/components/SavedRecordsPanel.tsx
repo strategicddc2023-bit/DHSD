@@ -13,7 +13,8 @@ import type {
   Province,
 } from "@/types/mvp";
 import type { AccessScope } from "@/services/access-control";
-import { getHealthIssueGroupLabel } from "@/types/mvp";
+import { HEALTH_ISSUE_GROUPS, getHealthIssueGroupLabel } from "@/types/mvp";
+import styles from "./SavedRecordsPanel.module.css";
 
 type SavedRecordDraft = {
   fiscalYear: number;
@@ -63,6 +64,9 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
   const [filterAgency, setFilterAgency] = useState("");
   const [filterProvince, setFilterProvince] = useState("");
   const [filterFiscalYear, setFilterFiscalYear] = useState("");
+  const [filterHealthIssueGroup, setFilterHealthIssueGroup] = useState("all");
+  const [filterHealthIssue, setFilterHealthIssue] = useState("");
+  const [healthIssueSearchQuery, setHealthIssueSearchQuery] = useState("");
 
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<SavedRecordDraft | null>(null);
@@ -77,6 +81,15 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
   const startIdx = totalCount === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const endIdx = Math.min(totalCount, page * PAGE_SIZE);
   const activeHealthIssueNames = useMemo(() => [...new Set(healthIssueOptions.map((issue) => issue.name_th))], [healthIssueOptions]);
+  const availableHealthIssueGroups = useMemo(() => {
+    const availableGroups = new Set(healthIssueOptions.map((issue) => issue.issue_group));
+    return HEALTH_ISSUE_GROUPS.filter((option) => availableGroups.has(option.value));
+  }, [healthIssueOptions]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setHealthIssueSearchQuery(filterHealthIssue.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [filterHealthIssue]);
 
   // Load filter options once
   useEffect(() => {
@@ -108,7 +121,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
   // Reset page on filter change
   useEffect(() => {
     setPage(1);
-  }, [refreshKey, localRefresh, activeAgencyFilter, activeProvinceFilter, filterFiscalYear]);
+  }, [refreshKey, localRefresh, activeAgencyFilter, activeProvinceFilter, filterFiscalYear, filterHealthIssueGroup, healthIssueSearchQuery]);
 
   // Load records
   useEffect(() => {
@@ -151,6 +164,17 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
         query = query.eq("fiscal_year", Number(filterFiscalYear));
         countQuery = countQuery.eq("fiscal_year", Number(filterFiscalYear));
       }
+      if (filterHealthIssueGroup === "legacy_unresolved") {
+        query = query.is("health_issue_group", null);
+        countQuery = countQuery.is("health_issue_group", null);
+      } else if (filterHealthIssueGroup !== "all") {
+        query = query.eq("health_issue_group", filterHealthIssueGroup);
+        countQuery = countQuery.eq("health_issue_group", filterHealthIssueGroup);
+      }
+      if (healthIssueSearchQuery) {
+        query = query.ilike("health_issue_text", `%${healthIssueSearchQuery}%`);
+        countQuery = countQuery.ilike("health_issue_text", `%${healthIssueSearchQuery}%`);
+      }
 
       const [{ data }, { count }] = await Promise.all([query, countQuery]);
       setRows((data as IntakeRecordRow[]) ?? []);
@@ -158,7 +182,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
       setLoading(false);
     };
     void loadRows();
-  }, [page, refreshKey, localRefresh, activeAgencyFilter, activeProvinceFilter, filterFiscalYear, activeHealthIssueNames, isHealthIssueCatalogLoaded]);
+  }, [page, refreshKey, localRefresh, activeAgencyFilter, activeProvinceFilter, filterFiscalYear, filterHealthIssueGroup, healthIssueSearchQuery, activeHealthIssueNames, isHealthIssueCatalogLoaded]);
 
   // Visible filter options
   const visibleProvinces = useMemo(() => {
@@ -184,8 +208,14 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
     if (activeAgencyFilter) chips.push(agencies.find((a) => a.code === activeAgencyFilter)?.label_th ?? activeAgencyFilter);
     if (activeProvinceFilter) chips.push(provinces.find((p) => p.code === activeProvinceFilter)?.name_th ?? activeProvinceFilter);
     if (filterFiscalYear) chips.push(`ปีงบประมาณ: ${filterFiscalYear}`);
+    if (filterHealthIssueGroup === "legacy_unresolved") {
+      chips.push("กลุ่ม: ข้อมูลเดิมที่ยังไม่ระบุกลุ่ม");
+    } else if (filterHealthIssueGroup !== "all") {
+      chips.push(`กลุ่ม: ${getHealthIssueGroupLabel(filterHealthIssueGroup)}`);
+    }
+    if (healthIssueSearchQuery) chips.push(`ประเด็น: ${healthIssueSearchQuery}`);
     return chips;
-  }, [activeAgencyFilter, activeProvinceFilter, agencies, provinces, filterFiscalYear]);
+  }, [activeAgencyFilter, activeProvinceFilter, agencies, provinces, filterFiscalYear, filterHealthIssueGroup, healthIssueSearchQuery]);
 
   // Editing
   const beginEdit = (row: IntakeRecordRow) => {
@@ -313,7 +343,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
           Export CSV
         </button>
       </div>
-      <div className="filter-row">
+      <div className={styles.filters}>
         <label>
           กรองปีงบประมาณ
           <select value={filterFiscalYear} onChange={(e) => setFilterFiscalYear(e.target.value)}>
@@ -340,6 +370,25 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
             <option value="">ทั้งหมด</option>
             {visibleProvinces.map((p) => (<option key={p.code} value={p.code}>{p.name_th}</option>))}
           </select>
+        </label>
+        <label>
+          กรองกลุ่มโรค/ภัยสุขภาพ
+          <select value={filterHealthIssueGroup} onChange={(e) => setFilterHealthIssueGroup(e.target.value)}>
+            <option value="all">ทั้งหมด</option>
+            {availableHealthIssueGroups.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+            <option value="legacy_unresolved">ข้อมูลเดิมที่ยังไม่ระบุกลุ่ม</option>
+          </select>
+        </label>
+        <label>
+          ค้นหาประเด็นโรค/ภัยสุขภาพ
+          <input
+            type="search"
+            value={filterHealthIssue}
+            onChange={(e) => setFilterHealthIssue(e.target.value)}
+            placeholder="พิมพ์ชื่อประเด็น..."
+          />
         </label>
       </div>
 
