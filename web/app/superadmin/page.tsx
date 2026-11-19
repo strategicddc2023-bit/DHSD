@@ -18,6 +18,9 @@ const initialFormData: IntakeFormData = {
   provinceCode: "",
   districtCode: "",
   healthIssue: "",
+  healthIssueId: "",
+  healthIssueMembershipId: "",
+  healthIssueGroup: "",
   evaluationStatus: "",
 };
 

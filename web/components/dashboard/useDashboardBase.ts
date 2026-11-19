@@ -187,9 +187,8 @@ export function useDashboardBase(props: DashboardSectionProps) {
         supabase.from("master_districts").select("code,name_th,province_code").order("name_th", { ascending: true }),
         supabase.from("agency_provinces").select("agency_code,province_code"),
         supabase
-          .from("master_health_issues")
-          .select("id,name_th,issue_group,is_active,is_ddc_approved,sort_order,created_at,updated_at")
-          .eq("is_active", true)
+          .from("v_health_issue_catalog")
+          .select("id,issue_id,membership_id,name_th,issue_group,is_active,is_ddc_approved,is_primary_issue,is_reporting_target,sort_order,created_at,updated_at")
           .eq("is_ddc_approved", true)
           .order("issue_group", { ascending: true })
           .order("sort_order", { ascending: true })
@@ -242,7 +241,7 @@ export function useDashboardBase(props: DashboardSectionProps) {
       let query = supabase
         .from("intake_records")
         .select(
-          "id,created_at,fiscal_year,health_issue_text,evaluation_status,agency_code,province_code,district_code,master_agencies(label_th),master_provinces(name_th),master_districts(name_th)"
+          "id,created_at,fiscal_year,health_issue_text,health_issue_id,health_issue_membership_id,health_issue_group,evaluation_status,agency_code,province_code,district_code,master_agencies(label_th),master_provinces(name_th),master_districts(name_th)"
         )
         .in("health_issue_text", activeHealthIssueNames)
         .order("created_at", { ascending: false })
@@ -270,7 +269,7 @@ export function useDashboardBase(props: DashboardSectionProps) {
         (() => {
           let summaryQuery = supabase
             .from("intake_records")
-            .select("agency_code,province_code,district_code,health_issue_text,evaluation_status,master_agencies(label_th),master_provinces(name_th),master_districts(name_th)")
+            .select("agency_code,province_code,district_code,health_issue_text,health_issue_group,evaluation_status,master_agencies(label_th),master_provinces(name_th),master_districts(name_th)")
             .in("health_issue_text", activeHealthIssueNames)
             .limit(5000);
 
@@ -304,6 +303,7 @@ export function useDashboardBase(props: DashboardSectionProps) {
               province_code: string;
               district_code: string | null;
               health_issue_text: string | null;
+              health_issue_group: string | null;
               evaluation_status: IntakeEvaluationStatus | null;
               master_agencies: { label_th: string }[] | null;
               master_provinces: { name_th: string }[] | null;
@@ -348,6 +348,7 @@ export function useDashboardBase(props: DashboardSectionProps) {
             districtCode: item.district_code,
             districtName,
             healthIssue,
+            healthIssueGroup: item.health_issue_group ?? null,
             evaluationStatus: item.evaluation_status ?? null,
           });
           if (!healthIssueMap.has(key)) {
@@ -357,6 +358,7 @@ export function useDashboardBase(props: DashboardSectionProps) {
               districtCode: item.district_code,
               districtName,
               healthIssue,
+              healthIssueGroup: item.health_issue_group ?? null,
               evaluationStatus: item.evaluation_status ?? null,
             });
           }

@@ -183,21 +183,22 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
               <div className="dashboard-overview__metrics" aria-label="ตัวชี้วัดภาพรวม">
                 <article>
                   <span>จังหวัดทั้งหมด</span>
-                  <strong>{overviewMetricTotals.provinceCount.toLocaleString("th-TH")}</strong>
+                  <strong>76 จังหวัด 1 กทม.</strong>
                 </article>
                 <article>
                   <span>อำเภอทั้งหมด</span>
-                  <strong>{overviewMetricTotals.districtCount.toLocaleString("th-TH")}</strong>
+                  <strong>อำเภอ 875 กทม. 50</strong>
                 </article>
                 <article>
                   <span>ภาพรวมประเด็นการขับเคลื่อนงาน พชอ/พชข(ประเด็น)</span>
-                  <strong>{overviewMetricTotals.issueCount.toLocaleString("th-TH")}</strong>
+                  <strong>
+                    {overviewMetricTotals.reportingIssueCount.toLocaleString("th-TH")} / {overviewMetricTotals.issueCount.toLocaleString("th-TH")} ประเด็น
+                  </strong>
                 </article>
                 <article>
                   <span>ภาพรวมการรายงานของอำเภอ</span>
                   <span>(ร้อยละ)</span>
-                  <strong>{overviewMetricTotals.submittedPercent.toLocaleString("th-TH", { maximumFractionDigits: 2 })}%</strong>
-                  <p>ส่ง {overviewMetricTotals.submittedDistrictCount.toLocaleString("th-TH")} อำเภอ</p>
+                  <strong>{Math.round(overviewMetricTotals.reportingIssuePercent).toLocaleString("th-TH")}%</strong>
                 </article>
               </div>
 

@@ -42,6 +42,9 @@ export type SavedRecordDraft = {
   provinceCode: string;
   districtCode: string;
   healthIssue: string;
+  healthIssueId: string;
+  healthIssueMembershipId: string;
+  healthIssueGroup: string;
 };
 
 export type ProvinceSubmissionProgress = {
@@ -82,6 +85,7 @@ export type ProvinceHealthIssueRecord = {
   subdistrictCode?: string;
   subdistrictName?: string;
   healthIssue: string;
+  healthIssueGroup: string | null;
   evaluationStatus: IntakeEvaluationStatus | null;
 };
 
@@ -115,6 +119,7 @@ export const healthIssueGroupLabels: Record<string, string> = {
   systemic_prevention_mechanism: "กลุ่มการพัฒนากลไกป้องกันควบคุมโรคเชิงระบบ",
   disease_health_risk: "โรคและภัยสุขภาพ",
   context_driver: "ประเด็นการขับเคลื่อนตามบริบท",
+  legacy_unresolved: "ข้อมูลเดิมที่ยังไม่ระบุกลุ่ม",
   other: "อื่นๆ / ไม่อยู่ในรายการหลัก",
 };
 export const recordCountLabelFormatter = (value: unknown) => Number(value ?? 0).toLocaleString("th-TH");

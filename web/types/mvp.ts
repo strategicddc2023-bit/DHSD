@@ -48,10 +48,14 @@ export const getHealthIssueGroupLabel = (group: HealthIssueGroup | string | null
 
 export type HealthIssueOption = {
   id: string;
+  issue_id: string;
+  membership_id: string;
   name_th: string;
   issue_group: HealthIssueGroup;
   is_active: boolean;
   is_ddc_approved: boolean;
+  is_primary_issue: boolean;
+  is_reporting_target: boolean;
   sort_order: number;
   created_at?: string;
   updated_at?: string;
@@ -65,6 +69,9 @@ export type IntakeFormData = {
   provinceCode: string;
   districtCode: string;
   healthIssue: string;
+  healthIssueId: string;
+  healthIssueMembershipId: string;
+  healthIssueGroup: HealthIssueGroup | "";
   evaluationStatus: IntakeEvaluationStatus | "";
 };
 
@@ -73,6 +80,9 @@ export type IntakeRecordRow = {
   created_at: string;
   fiscal_year: number;
   health_issue_text: string;
+  health_issue_id?: string | null;
+  health_issue_membership_id?: string | null;
+  health_issue_group?: HealthIssueGroup | null;
   evaluation_status: IntakeEvaluationStatus | null;
   agency_code: string;
   province_code: string;

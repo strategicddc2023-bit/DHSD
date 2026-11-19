@@ -5,7 +5,7 @@ import { supabase } from "@/services/supabase-client";
 import { isSupportedFiscalYear } from "@/services/fiscal-year";
 import { forecastLabel, forecastPercent, overallRiskFromCounts, kpiStatusFromPercent, kpiStatusLabel, kpiStatusTone, trendDirectionFromDelta, trendLabel } from "@/services/dashboard-analytics";
 import type { ReadinessCheck } from "@/services/qa-readiness";
-import type { IntakeRecordRow } from "@/types/mvp";
+import { getHealthIssueGroupLabel, type IntakeRecordRow } from "@/types/mvp";
 import { getRelatedLabel } from "./dashboard-shared";
 import { getAgencyDisplayLabel } from "@/services/agency-display";
 import type { CoverageChartRow, DashboardInsightTab, SavedRecordDraft } from "./dashboard-shared";
@@ -171,6 +171,9 @@ export function useDashboardActions(model: DashboardActionInput) {
       provinceCode: row.province_code,
       districtCode: row.district_code,
       healthIssue: row.health_issue_text ?? "",
+      healthIssueId: row.health_issue_id ?? "",
+      healthIssueMembershipId: row.health_issue_membership_id ?? "",
+      healthIssueGroup: row.health_issue_group ?? "",
     });
   };
 
@@ -185,11 +188,11 @@ export function useDashboardActions(model: DashboardActionInput) {
 
   const saveEditedRecord = async () => {
     if (!editingRecordId || !editDraft) return;
-    const isApprovedHealthIssue = masterHealthIssues.some(
-      (issue) => issue.name_th === editDraft.healthIssue && issue.is_active && issue.is_ddc_approved
+    const selectedMembership = masterHealthIssues.find(
+      (issue) => issue.membership_id === editDraft.healthIssueMembershipId && issue.is_active && issue.is_ddc_approved
     );
-    if (!isSupportedFiscalYear(editDraft.fiscalYear) || !editDraft.agencyCode || !editDraft.provinceCode || !editDraft.districtCode || !isApprovedHealthIssue) {
-      setRecordActionMessage("กรอกข้อมูลให้ครบก่อนบันทึกการแก้ไข");
+    if (!isSupportedFiscalYear(editDraft.fiscalYear) || !editDraft.agencyCode || !editDraft.provinceCode || !editDraft.districtCode || !selectedMembership) {
+      setRecordActionMessage("กรอกข้อมูลให้ครบและเลือกกลุ่มของประเด็นก่อนบันทึกการแก้ไข");
       return;
     }
 
@@ -203,7 +206,10 @@ export function useDashboardActions(model: DashboardActionInput) {
         agency_code: editDraft.agencyCode,
         province_code: editDraft.provinceCode,
         district_code: editDraft.districtCode,
-        health_issue_text: editDraft.healthIssue.trim(),
+        health_issue_text: selectedMembership.name_th,
+        health_issue_id: selectedMembership.issue_id,
+        health_issue_membership_id: selectedMembership.membership_id,
+        health_issue_group: selectedMembership.issue_group,
       })
       .eq("id", editingRecordId);
 
@@ -244,7 +250,7 @@ export function useDashboardActions(model: DashboardActionInput) {
 
   const exportLatestRowsCsv = () => {
     if (rows.length === 0) return;
-    const headers = ["เวลา", "ปีงบประมาณ", "หน่วยงาน", "จังหวัด", "อำเภอ", "ประเด็นโรค/ภัยสุขภาพ"];
+    const headers = ["เวลา", "ปีงบประมาณ", "หน่วยงาน", "จังหวัด", "อำเภอ", "ประเด็นโรค/ภัยสุขภาพ", "กลุ่มรายการ"];
     const body = rows.map((row) => [
       new Date(row.created_at).toLocaleString("th-TH"),
       row.fiscal_year,
@@ -252,6 +258,7 @@ export function useDashboardActions(model: DashboardActionInput) {
       getRelatedLabel(row.master_provinces, (province) => province.name_th) ?? row.province_code ?? "-",
       getRelatedLabel(row.master_districts, (district) => district.name_th) ?? row.district_code ?? "-",
       row.health_issue_text ?? "-",
+      row.health_issue_group ? getHealthIssueGroupLabel(row.health_issue_group) : "ข้อมูลเดิมที่ยังไม่ระบุกลุ่ม",
     ]);
     const csvLines = [headers, ...body]
       .map((line) => line.map((cell) => `"${String(cell).replaceAll("\"", "\"\"")}"`).join(","))

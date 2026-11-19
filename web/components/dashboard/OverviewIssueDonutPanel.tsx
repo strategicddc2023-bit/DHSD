@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { HEALTH_ISSUE_GROUPS } from "../../types/mvp";
+import { healthIssueGroupLabels } from "./dashboard-shared";
 import type { DashboardModel } from "./DashboardSectionImpl";
 import OverviewIssueDrilldown from "./OverviewIssueDrilldown";
 import styles from "./OverviewIssueDonutPanel.module.css";
@@ -76,6 +77,7 @@ export default function OverviewIssueDonutPanel({ model }: OverviewIssueDonutPan
   const {
     overviewIssueDonutRows,
     overviewIssueTotal,
+    overviewMetricTotals,
     masterHealthIssues,
     selectedOverviewMapDistrictName,
     selectedOverviewMapProvinceName,
@@ -86,13 +88,18 @@ export default function OverviewIssueDonutPanel({ model }: OverviewIssueDonutPan
   } = model;
 
   const availableGroupOptions = useMemo(() => {
-    const availableGroups = new Set(
+    const availableGroups = new Set<string>(
       masterHealthIssues
         .filter((issue) => issue.is_active && issue.is_ddc_approved)
         .map((issue) => issue.issue_group)
     );
-    return HEALTH_ISSUE_GROUPS.filter((option) => availableGroups.has(option.value));
-  }, [masterHealthIssues]);
+    overviewIssueDonutRows.forEach((item) => availableGroups.add(item.group));
+    const options: Array<{ value: string; label: string }> = HEALTH_ISSUE_GROUPS.filter((option) => availableGroups.has(option.value));
+    if (availableGroups.has("legacy_unresolved")) {
+      options.push({ value: "legacy_unresolved", label: healthIssueGroupLabels.legacy_unresolved });
+    }
+    return options;
+  }, [masterHealthIssues, overviewIssueDonutRows]);
 
   const rankedIssueRows = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLocaleLowerCase("th-TH");
@@ -104,9 +111,9 @@ export default function OverviewIssueDonutPanel({ model }: OverviewIssueDonutPan
   }, [overviewIssueDonutRows, searchTerm, selectedGroup]);
 
   const otherIssueRows = useMemo(() => {
-    const visibleIssueSet = new Set(rankedIssueRows.map((item) => item.issue));
+    const visibleIssueSet = new Set(rankedIssueRows.map((item) => `${item.issue}:${item.group}`));
     return overviewIssueDonutRows
-      .filter((item) => !visibleIssueSet.has(item.issue))
+      .filter((item) => !visibleIssueSet.has(`${item.issue}:${item.group}`))
       .sort((a, b) => b.districtCount - a.districtCount || b.count - a.count || a.issue.localeCompare(b.issue, "th"));
   }, [overviewIssueDonutRows, rankedIssueRows]);
 
@@ -179,7 +186,7 @@ export default function OverviewIssueDonutPanel({ model }: OverviewIssueDonutPan
                 ? ` จังหวัด${selectedOverviewMapProvinceName}`
                 : ""}
           </h3>
-          <p>กดชิ้นกราฟเพื่อดูรายละเอียด หรือกดจำนวนตรงกลางเพื่อกลับสู่ภาพรวม</p>
+          <p>กดชิ้นกราฟเพื่อดูรายละเอียด หรือกดค่าร้อยละตรงกลางเพื่อกลับสู่ภาพรวม</p>
         </div>
         <button
           type="button"
@@ -213,12 +220,12 @@ export default function OverviewIssueDonutPanel({ model }: OverviewIssueDonutPan
                 const isSelected = row.isOther
                   ? isShowingOtherIssues
                   : selectedOverviewMapIssue === row.issue;
-                const isHovered = hoveredSlice?.issue === row.issue;
+                const isHovered = hoveredSlice?.issue === row.issue && hoveredSlice?.group === row.group;
                 const hasSelection = Boolean(selectedOverviewMapIssue) || isShowingOtherIssues;
                 const isDimmed = hasSelection && !isSelected;
                 return (
                   <g
-                    key={row.issue}
+                    key={`${row.issue}:${row.group}`}
                     style={{
                       cursor: "pointer",
                       opacity: isDimmed && !isHovered ? 0.45 : 1,
@@ -281,11 +288,11 @@ export default function OverviewIssueDonutPanel({ model }: OverviewIssueDonutPan
                 setSelectedOverviewMapIssue("");
                 setIsShowingOtherIssues(false);
               }}
-              aria-label={`กลับสู่ภาพรวมทั้งหมด ${overviewIssueTotal.toLocaleString("th-TH")} ประเด็น`}
+              aria-label={`กลับสู่ภาพรวม ${Math.round(overviewMetricTotals.reportingIssuePercent).toLocaleString("th-TH")} เปอร์เซ็นต์ จาก ${overviewMetricTotals.reportingIssueCount.toLocaleString("th-TH")} ใน ${overviewMetricTotals.issueCount.toLocaleString("th-TH")} ประเด็น`}
               title="กลับสู่ภาพรวมทั้งหมด"
             >
-              <strong>{overviewIssueTotal.toLocaleString("th-TH")}</strong>
-              <span>ประเด็น</span>
+              <strong>{Math.round(overviewMetricTotals.reportingIssuePercent).toLocaleString("th-TH")}%</strong>
+              <span>{overviewMetricTotals.reportingIssueCount.toLocaleString("th-TH")} / {overviewMetricTotals.issueCount.toLocaleString("th-TH")} ประเด็น</span>
               <small>ภาพรวม พชอ./พชข.</small>
             </button>
           </div>
@@ -334,7 +341,7 @@ export default function OverviewIssueDonutPanel({ model }: OverviewIssueDonutPan
                     const isActive = selectedOverviewMapIssue === item.issue;
                     return (
                       <button
-                        key={item.issue}
+                        key={`${item.issue}:${item.group}`}
                         type="button"
                         className={`overview-issue-donut-detail__item${isActive ? " is-active" : ""}`}
                         onClick={() =>
@@ -361,7 +368,7 @@ export default function OverviewIssueDonutPanel({ model }: OverviewIssueDonutPan
                   const isActive = selectedOverviewMapIssue === item.issue;
                   return (
                     <button
-                      key={item.issue}
+                      key={`${item.issue}:${item.group}`}
                       type="button"
                       className={`overview-issue-donut-detail__item${isActive ? " is-active" : ""}`}
                       onClick={() => setSelectedOverviewMapIssue((current) => (current === item.issue ? "" : item.issue))}

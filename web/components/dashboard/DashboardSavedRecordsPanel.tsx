@@ -4,6 +4,7 @@ import { getRelatedLabel } from "./dashboard-shared";
 import { getAgencyDisplayLabel } from "@/services/agency-display";
 import { FISCAL_YEARS } from "@/services/fiscal-year";
 import type { DashboardModel } from "./DashboardSectionImpl";
+import { getHealthIssueGroupLabel } from "@/types/mvp";
 
 type DashboardSavedRecordsPanelProps = { model: DashboardModel };
 
@@ -159,12 +160,22 @@ export default function DashboardSavedRecordsPanel({ model }: DashboardSavedReco
                         <td>
                           <select
                             className="table-input"
-                            value={editDraft.healthIssue}
-                            onChange={(event) => updateEditDraft({ healthIssue: event.target.value })}
+                            value={editDraft.healthIssueMembershipId}
+                            onChange={(event) => {
+                              const selected = masterHealthIssues.find((issue) => issue.membership_id === event.target.value);
+                              updateEditDraft({
+                                healthIssue: selected?.name_th ?? "",
+                                healthIssueId: selected?.issue_id ?? "",
+                                healthIssueMembershipId: selected?.membership_id ?? "",
+                                healthIssueGroup: selected?.issue_group ?? "",
+                              });
+                            }}
                           >
                             <option value="">เลือกประเด็นโรค/ภัยสุขภาพ</option>
                             {masterHealthIssues.map((issue) => (
-                              <option key={`${issue.issue_group}:${issue.id}`} value={issue.name_th}>{issue.name_th}</option>
+                              <option key={issue.membership_id} value={issue.membership_id}>
+                                {issue.name_th} — {getHealthIssueGroupLabel(issue.issue_group)}
+                              </option>
                             ))}
                           </select>
                         </td>
@@ -185,7 +196,12 @@ export default function DashboardSavedRecordsPanel({ model }: DashboardSavedReco
                         <td>{getAgencyDisplayLabel(row.agency_code, getRelatedLabel(row.master_agencies, (agency) => agency.label_th))}</td>
                         <td>{getRelatedLabel(row.master_provinces, (province) => province.name_th) ?? row.province_code ?? "-"}</td>
                         <td>{getRelatedLabel(row.master_districts, (district) => district.name_th) ?? row.district_code ?? "-"}</td>
-                        <td>{row.health_issue_text}</td>
+                        <td>
+                          {row.health_issue_text}
+                          <small className="section-row__subtitle">
+                            {row.health_issue_group ? getHealthIssueGroupLabel(row.health_issue_group) : "ข้อมูลเดิมที่ยังไม่ระบุกลุ่ม"}
+                          </small>
+                        </td>
                         <td>
                           <div className="record-actions">
                             <button type="button" className="cta cta--ghost" onClick={() => beginEditRecord(row)} disabled={Boolean(savingRecordId || deletingRecordId)}>

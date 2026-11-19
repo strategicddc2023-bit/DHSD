@@ -52,8 +52,8 @@ export default function HealthIssueMasterPanel() {
     setLoading(true);
     setMessage("");
     const { data, error } = await supabase
-      .from("master_health_issues")
-      .select("id,name_th,issue_group,is_active,is_ddc_approved,sort_order,created_at,updated_at")
+      .from("v_health_issue_catalog")
+      .select("id,issue_id,membership_id,name_th,issue_group,is_active,is_ddc_approved,is_primary_issue,is_reporting_target,sort_order,created_at,updated_at")
       .order("is_active", { ascending: false })
       .order("issue_group", { ascending: true })
       .order("sort_order", { ascending: true })
@@ -97,12 +97,37 @@ export default function HealthIssueMasterPanel() {
     setSaving(true);
     setMessage("");
     const isDdcApproved = newCatalogStatus === "approved";
-    const { error } = await supabase.from("master_health_issues").insert({
-      name_th: name,
-      issue_group: newIssueGroup,
-      is_active: false,
-      is_ddc_approved: isDdcApproved,
-    });
+    const existingIssue = issues.find(
+      (item) => normalizeIssueName(item.name_th).toLowerCase() === name.toLowerCase()
+    );
+    let issueId = existingIssue?.issue_id ?? "";
+    let error: { code?: string; message: string } | null = null;
+
+    if (!issueId) {
+      const result = await supabase
+        .from("master_health_issues")
+        .insert({
+          name_th: name,
+          issue_group: newIssueGroup,
+          is_active: true,
+          is_ddc_approved: isDdcApproved,
+          is_primary_issue: false,
+        })
+        .select("id")
+        .single();
+      issueId = result.data?.id ?? "";
+      error = result.error;
+    }
+
+    if (!error && issueId) {
+      const result = await supabase.from("health_issue_group_memberships").insert({
+        health_issue_id: issueId,
+        issue_group: newIssueGroup,
+        is_active: false,
+        is_ddc_approved: isDdcApproved,
+      });
+      error = result.error;
+    }
     setSaving(false);
 
     if (error) {
@@ -156,7 +181,26 @@ export default function HealthIssueMasterPanel() {
 
     setSaving(true);
     setMessage("");
-    const { error } = await supabase.from("master_health_issues").update({ name_th: name, issue_group: editingGroup }).eq("id", issue.id);
+    const membershipsForIssue = issues.filter((item) => item.issue_id === issue.issue_id);
+    const canRenameIssue = membershipsForIssue.every((item) => !item.is_ddc_approved);
+    if (!canRenameIssue && name !== issue.name_th) {
+      setSaving(false);
+      setMessage("ชื่อนี้เชื่อมกับรายการมาตรฐานกรมควบคุมโรค จึงแก้ได้เฉพาะกลุ่มของรายการนอกบัญชีกรมฯ");
+      return;
+    }
+
+    let error: { code?: string; message: string } | null = null;
+    if (name !== issue.name_th) {
+      const result = await supabase.from("master_health_issues").update({ name_th: name }).eq("id", issue.issue_id);
+      error = result.error;
+    }
+    if (!error && editingGroup !== issue.issue_group) {
+      const result = await supabase
+        .from("health_issue_group_memberships")
+        .update({ issue_group: editingGroup })
+        .eq("id", issue.membership_id);
+      error = result.error;
+    }
     setSaving(false);
 
     if (error) {
@@ -177,9 +221,9 @@ export default function HealthIssueMasterPanel() {
     setSaving(true);
     setMessage("");
     const { error } = await supabase
-      .from("master_health_issues")
+      .from("health_issue_group_memberships")
       .update({ is_active: !issue.is_active })
-      .eq("id", issue.id);
+      .eq("id", issue.membership_id);
     setSaving(false);
 
     if (error) {
@@ -277,12 +321,12 @@ export default function HealthIssueMasterPanel() {
       <div className="table-wrap">
         <table className="health-issue-master-table">
           <thead>
-            <tr><th>ลำดับ</th><th>กลุ่ม</th><th>ประเด็นโรค/ภัยสุขภาพ</th><th>สถานะบัญชี</th><th>สถานะใช้งาน</th><th>จัดการ</th></tr>
+            <tr><th>ลำดับ</th><th>กลุ่ม</th><th>ประเด็นโรค/ภัยสุขภาพ</th><th>สถานะบัญชี</th><th>การใช้งานข้อมูล</th><th>สถานะใช้งาน</th><th>จัดการ</th></tr>
           </thead>
           <tbody>
             {filteredIssues.length === 0 ? (
               <tr>
-                <td colSpan={6}>
+                <td colSpan={7}>
                   {searchQuery.trim()
                     ? `ไม่พบรายการประเด็นโรค/ภัยสุขภาพที่ตรงกับคำค้นหา "${searchQuery}"`
                     : "ยังไม่มีรายการประเด็นโรค/ภัยสุขภาพในกลุ่มนี้"}
@@ -313,6 +357,15 @@ export default function HealthIssueMasterPanel() {
                       )}
                     </td>
                     <td>{issue.is_ddc_approved ? "บัญชีกรมควบคุมโรค" : "นอกบัญชีกรมฯ"}</td>
+                    <td>
+                      {issue.is_reporting_target && !issue.is_primary_issue
+                        ? "ชุดติดตาม 26 (ไม่นับเพิ่มใน 37)"
+                        : issue.is_reporting_target
+                          ? "ประเด็นหลัก / ชุดติดตาม 26"
+                          : issue.is_primary_issue
+                            ? "ประเด็นหลัก"
+                            : "รายการทั่วไป"}
+                    </td>
                     <td>{issue.is_active ? "ใช้งาน" : "ปิดใช้งาน"}</td>
                     <td>
                       <div className="record-actions">

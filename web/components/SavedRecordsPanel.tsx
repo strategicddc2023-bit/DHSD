@@ -13,6 +13,7 @@ import type {
   Province,
 } from "@/types/mvp";
 import type { AccessScope } from "@/services/access-control";
+import { getHealthIssueGroupLabel } from "@/types/mvp";
 
 type SavedRecordDraft = {
   fiscalYear: number;
@@ -20,6 +21,9 @@ type SavedRecordDraft = {
   provinceCode: string;
   districtCode: string;
   healthIssue: string;
+  healthIssueId: string;
+  healthIssueMembershipId: string;
+  healthIssueGroup: string;
   evaluationStatus: IntakeEvaluationStatus | "";
 };
 
@@ -83,8 +87,8 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
         supabase.from("master_districts").select("code,name_th,province_code").order("name_th", { ascending: true }),
         supabase.from("agency_provinces").select("agency_code,province_code"),
         supabase
-          .from("master_health_issues")
-          .select("id,name_th,issue_group,is_active,is_ddc_approved,sort_order,created_at,updated_at")
+          .from("v_health_issue_catalog")
+          .select("id,issue_id,membership_id,name_th,issue_group,is_active,is_ddc_approved,is_primary_issue,is_reporting_target,sort_order,created_at,updated_at")
           .eq("is_active", true)
           .eq("is_ddc_approved", true)
           .order("issue_group", { ascending: true })
@@ -124,7 +128,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
       let query = supabase
         .from("intake_records")
         .select(
-          "id,created_at,fiscal_year,health_issue_text,evaluation_status,agency_code,province_code,district_code,master_agencies(label_th),master_provinces(name_th),master_districts(name_th)"
+          "id,created_at,fiscal_year,health_issue_text,health_issue_id,health_issue_membership_id,health_issue_group,evaluation_status,agency_code,province_code,district_code,master_agencies(label_th),master_provinces(name_th),master_districts(name_th)"
         )
         .in("health_issue_text", activeHealthIssueNames)
         .order("created_at", { ascending: false })
@@ -193,6 +197,9 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
       provinceCode: row.province_code,
       districtCode: row.district_code,
       healthIssue: row.health_issue_text ?? "",
+      healthIssueId: row.health_issue_id ?? "",
+      healthIssueMembershipId: row.health_issue_membership_id ?? "",
+      healthIssueGroup: row.health_issue_group ?? "",
       evaluationStatus: row.evaluation_status ?? "",
     });
   };
@@ -204,8 +211,9 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
 
   const saveEdit = async () => {
     if (!editingRecordId || !editDraft) return;
-    if (!isSupportedFiscalYear(editDraft.fiscalYear) || !editDraft.agencyCode || !editDraft.provinceCode || !editDraft.districtCode || !activeHealthIssueNames.includes(editDraft.healthIssue)) {
-      setRecordActionMessage("กรอกข้อมูลให้ครบก่อนบันทึกการแก้ไข");
+    const selectedMembership = healthIssueOptions.find((issue) => issue.membership_id === editDraft.healthIssueMembershipId);
+    if (!isSupportedFiscalYear(editDraft.fiscalYear) || !editDraft.agencyCode || !editDraft.provinceCode || !editDraft.districtCode || !selectedMembership) {
+      setRecordActionMessage("กรอกข้อมูลให้ครบและเลือกกลุ่มของประเด็นก่อนบันทึกการแก้ไข");
       return;
     }
 
@@ -219,7 +227,10 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
         agency_code: editDraft.agencyCode,
         province_code: editDraft.provinceCode,
         district_code: editDraft.districtCode,
-        health_issue_text: editDraft.healthIssue.trim(),
+        health_issue_text: selectedMembership.name_th,
+        health_issue_id: selectedMembership.issue_id,
+        health_issue_membership_id: selectedMembership.membership_id,
+        health_issue_group: selectedMembership.issue_group,
         evaluation_status: editDraft.evaluationStatus || null,
       })
       .eq("id", editingRecordId);
@@ -259,7 +270,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
 
   const exportCsv = () => {
     if (rows.length === 0) return;
-    const headers = ["เวลา", "ปีงบประมาณ", "หน่วยงาน", "จังหวัด", "อำเภอ", "ประเด็นโรค/ภัยสุขภาพ", "ผลการคัดเกณฑ์"];
+    const headers = ["เวลา", "ปีงบประมาณ", "หน่วยงาน", "จังหวัด", "อำเภอ", "ประเด็นโรค/ภัยสุขภาพ", "กลุ่มรายการ", "ผลการคัดเกณฑ์"];
     const body = rows.map((row) => [
       new Date(row.created_at).toLocaleString("th-TH"),
       row.fiscal_year,
@@ -267,6 +278,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
       getRelatedLabel(row.master_provinces, (p) => p.name_th) ?? row.province_code ?? "-",
       getRelatedLabel(row.master_districts, (d) => d.name_th) ?? row.district_code ?? "-",
       row.health_issue_text ?? "-",
+      row.health_issue_group ? getHealthIssueGroupLabel(row.health_issue_group) : "ข้อมูลเดิมที่ยังไม่ระบุกลุ่ม",
       evaluationStatusLabel(row.evaluation_status),
     ]);
     const csvLines = [headers, ...body]
@@ -344,7 +356,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
       <div className="table-wrap">
         <table>
           <thead>
-            <tr><th>เวลา</th><th>ปีงบประมาณ</th><th>หน่วยงาน</th><th>จังหวัด</th><th>อำเภอ</th><th>ประเด็นโรค/ภัยสุขภาพ</th><th>ผลการคัดเกณฑ์</th><th>จัดการ</th></tr>
+            <tr><th>เวลา</th><th>ปีงบประมาณ</th><th>หน่วยงาน</th><th>จังหวัด</th><th>อำเภอ</th><th>ประเด็นโรค/ภัยสุขภาพและกลุ่ม</th><th>ผลการคัดเกณฑ์</th><th>จัดการ</th></tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
@@ -406,12 +418,23 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
                         <td>
                           <select
                             className="table-input"
-                            value={editDraft.healthIssue}
-                            onChange={(e) => setEditDraft({ ...editDraft, healthIssue: e.target.value })}
+                            value={editDraft.healthIssueMembershipId}
+                            onChange={(e) => {
+                              const selected = healthIssueOptions.find((issue) => issue.membership_id === e.target.value);
+                              setEditDraft({
+                                ...editDraft,
+                                healthIssue: selected?.name_th ?? "",
+                                healthIssueId: selected?.issue_id ?? "",
+                                healthIssueMembershipId: selected?.membership_id ?? "",
+                                healthIssueGroup: selected?.issue_group ?? "",
+                              });
+                            }}
                           >
                             <option value="">เลือกประเด็นโรค/ภัยสุขภาพ</option>
                             {healthIssueOptions.map((issue) => (
-                              <option key={`${issue.issue_group}:${issue.id}`} value={issue.name_th}>{issue.name_th}</option>
+                              <option key={issue.membership_id} value={issue.membership_id}>
+                                {issue.name_th} — {getHealthIssueGroupLabel(issue.issue_group)}
+                              </option>
                             ))}
                           </select>
                         </td>
@@ -444,7 +467,12 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
                         <td>{getAgencyDisplayLabel(row.agency_code, getRelatedLabel(row.master_agencies, (a) => a.label_th))}</td>
                         <td>{getRelatedLabel(row.master_provinces, (p) => p.name_th) ?? row.province_code ?? "-"}</td>
                         <td>{getRelatedLabel(row.master_districts, (d) => d.name_th) ?? row.district_code ?? "-"}</td>
-                        <td>{row.health_issue_text}</td>
+                        <td>
+                          {row.health_issue_text}
+                          <small className="section-row__subtitle">
+                            {row.health_issue_group ? getHealthIssueGroupLabel(row.health_issue_group) : "ข้อมูลเดิมที่ยังไม่ระบุกลุ่ม"}
+                          </small>
+                        </td>
                         <td>{evaluationStatusLabel(row.evaluation_status)}</td>
                         <td>
                           <div className="record-actions">

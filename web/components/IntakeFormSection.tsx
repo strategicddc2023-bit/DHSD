@@ -55,8 +55,8 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
         supabase.from("master_provinces").select("code,name_th").order("name_th", { ascending: true }),
         supabase.from("agency_provinces").select("agency_code,province_code"),
         supabase
-          .from("master_health_issues")
-          .select("id,name_th,issue_group,is_active,is_ddc_approved,sort_order,created_at,updated_at")
+          .from("v_health_issue_catalog")
+          .select("id,issue_id,membership_id,name_th,issue_group,is_active,is_ddc_approved,is_primary_issue,is_reporting_target,sort_order,created_at,updated_at")
           .eq("is_active", true)
           .order("issue_group", { ascending: true })
           .order("sort_order", { ascending: true })
@@ -154,7 +154,15 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
   }, [healthIssueOptions, selectedCatalog, selectedGroup]);
 
   const resolvedHealthIssue = formData.healthIssue.trim();
-  const isSelectableHealthIssue = filteredHealthIssueOptions.some((option) => option.name_th === resolvedHealthIssue);
+  const selectedHealthIssueOption = filteredHealthIssueOptions.find(
+    (option) => option.membership_id === formData.healthIssueMembershipId
+  );
+  const isSelectableHealthIssue = Boolean(
+    selectedHealthIssueOption
+      && selectedHealthIssueOption.name_th === resolvedHealthIssue
+      && selectedHealthIssueOption.issue_id === formData.healthIssueId
+      && selectedHealthIssueOption.issue_group === formData.healthIssueGroup
+  );
 
   const canSubmit = useMemo(() => {
     return Boolean(isSupportedFiscalYear(formData.fiscalYear) && formData.agencyCode && formData.provinceCode && formData.districtCode && isSelectableHealthIssue);
@@ -175,6 +183,9 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
       province_code: formData.provinceCode,
       district_code: formData.districtCode,
       health_issue_text: resolvedHealthIssue,
+      health_issue_id: formData.healthIssueId,
+      health_issue_membership_id: formData.healthIssueMembershipId,
+      health_issue_group: formData.healthIssueGroup,
       evaluation_status: formData.evaluationStatus || null,
     });
 
@@ -186,7 +197,14 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
     }
 
     setMessage("บันทึกข้อมูลสำเร็จแล้ว");
-    onChange({ ...formData, healthIssue: "", evaluationStatus: "" });
+    onChange({
+      ...formData,
+      healthIssue: "",
+      healthIssueId: "",
+      healthIssueMembershipId: "",
+      healthIssueGroup: "",
+      evaluationStatus: "",
+    });
     onSaved?.();
   };
 
@@ -298,7 +316,13 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
             onChange={(event) => {
               setSelectedCatalog(event.target.value as HealthIssueCatalogFilter);
               setSelectedGroup("all");
-              onChange({ ...formData, healthIssue: "" });
+              onChange({
+                ...formData,
+                healthIssue: "",
+                healthIssueId: "",
+                healthIssueMembershipId: "",
+                healthIssueGroup: "",
+              });
             }}
           >
             <option value="approved">บัญชีกรมควบคุมโรค</option>
@@ -312,7 +336,13 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
             value={selectedGroup}
             onChange={(event) => {
               setSelectedGroup(event.target.value as HealthIssueGroup | "all");
-              onChange({ ...formData, healthIssue: "" });
+              onChange({
+                ...formData,
+                healthIssue: "",
+                healthIssueId: "",
+                healthIssueMembershipId: "",
+                healthIssueGroup: "",
+              });
             }}
           >
             <option value="all">ทั้งหมด (ทุกกลุ่มโรค)</option>
@@ -331,12 +361,20 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
             value={formData.healthIssue}
             onChange={(event) => {
               const val = event.target.value;
-              onChange({ ...formData, healthIssue: val });
-              if (val) {
-                const match = filteredHealthIssueOptions.find((opt) => opt.name_th === val);
-                if (match && selectedGroup === "all") {
-                  setSelectedGroup(match.issue_group);
-                }
+              const exactMatches = filteredHealthIssueOptions.filter((option) => option.name_th === val);
+              const match = exactMatches.length === 1 ? exactMatches[0] : null;
+              onChange({
+                ...formData,
+                healthIssue: val,
+                healthIssueId: match?.issue_id ?? "",
+                healthIssueMembershipId: match?.membership_id ?? "",
+                healthIssueGroup: match?.issue_group ?? "",
+              });
+              if (match && selectedGroup === "all") {
+                setSelectedGroup(match.issue_group);
+                setMessage("");
+              } else if (val && exactMatches.length > 1) {
+                setMessage("ประเด็นนี้อยู่มากกว่าหนึ่งกลุ่ม กรุณาเลือกกลุ่มโรค/ภัยสุขภาพก่อนบันทึก");
               }
             }}
             placeholder={
@@ -347,7 +385,11 @@ export default function IntakeFormSection({ formData, onChange, onSaved, accessS
           />
           <datalist id="health-issue-options">
             {filteredHealthIssueOptions.map((option) => (
-              <option key={option.id} value={option.name_th} />
+              <option
+                key={option.membership_id}
+                value={option.name_th}
+                label={getHealthIssueGroupLabel(option.issue_group)}
+              />
             ))}
           </datalist>
         </label>
