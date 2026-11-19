@@ -304,14 +304,14 @@ export function useDashboardInsights(model: ReturnType<typeof import("./useDashb
   const primaryIssueCount = useMemo(
     () => new Set(
       masterHealthIssues
-        .filter((issue) => issue.is_ddc_approved && issue.is_primary_issue)
+        .filter((issue) => issue.is_active && issue.is_ddc_approved && issue.is_primary_issue)
         .map((issue) => issue.issue_id)
     ).size,
     [masterHealthIssues]
   );
   const reportingIssueCount = useMemo(
     () => masterHealthIssues.filter(
-      (issue) => issue.is_ddc_approved && issue.is_reporting_target
+      (issue) => issue.is_active && issue.is_ddc_approved && issue.is_reporting_target
     ).length,
     [masterHealthIssues]
   );

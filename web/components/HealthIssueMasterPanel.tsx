@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/services/supabase-client";
+import { notifyHealthIssueCatalogChanged } from "@/services/health-issue-catalog-events";
 import type { HealthIssueGroup, HealthIssueOption } from "@/types/mvp";
 import { HEALTH_ISSUE_GROUPS, getHealthIssueGroupLabel } from "@/types/mvp";
 
@@ -143,6 +144,7 @@ export default function HealthIssueMasterPanel() {
     setNewCatalogStatus("");
     setNewIssueGroup("royal_initiative");
     setMessage(`เพิ่มรายการ${isDdcApproved ? "บัญชีกรมควบคุมโรค" : "นอกบัญชีกรมฯ"}แล้ว โดยตั้งเป็นปิดใช้งาน`);
+    notifyHealthIssueCatalogChanged();
     void loadIssues();
   };
 
@@ -214,6 +216,7 @@ export default function HealthIssueMasterPanel() {
 
     cancelEdit();
     setMessage("แก้ไขรายการเรียบร้อยแล้ว");
+    notifyHealthIssueCatalogChanged();
     void loadIssues();
   };
 
@@ -232,6 +235,7 @@ export default function HealthIssueMasterPanel() {
     }
 
     setMessage(issue.is_active ? "ปิดใช้งานรายการแล้ว" : "เปิดใช้งานรายการแล้ว");
+    notifyHealthIssueCatalogChanged();
     void loadIssues();
   };
 

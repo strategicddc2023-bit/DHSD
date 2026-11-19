@@ -172,11 +172,13 @@ export default function DashboardSavedRecordsPanel({ model }: DashboardSavedReco
                             }}
                           >
                             <option value="">เลือกประเด็นโรค/ภัยสุขภาพ</option>
-                            {masterHealthIssues.map((issue) => (
+                            {masterHealthIssues
+                              .filter((issue) => issue.is_active && issue.is_ddc_approved)
+                              .map((issue) => (
                               <option key={issue.membership_id} value={issue.membership_id}>
                                 {issue.name_th} — {getHealthIssueGroupLabel(issue.issue_group)}
                               </option>
-                            ))}
+                              ))}
                           </select>
                         </td>
                         <td>

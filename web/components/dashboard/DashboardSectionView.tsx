@@ -187,7 +187,7 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
                 </article>
                 <article>
                   <span>อำเภอทั้งหมด</span>
-                  <strong>อำเภอ 875 กทม. 50</strong>
+                  <strong>อำเภอ 878 กทม. 50</strong>
                 </article>
                 <article>
                   <span>ภาพรวมประเด็นการขับเคลื่อนงาน พชอ/พชข(ประเด็น)</span>

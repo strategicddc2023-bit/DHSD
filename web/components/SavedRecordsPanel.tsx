@@ -80,7 +80,10 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
   const pageCount = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const startIdx = totalCount === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const endIdx = Math.min(totalCount, page * PAGE_SIZE);
-  const activeHealthIssueNames = useMemo(() => [...new Set(healthIssueOptions.map((issue) => issue.name_th))], [healthIssueOptions]);
+  const activeHealthIssueMembershipIds = useMemo(
+    () => healthIssueOptions.map((issue) => issue.membership_id),
+    [healthIssueOptions]
+  );
   const availableHealthIssueGroups = useMemo(() => {
     const availableGroups = new Set(healthIssueOptions.map((issue) => issue.issue_group));
     return HEALTH_ISSUE_GROUPS.filter((option) => availableGroups.has(option.value));
@@ -129,7 +132,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
       if (!isHealthIssueCatalogLoaded) return;
 
       setLoading(true);
-      if (activeHealthIssueNames.length === 0) {
+      if (activeHealthIssueMembershipIds.length === 0) {
         setRows([]);
         setTotalCount(0);
         setLoading(false);
@@ -143,14 +146,14 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
         .select(
           "id,created_at,fiscal_year,health_issue_text,health_issue_id,health_issue_membership_id,health_issue_group,evaluation_status,agency_code,province_code,district_code,master_agencies(label_th),master_provinces(name_th),master_districts(name_th)"
         )
-        .in("health_issue_text", activeHealthIssueNames)
+        .in("health_issue_membership_id", activeHealthIssueMembershipIds)
         .order("created_at", { ascending: false })
         .range(from, to);
 
       let countQuery = supabase
         .from("intake_records")
         .select("*", { count: "exact", head: true })
-        .in("health_issue_text", activeHealthIssueNames);
+        .in("health_issue_membership_id", activeHealthIssueMembershipIds);
 
       if (activeAgencyFilter) {
         query = query.eq("agency_code", activeAgencyFilter);
@@ -182,7 +185,7 @@ export default function SavedRecordsPanel({ refreshKey, accessScope }: SavedReco
       setLoading(false);
     };
     void loadRows();
-  }, [page, refreshKey, localRefresh, activeAgencyFilter, activeProvinceFilter, filterFiscalYear, filterHealthIssueGroup, healthIssueSearchQuery, activeHealthIssueNames, isHealthIssueCatalogLoaded]);
+  }, [page, refreshKey, localRefresh, activeAgencyFilter, activeProvinceFilter, filterFiscalYear, filterHealthIssueGroup, healthIssueSearchQuery, activeHealthIssueMembershipIds, isHealthIssueCatalogLoaded]);
 
   // Visible filter options
   const visibleProvinces = useMemo(() => {
