@@ -69,6 +69,13 @@ function formatSlicePercent(value: number) {
   return `${value.toLocaleString("th-TH", { maximumFractionDigits: value < 10 ? 1 : 0 })}%`;
 }
 
+function normalizeIssueSearch(value: string) {
+  return value
+    .normalize("NFKC")
+    .toLocaleLowerCase("th-TH")
+    .replace(/[\s/()._-]+/g, "");
+}
+
 export default function OverviewIssueDonutPanel({ model }: OverviewIssueDonutPanelProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGroup, setSelectedGroup] = useState("all");
@@ -101,14 +108,44 @@ export default function OverviewIssueDonutPanel({ model }: OverviewIssueDonutPan
     return options;
   }, [masterHealthIssues, overviewIssueDonutRows]);
 
+  const searchableIssueRows = useMemo(() => {
+    const rowsByIssueAndGroup = new Map(
+      overviewIssueDonutRows.map((item) => [
+        `${normalizeIssueSearch(item.issue)}::${item.group}`,
+        item,
+      ])
+    );
+
+    masterHealthIssues
+      .filter((issue) => issue.is_active && issue.is_ddc_approved)
+      .forEach((issue) => {
+        const key = `${normalizeIssueSearch(issue.name_th)}::${issue.issue_group}`;
+        if (rowsByIssueAndGroup.has(key)) return;
+        rowsByIssueAndGroup.set(key, {
+          issue: issue.name_th,
+          count: 0,
+          group: issue.issue_group,
+          groupLabel: healthIssueGroupLabels[issue.issue_group] ?? issue.issue_group,
+          provinceCount: 0,
+          totalDistrictCount: 0,
+          districtCount: 0,
+          percent: 0,
+          color: "#94a3b8",
+        });
+      });
+
+    return [...rowsByIssueAndGroup.values()];
+  }, [masterHealthIssues, overviewIssueDonutRows]);
+
   const rankedIssueRows = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLocaleLowerCase("th-TH");
-    return overviewIssueDonutRows
+    const normalizedSearch = normalizeIssueSearch(searchTerm.trim());
+    const sourceRows = normalizedSearch ? searchableIssueRows : overviewIssueDonutRows;
+    return sourceRows
       .filter((item) => selectedGroup === "all" || item.group === selectedGroup)
-      .filter((item) => !normalizedSearch || item.issue.toLocaleLowerCase("th-TH").includes(normalizedSearch))
+      .filter((item) => !normalizedSearch || normalizeIssueSearch(item.issue).includes(normalizedSearch))
       .sort((a, b) => b.districtCount - a.districtCount || b.count - a.count || a.issue.localeCompare(b.issue, "th"))
       .slice(0, 10);
-  }, [overviewIssueDonutRows, searchTerm, selectedGroup]);
+  }, [overviewIssueDonutRows, searchableIssueRows, searchTerm, selectedGroup]);
 
   const otherIssueRows = useMemo(() => {
     const visibleIssueSet = new Set(rankedIssueRows.map((item) => `${item.issue}:${item.group}`));
@@ -205,7 +242,7 @@ export default function OverviewIssueDonutPanel({ model }: OverviewIssueDonutPan
         </button>
       </div>
 
-      {overviewIssueDonutRows.length === 0 ? (
+      {searchableIssueRows.length === 0 ? (
         <p className="province-issue-empty">ยังไม่มีข้อมูลประเด็นโรค/ภัยสุขภาพ</p>
       ) : (
         <div className="overview-issue-control-panel__body">
