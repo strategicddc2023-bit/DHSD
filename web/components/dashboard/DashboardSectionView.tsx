@@ -183,11 +183,11 @@ export default function DashboardSectionView({ model }: DashboardSectionViewProp
               <div className="dashboard-overview__metrics" aria-label="ตัวชี้วัดภาพรวม">
                 <article>
                   <span>จังหวัดทั้งหมด</span>
-                  <strong>76 จังหวัด 1 กทม.</strong>
+                  <strong>76/1 จังหวัด</strong>
                 </article>
                 <article>
                   <span>อำเภอทั้งหมด</span>
-                  <strong>อำเภอ 878 กทม. 50</strong>
+                  <strong>อำเภอ 878/50 เขต</strong>
                 </article>
                 <article>
                   <span>ภาพรวมประเด็นการขับเคลื่อนงาน พชอ/พชข(ประเด็น)</span>

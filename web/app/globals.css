@@ -2441,6 +2441,11 @@ input {
   min-width: 0;
 }
 
+.overview-issue-donut-detail__entry {
+  display: grid;
+  min-width: 0;
+}
+
 .overview-issue-donut-detail__item {
   width: 100%;
   display: grid;

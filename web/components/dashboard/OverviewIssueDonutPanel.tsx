@@ -80,6 +80,7 @@ export default function OverviewIssueDonutPanel({ model }: OverviewIssueDonutPan
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGroup, setSelectedGroup] = useState("all");
   const [isShowingOtherIssues, setIsShowingOtherIssues] = useState(false);
+  const [selectedIssueRowKey, setSelectedIssueRowKey] = useState("");
   const [hoveredSlice, setHoveredSlice] = useState<RoseSliceRow | null>(null);
   const {
     overviewIssueDonutRows,
@@ -235,6 +236,7 @@ export default function OverviewIssueDonutPanel({ model }: OverviewIssueDonutPan
             setSearchTerm("");
             setSelectedGroup("all");
             setIsShowingOtherIssues(false);
+            setSelectedIssueRowKey("");
           }}
           disabled={isClearDisabled}
         >
@@ -274,10 +276,14 @@ export default function OverviewIssueDonutPanel({ model }: OverviewIssueDonutPan
                       if (row.isOther) {
                         setSelectedOverviewMapIssue("");
                         setIsShowingOtherIssues((prev) => !prev);
+                        setSelectedIssueRowKey("");
                         return;
                       }
+                      const rowKey = `${row.issue}:${row.group}`;
+                      const isCurrentRow = selectedOverviewMapIssue === row.issue && selectedIssueRowKey === rowKey;
                       setIsShowingOtherIssues(false);
-                      setSelectedOverviewMapIssue((current) => (current === row.issue ? "" : row.issue));
+                      setSelectedIssueRowKey(isCurrentRow ? "" : rowKey);
+                      setSelectedOverviewMapIssue(isCurrentRow ? "" : row.issue);
                     }}
                   >
                     <path
@@ -324,6 +330,7 @@ export default function OverviewIssueDonutPanel({ model }: OverviewIssueDonutPan
               onClick={() => {
                 setSelectedOverviewMapIssue("");
                 setIsShowingOtherIssues(false);
+                setSelectedIssueRowKey("");
               }}
               aria-label={`กลับสู่ภาพรวม ${Math.round(overviewMetricTotals.reportingIssuePercent).toLocaleString("th-TH")} เปอร์เซ็นต์ จาก ${overviewMetricTotals.reportingIssueCount.toLocaleString("th-TH")} ใน ${overviewMetricTotals.issueCount.toLocaleString("th-TH")} ประเด็น`}
               title="กลับสู่ภาพรวมทั้งหมด"
@@ -375,24 +382,28 @@ export default function OverviewIssueDonutPanel({ model }: OverviewIssueDonutPan
               ) : (
                 <div className="overview-issue-donut-detail__group">
                   {otherIssueRows.map((item) => {
-                    const isActive = selectedOverviewMapIssue === item.issue;
+                    const rowKey = `${item.issue}:${item.group}`;
+                    const isActive = selectedOverviewMapIssue === item.issue && selectedIssueRowKey === rowKey;
                     return (
-                      <button
-                        key={`${item.issue}:${item.group}`}
-                        type="button"
-                        className={`overview-issue-donut-detail__item${isActive ? " is-active" : ""}`}
-                        onClick={() =>
-                          setSelectedOverviewMapIssue((current) => (current === item.issue ? "" : item.issue))
-                        }
-                      >
-                        <span
-                          className="overview-issue-donut-detail__swatch"
-                          style={{ background: item.color }}
-                          aria-hidden="true"
-                        />
-                        <span className="overview-issue-donut-detail__name">{item.issue}</span>
-                        <strong>{item.districtCount.toLocaleString("th-TH")} อำเภอ</strong>
-                      </button>
+                      <div key={rowKey} className="overview-issue-donut-detail__entry">
+                        <button
+                          type="button"
+                          className={`overview-issue-donut-detail__item${isActive ? " is-active" : ""}`}
+                          onClick={() => {
+                            setSelectedIssueRowKey(isActive ? "" : rowKey);
+                            setSelectedOverviewMapIssue(isActive ? "" : item.issue);
+                          }}
+                        >
+                          <span
+                            className="overview-issue-donut-detail__swatch"
+                            style={{ background: item.color }}
+                            aria-hidden="true"
+                          />
+                          <span className="overview-issue-donut-detail__name">{item.issue}</span>
+                          <strong>{item.districtCount.toLocaleString("th-TH")} อำเภอ</strong>
+                        </button>
+                        {isActive ? <OverviewIssueDrilldown model={model} /> : null}
+                      </div>
                     );
                   })}
                 </div>
@@ -402,25 +413,29 @@ export default function OverviewIssueDonutPanel({ model }: OverviewIssueDonutPan
             ) : (
               <div className="overview-issue-donut-detail__group">
                 {rankedIssueRows.map((item) => {
-                  const isActive = selectedOverviewMapIssue === item.issue;
+                  const rowKey = `${item.issue}:${item.group}`;
+                  const isActive = selectedOverviewMapIssue === item.issue && selectedIssueRowKey === rowKey;
                   return (
-                    <button
-                      key={`${item.issue}:${item.group}`}
-                      type="button"
-                      className={`overview-issue-donut-detail__item${isActive ? " is-active" : ""}`}
-                      onClick={() => setSelectedOverviewMapIssue((current) => (current === item.issue ? "" : item.issue))}
-                    >
-                      <span className="overview-issue-donut-detail__swatch" style={{ background: item.color }} aria-hidden="true" />
-                      <span className="overview-issue-donut-detail__name">{item.issue}</span>
-                      <strong>{item.districtCount.toLocaleString("th-TH")} อำเภอ</strong>
-                    </button>
+                    <div key={rowKey} className="overview-issue-donut-detail__entry">
+                      <button
+                        type="button"
+                        className={`overview-issue-donut-detail__item${isActive ? " is-active" : ""}`}
+                        onClick={() => {
+                          setSelectedIssueRowKey(isActive ? "" : rowKey);
+                          setSelectedOverviewMapIssue(isActive ? "" : item.issue);
+                        }}
+                      >
+                        <span className="overview-issue-donut-detail__swatch" style={{ background: item.color }} aria-hidden="true" />
+                        <span className="overview-issue-donut-detail__name">{item.issue}</span>
+                        <strong>{item.districtCount.toLocaleString("th-TH")} อำเภอ</strong>
+                      </button>
+                      {isActive ? <OverviewIssueDrilldown model={model} /> : null}
+                    </div>
                   );
                 })}
               </div>
             )}
           </div>
-
-          <OverviewIssueDrilldown model={model} />
         </div>
       )}
     </aside>
